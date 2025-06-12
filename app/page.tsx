@@ -42,7 +42,7 @@ export default function Home() {
         </motion.div>
       </div>
 
-      <h1>Hello World</h1>
+      <p className="text-[20px] font-medium text-foreground">Send anonymous messages</p>
     </div>
   );
 }

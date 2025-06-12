@@ -117,7 +117,7 @@ export default function Home() {
         }}
       >
         <div className="p-[10px] flex flex-row mt-[5px] items-center justify-center bg-white outline-[1px] outline-[#D8D8D8] rounded-[10px] drop-shadow-[0px_1px_1px_rgba(23,15,37,0.15)]">
-          <span className="font-medium text-[16px]">woah.page/</span>
+          <span className="font-medium text-[16px] select-none">woah.page/</span>
           <input
             type="text"
             className="font-medium text-[16px] outline-none"

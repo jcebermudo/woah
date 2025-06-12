@@ -5,8 +5,10 @@ import { motion } from "motion/react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { validateUsername } from "@/actions/validateUsername";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [validationResult, setValidationResult] = useState<boolean | null>(
     null
@@ -35,7 +37,8 @@ export default function Home() {
   }, [username]);
 
   const handleSubmit = () => {
-    console.log("submit");
+    sessionStorage.setItem("username", username);
+    router.push("/auth");
   };
 
   return (

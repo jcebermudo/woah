@@ -8,7 +8,7 @@ import { useState } from "react";
 
 export default function Home() {
   const [username, setUsername] = useState("");
-  const [userNameExists, setUserNameExists] = useState(false);
+  const [validationResult, setValidationResult] = useState<boolean | null>(null);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -97,19 +97,19 @@ export default function Home() {
               setUsername(value);
               if (value.length > 0) {
                 const exists = await validateUsername(value);
-                setUserNameExists(exists);
+                setValidationResult(exists);
               }
             }}
           ></input>
           <button className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]">
             <ArrowRight className="text-white" />
           </button>
-          {username && (
+          {(username.length > 0 && validationResult !== null) && (
             <span
-              className={`text-sm mt-2 ${userNameExists ? "text-green-500" : "text-red-500"}`}
+              className={`text-sm mt-2 ${validationResult ? "text-green-500" : "text-red-500"}`}
             >
-              {userNameExists == true && "Username is already taken"}
-              {userNameExists == false && "Username is available"}
+              {validationResult == true && "Link is available!"}
+              {validationResult == false && "Link is already taken"}
             </span>
           )}
         </div>

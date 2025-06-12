@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.80.7",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.44.2",
     "lucide-react": "^0.514.0",

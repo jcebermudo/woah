@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "motion/react";
+import { MoveRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -86,7 +87,9 @@ export default function Home() {
             className="font-medium text-[16px] outline-none"
             placeholder="yourname"
           />
-          <button className="font-medium text-[16px]">Send</button>
+          <button className="font-medium text-[16px]">
+            <MoveRight className="" />
+          </button>
         </div>
       </motion.div>
     </div>

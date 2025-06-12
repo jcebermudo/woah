@@ -3,8 +3,13 @@
 import Image from "next/image";
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
+import { validateUsername } from "@/actions/validateUsername";
+import { useState } from "react";
 
 export default function Home() {
+  const [username, setUsername] = useState("");
+  const [userNameExists, setUserNameExists] = useState(false);
+
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="select-none flex flex-row gap-[10px] items-center justify-center">
@@ -86,10 +91,27 @@ export default function Home() {
             type="text"
             className="font-medium text-[16px] outline-none"
             placeholder="yourname"
+            value={username}
+            onChange={async (e) => {
+              const value = e.target.value;
+              setUsername(value);
+              if (value.length > 0) {
+                const exists = await validateUsername(value);
+                setUserNameExists(exists);
+              }
+            }}
           ></input>
           <button className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]">
             <ArrowRight className="text-white" />
           </button>
+          {username && (
+            <span
+              className={`text-sm mt-2 ${userNameExists ? "text-green-500" : "text-red-500"}`}
+            >
+              {userNameExists == true && "Username is already taken"}
+              {userNameExists == false && "Username is available"}
+            </span>
+          )}
         </div>
       </motion.div>
     </div>

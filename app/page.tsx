@@ -22,7 +22,7 @@ export default function Home() {
             duration: 0.5,
             type: "spring",
             stiffness: 200,
-            delay: 0.2,
+            delay: 0.1,
           }}
           className="ml-[-15px]"
         >
@@ -35,7 +35,7 @@ export default function Home() {
             duration: 0.5,
             type: "spring",
             stiffness: 200,
-            delay: 0.4,
+            delay: 0.2,
           }}
           className="ml-[-15px]"
         >
@@ -48,7 +48,7 @@ export default function Home() {
             duration: 0.5,
             type: "spring",
             stiffness: 200,
-            delay: 0.6,
+            delay: 0.3,
           }}
           className="ml-[-12px]"
         >
@@ -63,12 +63,32 @@ export default function Home() {
           duration: 0.5,
           type: "spring",
           stiffness: 200,
-          delay: 0.8,
+          delay: 0.4,
         }}
         className="text-[24px] font-medium text-foreground"
       >
         Send anonymous messages
       </motion.p>
+      <motion.div
+        initial={{ opacity: 0, y: 70 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.5,
+          type: "spring",
+          stiffness: 200,
+          delay: 0.45,
+        }}
+      >
+        <div className="p-[10px] flex flex-row mt-[5px] bg-white outline-[1px] outline-[#D8D8D8] rounded-[10px] drop-shadow-[0px_1px_1px_rgba(23,15,37,0.15)]">
+          <span className="font-medium text-[16px]">woah.page/</span>
+          <input
+            type="text"
+            className="font-medium text-[16px] outline-none"
+            placeholder="yourname"
+          />
+          <button className="font-medium text-[16px]">Send</button>
+        </div>
+      </motion.div>
     </div>
   );
 }

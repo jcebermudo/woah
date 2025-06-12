@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "motion/react";
-import { MoveRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -80,15 +80,15 @@ export default function Home() {
           delay: 0.45,
         }}
       >
-        <div className="p-[10px] flex flex-row mt-[5px] bg-white outline-[1px] outline-[#D8D8D8] rounded-[10px] drop-shadow-[0px_1px_1px_rgba(23,15,37,0.15)]">
+        <div className="p-[10px] flex flex-row mt-[5px] items-center justify-center bg-white outline-[1px] outline-[#D8D8D8] rounded-[10px] drop-shadow-[0px_1px_1px_rgba(23,15,37,0.15)]">
           <span className="font-medium text-[16px]">woah.page/</span>
           <input
             type="text"
             className="font-medium text-[16px] outline-none"
             placeholder="yourname"
-          />
-          <button className="font-medium text-[16px]">
-            <MoveRight className="" />
+          ></input>
+          <button className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]">
+            <ArrowRight className="text-white" />
           </button>
         </div>
       </motion.div>

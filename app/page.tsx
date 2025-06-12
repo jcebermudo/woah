@@ -2,13 +2,37 @@
 
 import Image from "next/image";
 import { motion } from "motion/react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { validateUsername } from "@/actions/validateUsername";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [username, setUsername] = useState("");
-  const [validationResult, setValidationResult] = useState<boolean | null>(null);
+  const [validationResult, setValidationResult] = useState<boolean | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitButtonDisabled, setSubmitButtonDisabled] = useState(true);
+  const [debouncedUsername, setDebouncedUsername] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (username.length > 0) {
+        setIsLoading(true);
+        setSubmitButtonDisabled(true);
+        const validationResult = await validateUsername(username);
+        setValidationResult(validationResult);
+        setSubmitButtonDisabled(!validationResult);
+        setIsLoading(false);
+      } else {
+        setValidationResult(null);
+        setSubmitButtonDisabled(true);
+      }
+      setDebouncedUsername(username);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
@@ -92,31 +116,43 @@ export default function Home() {
             className="font-medium text-[16px] outline-none"
             placeholder="yourname"
             value={username}
-            onChange={async (e) => {
+            onChange={(e) => {
               const value = e.target.value;
               setUsername(value);
-              if (value.length > 0) {
-                const exists = await validateUsername(value);
-                setValidationResult(exists);
-              }
+              setSubmitButtonDisabled(true);
             }}
           ></input>
-          <button className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]">
-            <ArrowRight className="text-white" />
+          <button
+            disabled={submitButtonDisabled}
+            className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]"
+          >
+            {isLoading ? (
+              <Loader2 className="text-white animate-spin" />
+            ) : (
+              <ArrowRight className="text-white" />
+            )}
           </button>
         </div>
         {username.length > 0 && validationResult !== null && (
           <motion.div
-           initial={{ opacity: 0,  y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.1, type: "spring", stiffness: 200 }}>
-          <span
-
-            className={`text-[16px] font-medium mt-2 ${validationResult ? "text-green-500" : "text-red-500"}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.1, type: "spring", stiffness: 200 }}
           >
-            {validationResult == true && "Link is available!"}
-            {validationResult == false && "Link is already taken"}
-          </span>
+            {isLoading && (
+              <span className="text-gray-500 font-medium">Checking availability...</span>
+            )}
+            {!isLoading && debouncedUsername && (
+              <span
+                className={
+                  validationResult ? "text-green-500 font-medium" : "text-red-500 font-medium"
+                }
+              >
+                {validationResult
+                  ? "Link is available!"
+                  : "Link is already taken"}
+              </span>
+            )}
           </motion.div>
         )}
       </motion.div>

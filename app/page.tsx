@@ -104,15 +104,21 @@ export default function Home() {
           <button className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]">
             <ArrowRight className="text-white" />
           </button>
-          {(username.length > 0 && validationResult !== null) && (
-            <span
-              className={`text-sm mt-2 ${validationResult ? "text-green-500" : "text-red-500"}`}
-            >
-              {validationResult == true && "Link is available!"}
-              {validationResult == false && "Link is already taken"}
-            </span>
-          )}
         </div>
+        {username.length > 0 && validationResult !== null && (
+          <motion.div
+           initial={{ opacity: 0,  y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.1, type: "spring", stiffness: 200 }}>
+          <span
+
+            className={`text-[16px] font-medium mt-2 ${validationResult ? "text-green-500" : "text-red-500"}`}
+          >
+            {validationResult == true && "Link is available!"}
+            {validationResult == false && "Link is already taken"}
+          </span>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

@@ -34,6 +34,10 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [username]);
 
+  const handleSubmit = () => {
+    console.log("submit");
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <div className="select-none flex flex-row gap-[10px] items-center justify-center">
@@ -136,7 +140,7 @@ export default function Home() {
             className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]"
           >
             {isLoading ? (
-              <Loader2 className="text-white animate-spin" />
+              <Loader2 className="text-white translate-x-[-0.5px] w-[20px] h-[20px] animate-spin" />
             ) : (
               <ArrowRight className="text-white" />
             )}
@@ -148,9 +152,6 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.1, type: "spring", stiffness: 200 }}
           >
-            {isLoading && (
-              <span className="text-gray-500 font-medium">Checking availability...</span>
-            )}
             {!isLoading && debouncedUsername && (
               <span
                 className={

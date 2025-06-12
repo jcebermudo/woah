@@ -116,6 +116,14 @@ export default function Home() {
             className="font-medium text-[16px] outline-none"
             placeholder="yourname"
             value={username}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                console.log("submit");
+              }
+            }}
+            onSubmit={() => {
+              console.log("submit");
+            }}
             onChange={(e) => {
               const value = e.target.value;
               setUsername(value);
@@ -123,6 +131,7 @@ export default function Home() {
             }}
           ></input>
           <button
+            type="submit"
             disabled={submitButtonDisabled}
             className="cursor-pointer font-medium text-[16px] w-[35px] h-[35px] flex items-center justify-center rounded-[10px] bg-[#803DFF]"
           >

@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const myFont = localFont({
-  src: "../public/fonts/Satoshi-Variable.ttf",
+const myFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export default function RootLayout({

@@ -65,11 +65,10 @@ export default function AuthPage() {
           stiffness: 200,
           delay: 0.4,
         }}
-        className="text-[24px] font-medium text-foreground"
+        className="text-[20px] font-medium text-foreground max-w-[350px] text-center"
       >
-        Send anonymous messages
+        Log in or create an account to send and receive anonymous messages.
       </motion.p>
-      
     </div>
   );
 }

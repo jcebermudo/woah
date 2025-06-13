@@ -120,7 +120,7 @@ export default function Home() {
           <span className="font-medium text-[16px] select-none">woah.page/</span>
           <input
             type="text"
-            className="font-medium text-[16px] outline-none"
+            className="font-medium text-[16px] outline-none placeholder:select-none"
             placeholder="yourname"
             value={username}
             onKeyDown={(e) => {

@@ -6,12 +6,13 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { validateUsername } from "@/actions/validateUsername";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [validationResult, setValidationResult] = useState<boolean | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [submitButtonDisabled, setSubmitButtonDisabled] = useState(true);
@@ -117,7 +118,9 @@ export default function Home() {
         }}
       >
         <div className="p-[10px] flex flex-row mt-[5px] items-center justify-center bg-white outline-[1px] outline-[#D8D8D8] rounded-[10px] drop-shadow-[0px_1px_1px_rgba(23,15,37,0.15)]">
-          <span className="font-medium text-[16px] select-none">woah.page/</span>
+          <span className="font-medium text-[16px] select-none">
+            woah.page/
+          </span>
           <input
             type="text"
             className="font-medium text-[16px] outline-none placeholder:select-none"
@@ -158,7 +161,9 @@ export default function Home() {
             {!isLoading && debouncedUsername && (
               <span
                 className={
-                  validationResult ? "text-green-500 font-medium" : "text-red-500 font-medium"
+                  validationResult
+                    ? "text-green-500 font-medium"
+                    : "text-red-500 font-medium"
                 }
               >
                 {validationResult
@@ -169,6 +174,14 @@ export default function Home() {
           </motion.div>
         )}
       </motion.div>
+      <p className="font-medium mt-[10px]">
+        Already have an account?{" "}
+        <Link href="/auth">
+          <span className="text-[#803DFF] font-medium cursor-pointer">
+            Sign in
+          </span>
+        </Link>
+      </p>
     </div>
   );
 }

@@ -1,11 +1,8 @@
 "use server";
 
-import "dotenv/config";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { db } from "@/db";
+import { usersTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { usersTable } from "../src/db/schema";
-
-const db = drizzle(process.env.DATABASE_URL!);
 
 export async function validateUsername(username: string): Promise<boolean> {
   try {

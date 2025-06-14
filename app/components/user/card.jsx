@@ -12,7 +12,7 @@ export const Card = ({background, padding = 20}) => {
         <Text text="Subtitle" fontSize={15} />
       </div>
       <div className="buttons-only">
-        <Button size="small" text="Learn more" variant="contained" color="primary" />
+        <Button size="small" text="Learn more" variant="default" color="primary" />
       </div>
     </Container>
   )

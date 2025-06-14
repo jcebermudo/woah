@@ -1,21 +1,20 @@
-// components/Topbar.js
 import React from "react";
-import { Box, FormControlLabel, Switch, Grid, Button as MaterialButton } from "@mui/material";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export const Topbar = () => {
   return (
-    <Box px={1} py={1} mt={3} mb={1} bgcolor="#cbe8e7">
-      <Grid container alignItems="center">
-        <Grid item xs>
-          <FormControlLabel
-            control={<Switch checked={true} />}
-            label="Enable"
-          />
-        </Grid>
-        <Grid item>
-          <MaterialButton size="small" variant="outlined" color="secondary">Serialize JSON to console</MaterialButton>
-        </Grid>
-      </Grid>
-    </Box>
+    <div className="px-1 py-1 mt-3 mb-1 bg-[#cbe8e7]">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Switch id="enable" defaultChecked />
+          <Label htmlFor="enable">Enable</Label>
+        </div>
+        <Button variant="outline" size="sm">
+          Serialize JSON to console
+        </Button>
+      </div>
+    </div>
   )
 };

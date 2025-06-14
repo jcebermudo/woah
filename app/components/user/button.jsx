@@ -11,3 +11,4 @@ export const Button = ({size, variant, color, children}) => {
     </ShadButton>
   )
 }
+

@@ -1,36 +1,34 @@
-// components/SettingsPanel.js
 import React from 'react';
-import { Box, Chip, Grid, Typography, Button as MaterialButton, FormControl, FormLabel, Slider } from "@mui/material";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 
 export const SettingsPanel = () => {  
-  return  (    
-    <Box bgcolor="rgba(0, 0, 0, 0.06)" mt={2} px={2} py={2}>
-      <Grid container direction="column" spacing={0}>
-        <Grid item>
-          <Box pb={2}>
-            <Grid container alignItems="center">
-              <Grid item xs><Typography variant="subtitle1">Selected</Typography></Grid>
-              <Grid item><Chip size="small" color="primary" label="Selected" /></Grid>
-            </Grid>
-          </Box>
-        </Grid>
-        <FormControl size="small" component="fieldset">
-          <FormLabel component="legend">Prop</FormLabel>
+  return (    
+    <div className="bg-muted/60 mt-2 px-2 py-2">
+      <div className="flex flex-col gap-4">
+        <div className="pb-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Selected</span>
+            <Badge variant="default">Selected</Badge>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Prop</label>
           <Slider
-            defaultValue={0}
-            step={1}
-            min={7}
+            defaultValue={[0]}
             max={50}
-            valueLabelDisplay="auto"
+            min={7}
+            step={1}
+            className="w-full"
           />
-        </FormControl>
-        <MaterialButton
-          variant="contained"
-          color="default"
-        >
+        </div>
+
+        <Button variant="default">
           Delete
-        </MaterialButton>
-      </Grid>
-    </Box>
+        </Button>
+      </div>
+    </div>
   ) 
 }

@@ -1,5 +1,3 @@
-// pages/index.js
-
 import React from "react";
 
 import { Toolbox } from "./components/Toolbox";
@@ -13,21 +11,22 @@ import { Text } from "./components/user/Text";
 
 export default function App() {
   return (
-    <div style={{ margin: "0 auto", width: "800px" }}>
-      <h1>A super simple page editor</h1>
-      <Topbar />
-      <Container padding={5} background="#eee">
-        <Card background="#fff" padding={5} />
-      </Container>
-      <div style={{ paddingTop: "10px" }}>
-        <div>
+    <div className="mx-auto w-[800px]">
+      <h1 className="text-xl font-semibold text-center">
+        A super simple page editor
+      </h1>
+      <div className="flex gap-3 pt-3">
+        <Topbar />
+        <div className="flex-1">
           <Container padding={5} background="#eee">
-            <Card background="#fff" padding={5}  />
+            <Card background="#fff" padding={5} />
           </Container>
         </div>
-        <div>
-          <Toolbox />
-          <SettingsPanel />
+        <div className="w-1/4">
+          <div className="bg-card rounded-lg shadow-sm">
+            <Toolbox />
+            <SettingsPanel />
+          </div>
         </div>
       </div>
     </div>

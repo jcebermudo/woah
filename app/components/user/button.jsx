@@ -1,11 +1,11 @@
 // components/user/Button.js
 import React  from "react";
-import {Button as MaterialButton} from "@mui/material";
+import { Button as ShadButton } from "@/components/ui/button";
 
 export const Button = ({size, variant, color, children}) => {
   return (
-    <MaterialButton size={size} variant={variant} color={color}>
+    <ShadButton size={size} variant={variant} color={color}>
       {children}
-    </MaterialButton>
+    </ShadButton>
   )
 }

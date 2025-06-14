@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Editor, Frame, Element } from "@craftjs/core";
 
 import { Toolbox } from "./components/Toolbox";
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -10,8 +11,6 @@ import { Container } from "./components/user/Container";
 import { Button } from "./components/user/Button";
 import { Card } from "./components/user/Card";
 import { Text } from "./components/user/Text";
-
-import { Editor, Frame, Element } from "@craftjs/core";
 
 export default function App() {
   return (
@@ -24,21 +23,13 @@ export default function App() {
           <div className="flex-1">
             <Frame>
               <Element is={Container} padding={5} background="#eee" canvas>
-                <Container padding={5} background="#eee">
-                  <Element is={Container} padding={5} background="#eee" canvas>
-                    <Card background="#fff" padding={5} />
-                  </Element>
-                  <Element is={Container} padding={5} background="#eee" canvas>
-                    <Button size="sm" variant="outline" color="default">
-                      Click
-                    </Button>
-                  </Element>
-                  <Element is={Container} padding={5} background="#eee" canvas>
-                    <Text text="Hi world!" fontSize="14px" />
-                  </Element>
-                  <Element is={Container} padding={6} background="#999" canvas>
-                    <Text text="It's me again!" fontSize="14px" />
-                  </Element>
+                <Card background="#fff" padding={5} />
+                <Button size="sm" variant="outline" color="default">
+                  Click
+                </Button>
+                <Text text="Hi world!" fontSize="14px" />
+                <Container padding={6} background="#999">
+                  <Text text="It's me again!" fontSize="14px" />
                 </Container>
               </Element>
             </Frame>

@@ -10,3 +10,4 @@ export const Text = ({text, fontSize}) => {
       </div>
   )
 }
+

@@ -1,7 +1,8 @@
+// components/user/Card.js
 import React  from "react";
-import { Text } from "./text";
-import { Button } from "./button";
-import { Container } from "./container";
+import { Text } from "./Text";
+import { Button } from "./Button";
+import { Container } from "./Container";
 
 export const Card = ({background, padding = 20}) => {
   return (

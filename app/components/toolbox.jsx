@@ -1,27 +1,26 @@
-// components/Toolbox.js
 import React from "react";
-import { Box, Typography, Grid, Button as MaterialButton } from "@mui/material";
+import { Button } from "@/components/ui/button";
 
 export const Toolbox = () => {
   return (
-    <Box px={2} py={2}>
-      <Grid container direction="column"  alignItems="center" justify="center" spacing={1}>
-        <Box pb={2}>
-          <Typography>Drag to add</Typography>
-        </Box>
-        <Grid container direction="column" item>
-          <MaterialButton variant="contained">Button</MaterialButton>
-        </Grid>
-        <Grid container direction="column" item>
-          <MaterialButton variant="contained">Text</MaterialButton>
-        </Grid>
-        <Grid container direction="column" item>
-          <MaterialButton variant="contained">Container</MaterialButton>
-        </Grid>
-        <Grid container direction="column" item>
-          <MaterialButton variant="contained">Card</MaterialButton>
-        </Grid>
-      </Grid>
-    </Box>
+    <div className="px-2 py-2">
+      <div className="flex flex-col items-center justify-center gap-1">
+        <div className="pb-2">
+          <p className="text-sm">Drag to add</p>
+        </div>
+        <div className="flex flex-col w-full">
+          <Button variant="default">Button</Button>
+        </div>
+        <div className="flex flex-col w-full">
+          <Button variant="default">Text</Button>
+        </div>
+        <div className="flex flex-col w-full">
+          <Button variant="default">Container</Button>
+        </div>
+        <div className="flex flex-col w-full">
+          <Button variant="default">Card</Button>
+        </div>
+      </div>
+    </div>
   )
 };

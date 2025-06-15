@@ -24,10 +24,7 @@ export default function App() {
             <Frame>
               <Element is={Container} padding={5} background="#eee" canvas>
                 <Card background="#fff" padding={5} />
-            
-                <Button size="sm" variant="outline" color="default">
-                  Click
-                </Button>
+                <Button size="sm" variant="outline" color="default" text="Click" />
                 <Text text="Hi world!" fontSize="14px" />
                 <Container padding={6} background="#999">
                   <Text text="It's me again!" fontSize="14px" />

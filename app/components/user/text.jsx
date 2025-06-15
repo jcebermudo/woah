@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import ContentEditable from "react-contenteditable";
 import { useNode } from "@craftjs/core";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 export const Text = ({ text, fontSize }) => {
   const {
@@ -33,6 +35,21 @@ export const Text = ({ text, fontSize }) => {
         tagName="p"
         style={{ fontSize: `${fontSize}px` }}
       />
+      {hasSelectedNode && (
+        <div className="mt-4 space-y-2">
+          <Label>Font size</Label>
+          <Slider
+            defaultValue={[fontSize]}
+            min={7}
+            max={50}
+            step={1}
+            onValueChange={(value) => {
+              setProp(props => props.fontSize = value[0]);
+            }}
+            className="w-full"
+          />
+        </div>
+      )}
     </div>
   );
 };

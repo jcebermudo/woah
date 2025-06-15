@@ -82,10 +82,11 @@ const TextSettings = () => {
             id="font-size"
             value={fontSize}
             onChange={(e) =>
-              setProp(
-                (props: { fontSize: number }) =>
-                  (props.fontSize = parseInt(e.target.value))
-              )
+              setProp((props: { fontSize: number }) => {
+                const parsedValue = parseInt(e.target.value);
+                // If the input is empty or results in NaN, set fontSize to 1, otherwise use the parsed value.
+                props.fontSize = isNaN(parsedValue) ? 1 : parsedValue;
+              })
             }
           />
         </div>

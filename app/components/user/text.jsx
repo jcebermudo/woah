@@ -40,8 +40,11 @@ export const Text = ({ text, fontSize }) => {
 };
 
 const TextSettings = () => {
-  const { actions: {setProp}, fontSize } = useNode((node) => ({
-    fontSize: node.data.props.fontSize
+  const {
+    actions: { setProp },
+    fontSize,
+  } = useNode((node) => ({
+    fontSize: node.data.props.fontSize,
   }));
 
   return (
@@ -54,16 +57,20 @@ const TextSettings = () => {
           min={1}
           max={50}
           onChange={(_, value) => {
-            setProp(props => props.fontSize = value);
+            setProp((props) => (props.fontSize = value));
           }}
         />
       </FormControl>
     </>
-  )
-}
+  );
+};
 
 Text.craft = {
+  props: {
+    text: "Hi",
+    fontSize: 20,
+  },
   related: {
-    settings: TextSettings
-  }
-}
+    settings: TextSettings,
+  },
+};

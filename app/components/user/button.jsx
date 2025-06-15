@@ -5,7 +5,6 @@ import { useNode } from "@craftjs/core";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-
 export const Button = ({ size, variant, color, text }) => {
   const {
     connectors: { connect, drag },
@@ -23,17 +22,20 @@ export const Button = ({ size, variant, color, text }) => {
 };
 
 const ButtonSettings = () => {
-  const { actions: { setProp }, props } = useNode((node) => ({
-    props: node.data.props
+  const {
+    actions: { setProp },
+    props,
+  } = useNode((node) => ({
+    props: node.data.props,
   }));
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <Label>Size</Label>
-        <RadioGroup 
-          defaultValue={props.size} 
-          onValueChange={(value) => setProp(props => props.size = value)}
+        <RadioGroup
+          defaultValue={props.size}
+          onValueChange={(value) => setProp((props) => (props.size = value))}
           className="flex flex-col space-y-1"
         >
           <div className="flex items-center space-x-2">
@@ -53,9 +55,9 @@ const ButtonSettings = () => {
 
       <div className="space-y-2">
         <Label>Variant</Label>
-        <RadioGroup 
-          defaultValue={props.variant} 
-          onValueChange={(value) => setProp(props => props.variant = value)}
+        <RadioGroup
+          defaultValue={props.variant}
+          onValueChange={(value) => setProp((props) => (props.variant = value))}
           className="flex flex-col space-y-1"
         >
           <div className="flex items-center space-x-2">
@@ -75,9 +77,9 @@ const ButtonSettings = () => {
 
       <div className="space-y-2">
         <Label>Color</Label>
-        <RadioGroup 
-          defaultValue={props.color} 
-          onValueChange={(value) => setProp(props => props.color = value)}
+        <RadioGroup
+          defaultValue={props.color}
+          onValueChange={(value) => setProp((props) => (props.color = value))}
           className="flex flex-col space-y-1"
         >
           <div className="flex items-center space-x-2">
@@ -99,7 +101,13 @@ const ButtonSettings = () => {
 };
 
 Button.craft = {
-  related: { 
-    settings: ButtonSettings
-  }
-}
+  props: {
+    size: "small",
+    variant: "contained",
+    color: "primary",
+    text: "Click me",
+  },
+  related: {
+    settings: ButtonSettings,
+  },
+};

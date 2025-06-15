@@ -3,7 +3,7 @@ import React from "react";
 import { Button as ShadButton } from "@/components/ui/button";
 import { useNode } from "@craftjs/core";
 
-export const Button = ({ size, variant, color, text}) => {
+export const Button = ({ size, variant, color, text }) => {
   const {
     connectors: { connect, drag },
   } = useNode();

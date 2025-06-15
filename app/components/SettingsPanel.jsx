@@ -16,7 +16,7 @@ export const SettingsPanel = () => {
         settings:
           state.nodes[currentNodeId].related &&
           state.nodes[currentNodeId].related.settings,
-        isDeletable: query.node(currentNodeId).isDeletable()
+        isDeletable: query.node(currentNodeId).isDeletable(),
       };
     }
 
@@ -37,20 +37,16 @@ export const SettingsPanel = () => {
 
         {selected.settings && React.createElement(selected.settings)}
 
-        <Button variant="default">Delete</Button>
-        {
-          selected.isDeletable ? (
-            <MaterialButton
-              variant="contained"
-              color="default"
-              onClick={() => {
-                actions.delete(selected.id);
-              }}
-            >
-              Delete
-            </MaterialButton>
-          ) : null
-        }
+        {selected.isDeletable && (
+          <Button
+            variant="default"
+            onClick={() => {
+              actions.delete(selected.id);
+            }}
+          >
+            Delete
+          </Button>
+        )}
       </div>
     </div>
   ) : null;

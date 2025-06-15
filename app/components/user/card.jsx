@@ -50,8 +50,8 @@ export const Card = ({ background, padding = 20 }) => {
       <Element id="text" is={CardTop} canvas>
         {" "}
         // Canvas Node of type CardTop
-        <Text text="Title" fontSize={20} />
-        <Text text="Subtitle" fontSize={15} />
+        <Text text="Title" fontSize={20} tag="h1" color="black" bgcolor="none" />
+        <Text text="Subtitle" fontSize={15} tag="h2" color="black" bgcolor="none" />
       </Element>
       <Element id="buttons" is={CardBottom} canvas>
         {" "}

@@ -18,7 +18,9 @@ export default function App() {
       <h1 className="text-xl font-semibold text-center">
         A super simple page editor
       </h1>
-      <Editor resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}>
+      <Editor
+        resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
+      >
         <div className="flex gap-3">
           <div className="flex-1">
             <Frame>

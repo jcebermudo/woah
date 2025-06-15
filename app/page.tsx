@@ -23,6 +23,11 @@ export default function App() {
       >
         <Topbar />
         <div className="flex gap-3">
+          <div className="w-1/4">
+            <div className="bg-card rounded-lg shadow-sm">
+              <Toolbox />
+            </div>
+          </div>
           <div className="flex-1">
             <Frame>
               <Element is={Container} padding={5} background="#eee" canvas>
@@ -33,13 +38,18 @@ export default function App() {
                   color="default"
                   text="Click"
                 />
-                <Text text="Hi world!" fontSize={14} tag="p" color="black" bgcolor="none" />
+                <Text
+                  text="Hi world!"
+                  fontSize={14}
+                  tag="p"
+                  color="black"
+                  bgcolor="none"
+                />
               </Element>
             </Frame>
           </div>
           <div className="w-1/4">
             <div className="bg-card rounded-lg shadow-sm">
-              <Toolbox />
               <SettingsPanel />
             </div>
           </div>

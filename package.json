@@ -19,6 +19,7 @@
     "lucide-react": "^0.515.0",
     "next": "15.3.3",
     "react": "^19.0.0",
+    "react-contenteditable": "^3.3.7",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.3.1"
   },

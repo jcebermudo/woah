@@ -18,10 +18,15 @@ export const Toolbox = () => {
         <div className="flex flex-col w-full">
           <ShadcnButton
             ref={(ref) =>
-              connectors.create(ref, <UserButton size="sm"
+              connectors.create(
+                ref,
+                <UserButton
+                  size="sm"
                   variant="outline"
                   color="default"
-                  text="Click"/>)
+                  text="Click"
+                />,
+              )
             }
             variant="default"
           >
@@ -41,7 +46,7 @@ export const Toolbox = () => {
             ref={(ref) =>
               connectors.create(
                 ref,
-                <Element is={Container} padding={20} canvas />
+                <Element is={Container} padding={20} canvas />,
               )
             }
             variant="default"

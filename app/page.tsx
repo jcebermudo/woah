@@ -21,6 +21,7 @@ export default function App() {
       <Editor
         resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
       >
+        <Topbar />
         <div className="flex gap-3">
           <div className="flex-1">
             <Frame>
@@ -32,10 +33,7 @@ export default function App() {
                   color="default"
                   text="Click"
                 />
-                <Text text="Hi world!" fontSize="14px" />
-                <Container padding={6} background="#999">
-                  <Text text="It's me again!" fontSize="14px" />
-                </Container>
+                <Text text="Hi world!" fontSize={14} tag="p" color="black" bgcolor="none" />
               </Element>
             </Frame>
           </div>

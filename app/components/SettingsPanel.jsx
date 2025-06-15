@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEditor } from "@craftjs/core";
 
 export const SettingsPanel = () => {
-  const { actions, selected } = useEditor((state) => {
+  const { actions, selected } = useEditor((state, query) => {
     const [currentNodeId] = state.events.selected;
     let selected;
 

@@ -48,20 +48,21 @@ const TextSettings = () => {
   }));
 
   return (
-    <>
-      <FormControl size="small" component="fieldset">
-        <FormLabel component="legend">Font size</FormLabel>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="font-size">Font size</Label>
         <Slider
-          value={fontSize || 7}
+          id="font-size"
+          value={[fontSize || 7]}
           step={7}
           min={1}
           max={50}
-          onChange={(_, value) => {
-            setProp((props) => (props.fontSize = value));
+          onValueChange={(value) => {
+            setProp((props) => (props.fontSize = value[0]));
           }}
         />
-      </FormControl>
-    </>
+      </div>
+    </div>
   );
 };
 

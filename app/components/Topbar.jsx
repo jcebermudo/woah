@@ -16,5 +16,5 @@ export const Topbar = () => {
         </Button>
       </div>
     </div>
-  )
+  );
 };

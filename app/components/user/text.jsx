@@ -35,21 +35,35 @@ export const Text = ({ text, fontSize }) => {
         tagName="p"
         style={{ fontSize: `${fontSize}px` }}
       />
-      {hasSelectedNode && (
-        <div className="mt-4 space-y-2">
-          <Label>Font size</Label>
-          <Slider
-            defaultValue={[fontSize]}
-            min={7}
-            max={50}
-            step={1}
-            onValueChange={(value) => {
-              setProp(props => props.fontSize = value[0]);
-            }}
-            className="w-full"
-          />
-        </div>
-      )}
     </div>
   );
 };
+
+const TextSettings = () => {
+  const { actions: {setProp}, fontSize } = useNode((node) => ({
+    fontSize: node.data.props.fontSize
+  }));
+
+  return (
+    <>
+      <FormControl size="small" component="fieldset">
+        <FormLabel component="legend">Font size</FormLabel>
+        <Slider
+          value={fontSize || 7}
+          step={7}
+          min={1}
+          max={50}
+          onChange={(_, value) => {
+            setProp(props => props.fontSize = value);
+          }}
+        />
+      </FormControl>
+    </>
+  )
+}
+
+Text.craft = {
+  related: {
+    settings: TextSettings
+  }
+}

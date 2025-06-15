@@ -1,10 +1,10 @@
 import React from "react";
-import { Button } from "@/app/components/user/Button";
-import { useEditor } from "@craftjs/core";
+import { Button as ShadcnButton } from "@/components/ui/button"; // Rename to avoid confusion
+import { useEditor, Element } from "@craftjs/core";
 import { Text } from "@/app/components/user/Text";
 import { Container } from "@/app/components/user/Container";
 import { Card } from "@/app/components/user/Card";
-
+import { Button as UserButton } from "@/app/components/user/Button"; // Import user Button separately
 
 export const Toolbox = () => {
   const { connectors, query } = useEditor();
@@ -16,45 +16,46 @@ export const Toolbox = () => {
           <p className="text-sm">Drag to add</p>
         </div>
         <div className="flex flex-col w-full">
-          <Button
+          <ShadcnButton
             ref={(ref) =>
-              connectors.create(ref, <Button text="Click me" size="small" />)
+              connectors.create(ref, <UserButton size="sm"
+                  variant="outline"
+                  color="default"
+                  text="Click"/>)
             }
             variant="default"
           >
             Button
-          </Button>
+          </ShadcnButton>
         </div>
         <div className="flex flex-col w-full">
-          <Button
+          <ShadcnButton
             ref={(ref) => connectors.create(ref, <Text text="Hi world" />)}
             variant="default"
           >
             Text
-          </Button>
+          </ShadcnButton>
         </div>
         <div className="flex flex-col w-full">
-          <Button
+          <ShadcnButton
             ref={(ref) =>
               connectors.create(
                 ref,
-                <Element is={Container} padding={20} canvas />,
+                <Element is={Container} padding={20} canvas />
               )
             }
             variant="default"
           >
             Container
-          </Button>
+          </ShadcnButton>
         </div>
         <div className="flex flex-col w-full">
-          <div className="flex flex-col w-full">
-            <Button
-              ref={(ref) => connectors.create(ref, <Card />)}
-              variant="default"
-            >
-              Card
-            </Button>
-          </div>
+          <ShadcnButton
+            ref={(ref) => connectors.create(ref, <Card />)}
+            variant="default"
+          >
+            Card
+          </ShadcnButton>
         </div>
       </div>
     </div>

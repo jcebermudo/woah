@@ -22,5 +22,5 @@ export const Toolbox = () => {
         </div>
       </div>
     </div>
-  )
+  );
 };

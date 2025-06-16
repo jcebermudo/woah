@@ -1,45 +1,55 @@
 import React, { useState, useEffect } from "react";
 import ContentEditable from "react-contenteditable";
-import { useNode } from "@craftjs/core";
+import { useNode, useEditor } from "@craftjs/core";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useViewport } from "@/app/components/context/ViewportContext";
+
+type ViewportStyles = {
+  fontSize: number;
+  color: string;
+  bgcolor: string;
+};
+
+type ResponsiveStyles = {
+  desktop: ViewportStyles;
+  tablet: ViewportStyles;
+  mobile: ViewportStyles;
+};
 
 export const Text = ({
   text,
-  fontSize,
-  tag,
-  color,
-  bgcolor,
+  responsiveStyles,
 }: {
   text: string;
-  fontSize: number;
-  tag: string;
-  color: string;
-  bgcolor: string;
+  responsiveStyles: ResponsiveStyles;
 }) => {
   const {
     connectors: { connect, drag },
     hasSelectedNode,
-    hasDraggedNode,
     actions: { setProp },
   } = useNode((state) => ({
     hasSelectedNode: state.events.selected,
-    hasDraggedNode: state.events.dragged,
   }));
 
   const [editable, setEditable] = useState(false);
+  const { currentViewport } = useViewport();
 
   useEffect(() => {
     !hasSelectedNode && setEditable(false);
   }, [hasSelectedNode]);
+
+  const getCurrentStyles = () => {
+    return responsiveStyles[currentViewport || "desktop"];
+  };
 
   return (
     <div
       ref={(ref) => void (ref && connect(drag(ref)))}
       onClick={(e) => setEditable(true)}
     >
-
       <ContentEditable
         disabled={!editable}
         html={text}
@@ -49,14 +59,16 @@ export const Text = ({
               (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, ""))
           )
         }
-        tagName={tag}
+        tagName="div"
         style={{
-          fontSize: `${fontSize}px`,
-          color: color,
-          backgroundColor: bgcolor === "none" ? "transparent" : bgcolor,
+          fontSize: `${getCurrentStyles().fontSize}px`,
+          color: getCurrentStyles().color,
+          backgroundColor:
+            getCurrentStyles().bgcolor === "none"
+              ? "transparent"
+              : getCurrentStyles().bgcolor,
         }}
       />
-
     </div>
   );
 };
@@ -64,57 +76,92 @@ export const Text = ({
 const TextSettings = () => {
   const {
     actions: { setProp },
-    fontSize,
-    color,
-    bgcolor,
+    responsiveStyles,
   } = useNode((node) => ({
-    fontSize: node.data.props.fontSize,
-    color: node.data.props.color,
-    bgcolor: node.data.props.bgcolor,
+    responsiveStyles: node.data.props.responsiveStyles,
   }));
+
+  const { currentViewport, setCurrentViewport } = useViewport();
+  const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
+    currentViewport
+  );
+
+  useEffect(() => {
+    setTab(currentViewport);
+  }, [currentViewport]);
+
+  const updateStyle = <K extends keyof ViewportStyles>(
+    viewport: keyof ResponsiveStyles,
+    property: K,
+    value: ViewportStyles[K]
+  ) => {
+    setProp((props: { responsiveStyles: ResponsiveStyles }) => {
+      props.responsiveStyles[viewport][property] = value;
+    });
+  };
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <div>
-          <Label htmlFor="font-size">Font size</Label>
-          <Input
-            id="font-size"
-            value={fontSize}
-            onChange={(e) =>
-              setProp((props: { fontSize: number }) => {
-                const parsedValue = parseInt(e.target.value);
-                // If the input is empty or results in NaN, set fontSize to 1, otherwise use the parsed value.
-                props.fontSize = isNaN(parsedValue) ? 1 : parsedValue;
-              })
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="color">Color</Label>
-          <Input
-            id="color"
-            value={color}
-            onChange={(e) =>
-              setProp(
-                (props: { color: string }) => (props.color = e.target.value)
-              )
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="bgcolor">Background Color</Label>
-          <Input
-            id="bgcolor"
-            value={bgcolor}
-            onChange={(e) =>
-              setProp(
-                (props: { bgcolor: string }) => (props.bgcolor = e.target.value)
-              )
-            }
-          />
-        </div>
-      </div>
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTab(v as "desktop" | "tablet" | "mobile");
+          setCurrentViewport(v as "desktop" | "tablet" | "mobile");
+        }}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="desktop">Desktop</TabsTrigger>
+          <TabsTrigger value="tablet">Tablet</TabsTrigger>
+          <TabsTrigger value="mobile">Mobile</TabsTrigger>
+        </TabsList>
+
+        {(["desktop", "tablet", "mobile"] as const).map((viewport) => (
+          <TabsContent key={viewport} value={viewport}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor={`font-size-${viewport}`}>Font size</Label>
+                  <Input
+                    id={`font-size-${viewport}`}
+                    type="number"
+                    value={responsiveStyles[viewport].fontSize}
+                    onChange={(e) =>
+                      updateStyle(
+                        viewport,
+                        "fontSize",
+                        parseInt(e.target.value) || 1
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`color-${viewport}`}>Color</Label>
+                  <Input
+                    id={`color-${viewport}`}
+                    value={responsiveStyles[viewport].color}
+                    onChange={(e) =>
+                      updateStyle(viewport, "color", e.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`bgcolor-${viewport}`}>
+                    Background Color
+                  </Label>
+                  <Input
+                    id={`bgcolor-${viewport}`}
+                    value={responsiveStyles[viewport].bgcolor}
+                    onChange={(e) =>
+                      updateStyle(viewport, "bgcolor", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
@@ -122,9 +169,23 @@ const TextSettings = () => {
 Text.craft = {
   props: {
     text: "Hi",
-    fontSize: 20,
-    color: "black",
-    bgcolor: "none",
+    responsiveStyles: {
+      desktop: {
+        fontSize: 20,
+        color: "black",
+        bgcolor: "none",
+      },
+      tablet: {
+        fontSize: 18,
+        color: "black",
+        bgcolor: "none",
+      },
+      mobile: {
+        fontSize: 16,
+        color: "black",
+        bgcolor: "none",
+      },
+    },
   },
   related: {
     settings: TextSettings,

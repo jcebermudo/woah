@@ -49,6 +49,11 @@ export const Text = ({
     <div
       ref={(ref) => void (ref && connect(drag(ref)))}
       onClick={(e) => setEditable(true)}
+      style={{
+        outline: hasSelectedNode ? "2px solid #2563eb" : "none",
+        outlineOffset: "0px",
+        borderRadius: "0px",
+      }}
     >
       <ContentEditable
         disabled={!editable}
@@ -67,6 +72,7 @@ export const Text = ({
             getCurrentStyles().bgcolor === "none"
               ? "transparent"
               : getCurrentStyles().bgcolor,
+          outline: "none",
         }}
       />
     </div>

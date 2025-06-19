@@ -18,6 +18,7 @@ export default function App() {
   const [currentDevice, setCurrentDevice] = useState<
     "desktop" | "tablet" | "mobile"
   >("desktop");
+  const [zoom, setZoom] = useState(1);
 
   const getFrameWidth = () => {
     switch (currentDevice) {
@@ -33,10 +34,7 @@ export default function App() {
   };
 
   return (
-    <div className="mx-auto w-[800px]">
-      <h1 className="text-xl font-semibold text-center">
-        A super simple page editor
-      </h1>
+    <div className="h-screen flex flex-col">
       <Editor
         resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
       >
@@ -46,72 +44,105 @@ export default function App() {
             setCurrentViewport: setCurrentDevice,
           }}
         >
-          <Topbar />
-          <div className="flex gap-3">
-            <div className="w-1/4">
-              <div className="bg-card rounded-lg shadow-sm">
-                <Toolbox />
-              </div>
+          {/* Topbar: full width at the top */}
+          <div className="w-full flex-shrink-0">
+            <Topbar />
+          </div>
+          {/* Main content: 3 columns, fills the rest of the screen */}
+          <div className="flex flex-1 min-h-0">
+            {/* Toolbox: left, full height */}
+            <div className="w-64 bg-card rounded-none shadow-sm flex flex-col h-full">
+              <Toolbox />
             </div>
-            <div className="flex-1">
-              <div className="flex flex-col items-center gap-4">
-                <PreviewControls
-                  currentDevice={currentDevice}
-                  onDeviceChange={setCurrentDevice}
-                />
+            {/* Center: Preview and controls */}
+            <div className="flex-1 flex flex-col items-center justify-start overflow-auto">
+              <PreviewControls
+                currentDevice={currentDevice}
+                onDeviceChange={setCurrentDevice}
+              />
+              <div className="flex gap-2 mb-2">
+                <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}>
+                  -
+                </button>
+                <span>{Math.round(zoom * 100)}%</span>
+                <button onClick={() => setZoom((z) => Math.min(2, z + 0.1))}>
+                  +
+                </button>
+              </div>
+              <div
+                className="transition-all duration-300 ease-in-out bg-neutral-100"
+                style={{
+                  width: 800,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
                 <div
-                  className="transition-all duration-300 ease-in-out"
+                  className="transition-all duration-300 ease-in-out bg-neutral-100"
                   style={{
-                    width: getFrameWidth(),
-                    margin: "0 auto",
+                    width: "100%",
+                    minHeight: "500px",
                     border: "1px solid var(--border)",
                     borderRadius: "0.5rem",
-                    overflow: "hidden",
+                    overflow: "auto",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                    position: "relative",
                   }}
                 >
-                  <Frame>
-                    <Element
-                      is={Container}
-                      padding={5}
-                      background="#eee"
-                      canvas
-                    >
-                      <Card background="#fff" padding={5} />
-                      <UserButton
-                        size="sm"
-                        variant="outline"
-                        color="default"
-                        text="Click"
-                      />
-                      <Text
-                        text="Hi world!"
-                        responsiveStyles={{
-                          desktop: {
-                            fontSize: 14,
-                            color: "black",
-                            bgcolor: "none",
-                          },
-                          tablet: {
-                            fontSize: 14,
-                            color: "black",
-                            bgcolor: "none",
-                          },
-                          mobile: {
-                            fontSize: 14,
-                            color: "black",
-                            bgcolor: "none",
-                          },
-                        }}
-                      />
-                    </Element>
-                  </Frame>
+                  <div
+                    style={{
+                      width: getFrameWidth(),
+                      transform: `scale(${zoom})`,
+                      transformOrigin: "top center",
+                      transition: "width 0.2s, transform 0.2s",
+                    }}
+                  >
+                    <Frame>
+                      <Element
+                        is={Container}
+                        padding={5}
+                        background="#eee"
+                        canvas
+                      >
+                        <Card background="#fff" padding={5} />
+                        <UserButton
+                          size="sm"
+                          variant="outline"
+                          color="default"
+                          text="Click"
+                        />
+                        <Text
+                          text="Hi world!"
+                          responsiveStyles={{
+                            desktop: {
+                              fontSize: 14,
+                              color: "black",
+                              bgcolor: "none",
+                            },
+                            tablet: {
+                              fontSize: 14,
+                              color: "black",
+                              bgcolor: "none",
+                            },
+                            mobile: {
+                              fontSize: 14,
+                              color: "black",
+                              bgcolor: "none",
+                            },
+                          }}
+                        />
+                      </Element>
+                    </Frame>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="w-1/4">
-              <div className="bg-card rounded-lg shadow-sm">
-                <SettingsPanel />
-              </div>
+            {/* SettingsPanel: right, full height */}
+            <div className="w-80 bg-card rounded-none shadow-sm flex flex-col h-full">
+              <SettingsPanel />
             </div>
           </div>
         </ViewportContext.Provider>

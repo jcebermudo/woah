@@ -61,7 +61,7 @@ export const Text = ({
         onChange={(e) =>
           setProp(
             (props: { text: string }) =>
-              (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, ""))
+              (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, "")),
           )
         }
         tagName="div"
@@ -89,7 +89,7 @@ const TextSettings = () => {
 
   const { currentViewport, setCurrentViewport } = useViewport();
   const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport
+    currentViewport,
   );
 
   useEffect(() => {
@@ -99,7 +99,7 @@ const TextSettings = () => {
   const updateStyle = <K extends keyof ViewportStyles>(
     viewport: keyof ResponsiveStyles,
     property: K,
-    value: ViewportStyles[K]
+    value: ViewportStyles[K],
   ) => {
     setProp((props: { responsiveStyles: ResponsiveStyles }) => {
       props.responsiveStyles[viewport][property] = value;
@@ -136,7 +136,7 @@ const TextSettings = () => {
                       updateStyle(
                         viewport,
                         "fontSize",
-                        parseInt(e.target.value) || 1
+                        parseInt(e.target.value) || 1,
                       )
                     }
                   />

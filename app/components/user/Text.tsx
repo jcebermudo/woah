@@ -61,7 +61,7 @@ export const Text = ({
         onChange={(e) =>
           setProp(
             (props: { text: string }) =>
-              (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, "")),
+              (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, ""))
           )
         }
         tagName="div"
@@ -89,7 +89,7 @@ const TextSettings = () => {
 
   const { currentViewport, setCurrentViewport } = useViewport();
   const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport,
+    currentViewport
   );
 
   useEffect(() => {
@@ -99,7 +99,7 @@ const TextSettings = () => {
   const updateStyle = <K extends keyof ViewportStyles>(
     viewport: keyof ResponsiveStyles,
     property: K,
-    value: ViewportStyles[K],
+    value: ViewportStyles[K]
   ) => {
     setProp((props: { responsiveStyles: ResponsiveStyles }) => {
       props.responsiveStyles[viewport][property] = value;
@@ -136,32 +136,56 @@ const TextSettings = () => {
                       updateStyle(
                         viewport,
                         "fontSize",
-                        parseInt(e.target.value) || 1,
+                        parseInt(e.target.value) || 1
                       )
                     }
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`color-${viewport}`}>Color</Label>
-                  <Input
-                    id={`color-${viewport}`}
-                    value={responsiveStyles[viewport].color}
-                    onChange={(e) =>
-                      updateStyle(viewport, "color", e.target.value)
-                    }
-                  />
+                  <Label>Text Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={responsiveStyles[viewport].color}
+                      onChange={(e) =>
+                        updateStyle(viewport, "color", e.target.value)
+                      }
+                      className="h-8 w-8 rounded-md border border-input bg-background p-1"
+                    />
+                    <Input
+                      value={responsiveStyles[viewport].color}
+                      onChange={(e) =>
+                        updateStyle(viewport, "color", e.target.value)
+                      }
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor={`bgcolor-${viewport}`}>
-                    Background Color
-                  </Label>
-                  <Input
-                    id={`bgcolor-${viewport}`}
-                    value={responsiveStyles[viewport].bgcolor}
-                    onChange={(e) =>
-                      updateStyle(viewport, "bgcolor", e.target.value)
-                    }
-                  />
+                  <Label>Background Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={
+                        responsiveStyles[viewport].bgcolor === "none"
+                          ? "#ffffff"
+                          : responsiveStyles[viewport].bgcolor
+                      }
+                      onChange={(e) =>
+                        updateStyle(viewport, "bgcolor", e.target.value)
+                      }
+                      className="h-8 w-8 rounded-md border border-input bg-background p-1"
+                    />
+                    <Input
+                      value={responsiveStyles[viewport].bgcolor}
+                      onChange={(e) =>
+                        updateStyle(
+                          viewport,
+                          "bgcolor",
+                          e.target.value === "#ffffff" ? "none" : e.target.value
+                        )
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -178,17 +202,17 @@ Text.craft = {
     responsiveStyles: {
       desktop: {
         fontSize: 20,
-        color: "black",
+        color: "#000000",
         bgcolor: "none",
       },
       tablet: {
         fontSize: 18,
-        color: "black",
+        color: "#000000",
         bgcolor: "none",
       },
       mobile: {
         fontSize: 16,
-        color: "black",
+        color: "#000000",
         bgcolor: "none",
       },
     },

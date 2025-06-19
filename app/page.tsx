@@ -25,6 +25,10 @@ interface CanvasState {
 const CANVAS_SIZE = 10000; // Large virtual canvas size
 const CANVAS_CENTER = CANVAS_SIZE / 2;
 
+// Scroll sensitivity settings
+const SCROLL_SENSITIVITY = 2;
+const SMOOTH_SCROLL_FACTOR = 0.1;
+
 export default function App() {
   const [currentDevice, setCurrentDevice] = useState<
     "desktop" | "tablet" | "mobile"
@@ -45,21 +49,33 @@ export default function App() {
     y: number;
   } | null>(null);
 
+  // Scroll state
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [targetTranslate, setTargetTranslate] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Track main content position (center: 0,0 with fit scale)
+  const [mainContentScale, setMainContentScale] = useState<number>(1);
+
   // Refs
   const canvasRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const getFrameWidth = () => {
     switch (currentDevice) {
       case "desktop":
-        return 1440;
+        return 1200;
       case "tablet":
         return 768;
       case "mobile":
         return 375;
       default:
-        return 1440;
+        return 1200;
     }
   };
 
@@ -107,6 +123,85 @@ export default function App() {
     setCanvasState(newState);
   }, []);
 
+  // Smooth animation for canvas movement
+  const animateToTarget = useCallback(() => {
+    if (!targetTranslate) return;
+
+    const currentX = canvasState.translateX;
+    const currentY = canvasState.translateY;
+    const targetX = targetTranslate.x;
+    const targetY = targetTranslate.y;
+
+    const deltaX = targetX - currentX;
+    const deltaY = targetY - currentY;
+
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance < 0.5) {
+      // Close enough, snap to target
+      updateCanvasTransform({
+        ...canvasState,
+        translateX: targetX,
+        translateY: targetY,
+      });
+      setTargetTranslate(null);
+      setIsScrolling(false);
+      return;
+    }
+
+    // Smooth interpolation
+    const newX = currentX + deltaX * SMOOTH_SCROLL_FACTOR;
+    const newY = currentY + deltaY * SMOOTH_SCROLL_FACTOR;
+
+    updateCanvasTransform({
+      ...canvasState,
+      translateX: newX,
+      translateY: newY,
+    });
+
+    animationFrameRef.current = requestAnimationFrame(animateToTarget);
+  }, [canvasState, targetTranslate, updateCanvasTransform]);
+
+  // Start smooth animation
+  useEffect(() => {
+    if (targetTranslate && !isPanning) {
+      setIsScrolling(true);
+      animationFrameRef.current = requestAnimationFrame(animateToTarget);
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [targetTranslate, isPanning, animateToTarget]);
+
+  // Handle scroll with smooth animation
+  const handleScroll = useCallback(
+    (deltaX: number, deltaY: number) => {
+      if (isPanning) return; // Don't scroll while panning
+
+      const newTargetX = canvasState.translateX + deltaX * SCROLL_SENSITIVITY;
+      const newTargetY = canvasState.translateY + deltaY * SCROLL_SENSITIVITY;
+
+      setTargetTranslate({
+        x: newTargetX,
+        y: newTargetY,
+      });
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Set new timeout to stop scrolling
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    },
+    [canvasState, isPanning]
+  );
+
   // Handle zoom
   const handleZoom = useCallback(
     (delta: number, centerX: number, centerY: number) => {
@@ -137,6 +232,10 @@ export default function App() {
   // Handle pan
   const handlePan = useCallback(
     (deltaX: number, deltaY: number) => {
+      // Cancel any ongoing smooth scrolling
+      setTargetTranslate(null);
+      setIsScrolling(false);
+
       updateCanvasTransform({
         ...canvasState,
         translateX: canvasState.translateX + deltaX,
@@ -146,14 +245,79 @@ export default function App() {
     [canvasState, updateCanvasTransform]
   );
 
+  // Go back to main content (center and fit)
+  const goBackToMainContent = useCallback(() => {
+    if (!canvasRef.current) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const frameWidth = getFrameWidth();
+    const frameHeight = getFrameHeight();
+
+    const scaleX = (rect.width * 0.8) / frameWidth;
+    const scaleY = (rect.height * 0.8) / frameHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    updateCanvasTransform({
+      scale,
+      translateX: 0,
+      translateY: 0,
+    });
+
+    setMainContentScale(scale);
+  }, [getFrameWidth, getFrameHeight, updateCanvasTransform]);
+
   // Keyboard event handlers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !isSpacePressed) {
+      // Only activate panning if not focused on input, textarea, or contenteditable
+      const active = document.activeElement;
+      const isInput =
+        active &&
+        (active.tagName === "INPUT" ||
+          active.tagName === "TEXTAREA" ||
+          (active as HTMLElement).isContentEditable);
+
+      if (e.code === "Space" && !isSpacePressed && !isInput) {
         e.preventDefault();
+        // Remove focus from any active button
+        if (
+          document.activeElement &&
+          document.activeElement instanceof HTMLElement
+        ) {
+          document.activeElement.blur();
+        }
         setIsSpacePressed(true);
         if (canvasRef.current) {
           canvasRef.current.style.cursor = "grab";
+        }
+      }
+
+      // Home key to go back to main content
+      if (e.code === "Home" && !isInput) {
+        e.preventDefault();
+        goBackToMainContent();
+      }
+
+      // Arrow keys for navigation
+      if (!isInput) {
+        const moveDistance = 50;
+        switch (e.code) {
+          case "ArrowUp":
+            e.preventDefault();
+            handleScroll(0, moveDistance);
+            break;
+          case "ArrowDown":
+            e.preventDefault();
+            handleScroll(0, -moveDistance);
+            break;
+          case "ArrowLeft":
+            e.preventDefault();
+            handleScroll(moveDistance, 0);
+            break;
+          case "ArrowRight":
+            e.preventDefault();
+            handleScroll(-moveDistance, 0);
+            break;
         }
       }
     };
@@ -187,7 +351,7 @@ export default function App() {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [isSpacePressed]);
+  }, [isSpacePressed, handleScroll, goBackToMainContent]);
 
   // Mouse event handlers
   const handleMouseDown = useCallback(
@@ -225,12 +389,13 @@ export default function App() {
     }
   }, [isSpacePressed]);
 
-  // Wheel event handler for zoom
+  // Wheel event handler for zoom and scroll
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
+      e.preventDefault();
 
+      if (e.ctrlKey || e.metaKey) {
+        // Zoom functionality
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
 
@@ -238,9 +403,12 @@ export default function App() {
         const centerY = e.clientY - rect.top - rect.height / 2;
 
         handleZoom(-e.deltaY * 0.01, centerX, centerY);
+      } else {
+        // Scroll functionality
+        handleScroll(-e.deltaX, -e.deltaY);
       }
     },
-    [handleZoom]
+    [handleZoom, handleScroll]
   );
 
   // Zoom controls
@@ -276,6 +444,8 @@ export default function App() {
       translateX: 0,
       translateY: 0,
     });
+
+    setMainContentScale(scale);
   }, [getFrameWidth, getFrameHeight, updateCanvasTransform]);
 
   // Initialize canvas position
@@ -283,73 +453,19 @@ export default function App() {
     fitToScreen();
   }, [currentDevice]); // Re-fit when device changes
 
-  // Grid visibility state
-  const [showGrid, setShowGrid] = useState(false);
+  // Check if user has moved away from main content
+  const isAwayFromMainContent = useCallback(() => {
+    const threshold = 50; // pixels
+    const scaleThreshold = 0.05;
 
-  // Render infinite grid background (optional)
-  const renderGrid = () => {
-    if (!showGrid) return null;
-
-    const gridSize = 20;
-    const { scale, translateX, translateY } = canvasState;
-
-    if (!canvasRef.current) return null;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const startX = Math.floor(-translateX / gridSize) * gridSize;
-    const startY = Math.floor(-translateY / gridSize) * gridSize;
-    const endX = startX + rect.width / scale + gridSize;
-    const endY = startY + rect.height / scale + gridSize;
-
-    const lines = [];
-
-    // Vertical lines
-    for (let x = startX; x <= endX; x += gridSize) {
-      lines.push(
-        <line
-          key={`v-${x}`}
-          x1={x}
-          y1={startY}
-          x2={x}
-          y2={endY}
-          stroke="#e5e5e5"
-          strokeWidth={1 / scale}
-        />
-      );
-    }
-
-    // Horizontal lines
-    for (let y = startY; y <= endY; y += gridSize) {
-      lines.push(
-        <line
-          key={`h-${y}`}
-          x1={startX}
-          y1={y}
-          x2={endX}
-          y2={y}
-          stroke="#e5e5e5"
-          strokeWidth={1 / scale}
-        />
-      );
-    }
-
-    return (
-      <svg
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-          transformOrigin: "0 0",
-        }}
-      >
-        {lines}
-      </svg>
+    const translateDistance = Math.sqrt(
+      Math.pow(canvasState.translateX, 2) + Math.pow(canvasState.translateY, 2)
     );
-  };
+
+    const scaleDistance = Math.abs(canvasState.scale - mainContentScale);
+
+    return translateDistance > threshold || scaleDistance > scaleThreshold;
+  }, [canvasState, mainContentScale]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -383,53 +499,64 @@ export default function App() {
                   onDeviceChange={setCurrentDevice}
                 />
 
-                {/* Zoom controls */}
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    onClick={zoomOut}
-                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={resetZoom}
-                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm min-w-[60px]"
-                  >
-                    {Math.round(canvasState.scale * 100)}%
-                  </button>
-                  <button
-                    onClick={zoomIn}
-                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm"
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={fitToScreen}
-                    className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm ml-2"
-                  >
-                    Fit
-                  </button>
-                  <button
-                    onClick={() => setShowGrid(!showGrid)}
-                    className={`px-3 py-1 rounded text-sm ml-2 ${
-                      showGrid
-                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    Grid
-                  </button>
+                {/* Navigation and Zoom controls */}
+                <div className="flex items-center gap-4 mt-2">
+                  {/* Back to main content button - only show when away */}
+                  {isAwayFromMainContent() && (
+                    <button
+                      onClick={goBackToMainContent}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus on mouse down
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors focus:outline-none"
+                    >
+                      ← Back to Main
+                    </button>
+                  )}
+
+                  {/* Zoom controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={zoomOut}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus on mouse down
+                      className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm focus:outline-none"
+                    >
+                      −
+                    </button>
+                    <button
+                      onClick={resetZoom}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus on mouse down
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm min-w-[60px] focus:outline-none"
+                    >
+                      {Math.round(canvasState.scale * 100)}%
+                    </button>
+                    <button
+                      onClick={zoomIn}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus on mouse down
+                      className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm focus:outline-none"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={fitToScreen}
+                      onMouseDown={(e) => e.preventDefault()} // Prevent focus on mouse down
+                      className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm ml-2 focus:outline-none"
+                    >
+                      Fit
+                    </button>
+                  </div>
                 </div>
 
-                <div className="text-xs text-gray-500 mt-1">
-                  Hold Space + Drag to pan • Cmd/Ctrl + Scroll to zoom
+                <div className="text-xs text-gray-500 mt-1 text-center">
+                  Scroll to navigate • Hold Space + Drag to pan • Cmd/Ctrl +
+                  Scroll to zoom
+                  <br />
+                  Arrow keys to move • Home key to return to main content
                 </div>
               </div>
 
               {/* Infinite Canvas */}
               <div
                 ref={canvasRef}
-                className="flex-1 relative overflow-hidden bg-gray-50"
+                className="flex-1 relative bg-gray-50"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -441,11 +568,11 @@ export default function App() {
                       ? "grabbing"
                       : "grab"
                     : "default",
+                  overflow: "hidden", // Hide scrollbars
+                  scrollbarWidth: "none", // Firefox
+                  msOverflowStyle: "none", // IE/Edge
                 }}
               >
-                {/* Grid background */}
-                {renderGrid()}
-
                 {/* Canvas container */}
                 <div
                   ref={containerRef}
@@ -456,56 +583,44 @@ export default function App() {
                     transformOrigin: "0 0",
                     transform: `translate(${canvasState.translateX}px, ${canvasState.translateY}px) scale(${canvasState.scale})`,
                     pointerEvents: isPanning ? "none" : "auto",
+                    transition:
+                      isScrolling && !isPanning
+                        ? "transform 0.1s ease-out"
+                        : "none",
                   }}
                 >
                   {/* Frame */}
                   <div
                     ref={frameRef}
                     style={{
-                      width: getFrameWidth(),
-                      height: getFrameHeight(),
                       background: "white",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
                       boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      overflow: "hidden",
                       transform: "translate(-50%, -50%)",
                     }}
                   >
                     <Frame>
                       <Element
                         is={Container}
-                        padding={20}
-                        background="#f8fafc"
+                        responsiveStyles={{
+                          desktop: {
+                            width: getFrameWidth(),
+                            height: getFrameHeight(),
+                            bgcolor: "#ffffff",
+                          },
+                          tablet: {
+                            width: 768,
+                            height: 1024,
+                            bgcolor: "#ffffff",
+                          },
+                          mobile: {
+                            width: 375,
+                            height: 667,
+                            bgcolor: "#ffffff",
+                          },
+                        }}
                         canvas
                       >
-                        <Card background="#fff" padding={20} />
-                        <UserButton
-                          size="sm"
-                          variant="outline"
-                          color="default"
-                          text="Click me"
-                        />
-                        <Text
-                          text="Welcome to your infinite canvas!"
-                          responsiveStyles={{
-                            desktop: {
-                              fontSize: 18,
-                              color: "#1f2937",
-                              bgcolor: "none",
-                            },
-                            tablet: {
-                              fontSize: 16,
-                              color: "#1f2937",
-                              bgcolor: "none",
-                            },
-                            mobile: {
-                              fontSize: 14,
-                              color: "#1f2937",
-                              bgcolor: "none",
-                            },
-                          }}
-                        />
+                        {/* children go here if needed */}
                       </Element>
                     </Frame>
                   </div>

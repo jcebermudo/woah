@@ -10,7 +10,7 @@ export const Topbar = () => {
   }));
 
   return (
-    <div className="px-1 py-1 mt-3 mb-1 bg-[#cbe8e7]">
+    <div className="px-1 py-1 bg-[#cbe8e7]">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Switch

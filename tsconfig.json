@@ -30,7 +30,7 @@
     "app/components/user/Button.jsx",
     "app/components/user/Card.jsx",
     "app/components/user/Text.tsx",
-    "app/components/user/Container.jsx",
+    "app/components/user/Container.tsx",
     "app/components/Toolbox.jsx"
   ],
   "exclude": ["node_modules"]

@@ -55,41 +55,34 @@ export default function App() {
               <Toolbox />
             </div>
             {/* Center: Preview and controls */}
-            <div className="flex-1 flex flex-col items-center justify-start overflow-auto">
-              <PreviewControls
-                currentDevice={currentDevice}
-                onDeviceChange={setCurrentDevice}
-              />
-              <div className="flex gap-2 mb-2">
-                <button onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}>
-                  -
-                </button>
-                <span>{Math.round(zoom * 100)}%</span>
-                <button onClick={() => setZoom((z) => Math.min(2, z + 0.1))}>
-                  +
-                </button>
+            <div className="flex-1 flex flex-col h-full min-h-0">
+              {/* Controls */}
+              <div className="flex flex-col items-center py-4 bg-white z-10">
+                <PreviewControls
+                  currentDevice={currentDevice}
+                  onDeviceChange={setCurrentDevice}
+                />
+                <div className="flex gap-2 mb-2">
+                  <button
+                    onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+                  >
+                    -
+                  </button>
+                  <span>{Math.round(zoom * 100)}%</span>
+                  <button onClick={() => setZoom((z) => Math.min(2, z + 0.1))}>
+                    +
+                  </button>
+                </div>
               </div>
-              <div
-                className="transition-all duration-300 ease-in-out bg-neutral-100"
-                style={{
-                  width: 800,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
+              {/* Canvas */}
+              <div className="flex-1 flex justify-center items-start overflow-auto bg-neutral-100 min-h-0">
                 <div
-                  className="transition-all duration-300 ease-in-out bg-neutral-100"
                   style={{
-                    width: "100%",
-                    minHeight: "500px",
-                    border: "1px solid var(--border)",
-                    borderRadius: "0.5rem",
-                    overflow: "auto",
+                    width: 800,
+                    minHeight: "100%",
                     display: "flex",
-                    justifyContent: "center",
-                    alignItems: "flex-start",
-                    position: "relative",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
                   <div

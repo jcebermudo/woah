@@ -9,7 +9,7 @@ interface RenderNodeProps {
 
 export const RenderNode: React.FC<RenderNodeProps> = ({
   render,
-  canvasScale,
+  canvasScale = 1,
 }) => {
   const {
     connectors: { drag },
@@ -20,67 +20,61 @@ export const RenderNode: React.FC<RenderNodeProps> = ({
     selected: node.events.selected,
   }));
 
-  // Get the node type (displayName or custom.displayName)
   const nodeType = data?.custom?.displayName || data?.displayName || "Node";
-
   const handleScale = 1 / Math.max(canvasScale, 0.1);
 
-  if (!selected) {
-    // Not selected: just render the content
-    return (
-      <div
-        style={{
-          position: "relative",
-          background: "white",
-          border: "none",
-        }}
-      >
-        {render}
-      </div>
-    );
-  }
+  const scaledBorder = 2 * handleScale;
+  const scaledFontSize = 12 * handleScale;
 
-  // Selected: show outline, label, and drag
+  const borderStyle = selected ? "1px solid #3b82f6" : "none";
+
+  const dragRef = React.useCallback(
+    (ref: HTMLDivElement | null) => {
+      if (ref) drag(ref);
+    },
+    [drag]
+  );
+
   return (
     <div
-      ref={(ref) => {
-        if (ref) drag(ref);
-      }}
       style={{
         position: "relative",
         background: "white",
-        border: `${2 * handleScale}px solid #3b82f6`,
+        border: borderStyle,
       }}
     >
       {/* Overlay for border and label */}
-      <div
-        style={{
-          pointerEvents: "none",
-          position: "absolute",
-          inset: 0,
-          zIndex: 10,
-          transform: `scale(${1 * handleScale})`,
-          transformOrigin: "top left",
-        }}
-      >
-        {/* Node type label */}
-        <span
+      {selected && (
+        <div
           style={{
-            position: "absolute",
-            top: -19,
-            left: -1.8,
-            background: "#3b82f6",
-            color: "white",
-            fontSize: 12,
-            padding: "0 6px",
             pointerEvents: "none",
-            zIndex: 1,
+            position: "absolute",
+            inset: 0,
+            zIndex: 10,
+            transform: `scale(${handleScale})`,
+            transformOrigin: "top left",
           }}
         >
-          {nodeType}
-        </span>
-      </div>
-      {render}
+          <span
+            style={{
+              position: "absolute",
+              top: -19,
+              left: -1.8,
+              background: "#3b82f6",
+              color: "white",
+              fontSize: `${scaledFontSize}px`,
+              padding: "0 6px",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          >
+            {nodeType}
+          </span>
+        </div>
+      )}
+
+      {/* Make this the draggable area */}
+      <div ref={dragRef}>{render}</div>
     </div>
   );
 };

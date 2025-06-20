@@ -30,12 +30,12 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
       ref={(ref) => connect(ref as any)}
       style={{
         position: "relative",
-        border: selected
+        outline: selected
           ? "2px solid #1976d2"
           : hovered
             ? "1px dashed #90caf9"
             : "none",
-        transition: "border 0.2s",
+        transition: "outline 0.2s",
         boxSizing: "border-box",
       }}
     >

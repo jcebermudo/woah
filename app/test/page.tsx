@@ -1,39 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Editor, Frame, } from "@craftjs/core";
+import { Editor, Frame } from "@craftjs/core";
 import { Container } from "@/app/components/user/Container";
 import { Text } from "@/app/components/user/Text";
+import { Page } from "@/app/components/user/Page";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
 
 export default function PublishedSite() {
   const json = {
     ROOT: {
-      type: { resolvedName: "Container" },
+      type: { resolvedName: "Page" },
       isCanvas: true,
       props: {
         responsiveStyles: {
-          desktop: { width: 1200, height: 800, bgcolor: "#ffffff" },
-          tablet: { width: 768, height: 1024, bgcolor: "#ffffff" },
-          mobile: { width: 375, height: 667, bgcolor: "#ffffff" },
+          desktop: { width: 1200, minHeight: 800, bgcolor: "#ff0000" },
+          tablet: { width: 768, minHeight: 800, bgcolor: "#ffffff" },
+          mobile: { width: 375, minHeight: 800, bgcolor: "#ffffff" },
         },
       },
-      displayName: "Container",
+      displayName: "Page",
       custom: {},
       hidden: false,
-      nodes: ["tp1g-7-EbZ"],
+      nodes: ["Qqw7eFIah4"],
       linkedNodes: {},
     },
-    "tp1g-7-EbZ": {
+    Qqw7eFIah4: {
       type: { resolvedName: "Text" },
       isCanvas: false,
       props: {
+        fontSize: "15",
+        textAlign: "left",
+        fontWeight: "500",
+        color: { r: "92", g: "90", b: "90", a: "1" },
+        margin: ["0", "0", "0", "0"],
+        shadow: 0,
         text: "Hi world",
-        responsiveStyles: {
-          desktop: { fontSize: 190, color: "#000000", bgcolor: "none" },
-          tablet: { fontSize: 18, color: "#000000", bgcolor: "none" },
-          mobile: { fontSize: 16, color: "#000000", bgcolor: "none" },
-        },
       },
       displayName: "Text",
       custom: {},
@@ -63,7 +65,10 @@ export default function PublishedSite() {
 
   return (
     <ViewportContext.Provider value={{ currentViewport, setCurrentViewport }}>
-      <Editor enabled={false} resolver={{ Container, Text }}>
+      <Editor
+        resolver={{ Container, Text, Page }}
+        enabled={false}
+      >
         <Frame data={JSON.stringify(json)} />
       </Editor>
     </ViewportContext.Provider>

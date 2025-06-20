@@ -14,6 +14,7 @@ import { Card, CardTop, CardBottom } from "./components/user/Card";
 import { Text } from "./components/user/Text";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
 import { RenderNode } from "@/app/components/RenderNode";
+import { Page } from "./components/user/Page";
 
 // Canvas state interface
 interface CanvasState {
@@ -471,7 +472,7 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Editor
-        resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
+        resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom, Page }}
         indicator={{
           error: "#ef4444",
           success: "#0055ff",
@@ -607,21 +608,21 @@ export default function App() {
                   >
                     <Frame>
                       <Element
-                        is={Container}
+                        is={Page}
                         responsiveStyles={{
                           desktop: {
                             width: getFrameWidth(),
-                            height: getFrameHeight(),
+                            minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },
                           tablet: {
                             width: 768,
-                            height: 1024,
+                            minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },
                           mobile: {
                             width: 375,
-                            height: 667,
+                            minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },
                         }}

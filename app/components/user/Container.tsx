@@ -44,10 +44,7 @@ export const Container = ({
 }) => {
   const {
     connectors: { connect, drag },
-    hasSelectedNode,
-  } = useNode((state) => ({
-    hasSelectedNode: state.events.selected,
-  }));
+  } = useNode();
 
   const { currentViewport } = useViewport();
 
@@ -59,8 +56,6 @@ export const Container = ({
     <div
       ref={(ref) => void (ref && connect(drag(ref)))}
       style={{
-        outline: hasSelectedNode ? "2px solid #2563eb" : "none",
-        outlineOffset: "0px",
         borderRadius: "0px",
         backgroundColor:
           getCurrentStyles().bgcolor === "none"
@@ -101,7 +96,7 @@ export const ContainerSettings = () => {
 
   const { currentViewport, setCurrentViewport } = useViewport();
   const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport,
+    currentViewport
   );
 
   useEffect(() => {
@@ -111,7 +106,7 @@ export const ContainerSettings = () => {
   const updateStyle = <K extends keyof ViewportStyles>(
     viewport: keyof ResponsiveStyles,
     property: K,
-    value: ViewportStyles[K],
+    value: ViewportStyles[K]
   ) => {
     setProp((props: { responsiveStyles: ResponsiveStyles }) => {
       props.responsiveStyles[viewport][property] = value;
@@ -159,7 +154,7 @@ export const ContainerSettings = () => {
                       updateStyle(
                         viewport,
                         "bgcolor",
-                        e.target.value === "#ffffff" ? "none" : e.target.value,
+                        e.target.value === "#ffffff" ? "none" : e.target.value
                       )
                     }
                   />
@@ -177,7 +172,7 @@ export const ContainerSettings = () => {
                     updateStyle(
                       viewport,
                       "padding",
-                      parseInt(e.target.value) || 0,
+                      parseInt(e.target.value) || 0
                     )
                   }
                 />
@@ -194,7 +189,7 @@ export const ContainerSettings = () => {
                     updateStyle(
                       viewport,
                       "margin",
-                      parseInt(e.target.value) || 0,
+                      parseInt(e.target.value) || 0
                     )
                   }
                 />
@@ -235,7 +230,6 @@ export const ContainerDefaultProps = {
 };
 
 Container.craft = {
-  
   related: {
     settings: ContainerSettings,
   },

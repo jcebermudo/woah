@@ -4,28 +4,35 @@ import { useState, useEffect } from "react";
 import { Editor, Frame } from "@craftjs/core";
 import { Container } from "@/app/components/user/Container";
 import { Text } from "@/app/components/user/Text";
-import { Page } from "@/app/components/user/Page";
+import { Body } from "@/app/components/user/Body";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
+import { Card, CardBottom, CardTop } from "@/app/components/user/Card";
+import { Button as UserButton } from "@/app/components/user/Button";
 
 export default function PublishedSite() {
   const json = {
     ROOT: {
-      type: { resolvedName: "Page" },
+      type: { resolvedName: "Body" },
       isCanvas: true,
       props: {
         responsiveStyles: {
-          desktop: { width: 1200, minHeight: 800, bgcolor: "#ff0000" },
-          tablet: { width: 768, minHeight: 800, bgcolor: "#ffffff" },
-          mobile: { width: 375, minHeight: 800, bgcolor: "#ffffff" },
+          desktop: {
+            maxWidth: 1200,
+            minHeight: 800,
+            bgcolor: "#ffffff",
+            padding: 90,
+          },
+          tablet: { maxWidth: 1200, minHeight: 800, bgcolor: "#ffffff" },
+          mobile: { maxWidth: 1200, minHeight: 800, bgcolor: "#ffffff" },
         },
       },
-      displayName: "Page",
+      displayName: "Body",
       custom: {},
       hidden: false,
-      nodes: ["Qqw7eFIah4"],
+      nodes: ["fpUO3PdkT0"],
       linkedNodes: {},
     },
-    Qqw7eFIah4: {
+    fpUO3PdkT0: {
       type: { resolvedName: "Text" },
       isCanvas: false,
       props: {
@@ -66,7 +73,15 @@ export default function PublishedSite() {
   return (
     <ViewportContext.Provider value={{ currentViewport, setCurrentViewport }}>
       <Editor
-        resolver={{ Container, Text, Page }}
+        resolver={{
+          Container,
+          Text,
+          Body,
+          Card,
+          CardTop,
+          CardBottom,
+          UserButton,
+        }}
         enabled={false}
       >
         <Frame data={JSON.stringify(json)} />

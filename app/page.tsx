@@ -13,7 +13,7 @@ import { Button as UserButton } from "./components/user/Button";
 import { Card, CardTop, CardBottom } from "./components/user/Card";
 import { Text } from "./components/user/Text";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
-import { RenderNode } from "./components/RenderNode";
+import { RenderNode } from "@/app/components/RenderNode";
 
 // Canvas state interface
 interface CanvasState {
@@ -476,9 +476,8 @@ export default function App() {
           error: "#ef4444",
           success: "#0055ff",
         }}
-        onRender={(props) => (
-          <RenderNode {...props} canvasScale={canvasState.scale} />
-        )}
+        onRender={RenderNode}
+        
       >
         <ViewportContext.Provider
           value={{

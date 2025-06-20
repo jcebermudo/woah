@@ -1,489 +1,396 @@
-import React, { useState, useEffect, useRef } from "react";
-import ContentEditable from "react-contenteditable";
 import { useNode, useEditor } from "@craftjs/core";
+import React from "react";
+import ContentEditable from "react-contenteditable";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useViewport } from "@/app/components/context/ViewportContext";
+import { Button } from "@/components/ui/button";
+import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Type,
+  Palette,
+  Move,
+  Square,
+} from "lucide-react";
 
-type ViewportStyles = {
-  fontSize: number;
-  color: string;
-  bgcolor: string;
+export type TextProps = {
+  fontSize: string;
+  textAlign: string;
+  fontWeight: string;
+  color: Record<"r" | "g" | "b" | "a", string>;
+  shadow: number;
+  text: string;
+  margin: [string, string, string, string];
 };
 
-type ResponsiveStyles = {
-  desktop: ViewportStyles;
-  tablet: ViewportStyles;
-  mobile: ViewportStyles;
+// Utility functions
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+
+const weightDescription = (weight: number) => {
+  switch (weight) {
+    case 400:
+      return "Regular";
+    case 500:
+      return "Medium";
+    case 700:
+      return "Bold";
+    default:
+      return "Regular";
+  }
 };
 
-const ScaleHandle = ({
-  onMouseDown,
-  isVisible,
-  canvasScale = 1,
-  outlineWidth = 0,
+// Toolbar Components
+const ToolbarSection = ({
+  title,
+  children,
+  icon: Icon,
 }: {
-  onMouseDown: (e: React.MouseEvent) => void;
-  isVisible: boolean;
-  canvasScale?: number;
-  outlineWidth?: number;
-}) => {
-  if (!isVisible) return null;
+  title: string;
+  children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+}) => (
+  <Card className="mb-4">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4" />}
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">{children}</CardContent>
+  </Card>
+);
 
-  // Calculate inverse scale to maintain consistent handle size
-  const handleScale = 1 / Math.max(canvasScale, 0.1); // Prevent division by very small numbers
-  const baseSize = 12; // Base handle size in pixels
-  const baseBorder = 2; // Base border width in pixels
-  
-  const handleSize = baseSize * handleScale;
-  const borderWidth = baseBorder * handleScale;
-  const baseOffset = 8; // Base distance from element
-  
-  // Account for outline width in positioning
-  const offset = (baseOffset + outlineWidth) * handleScale;
+const ToolbarItem = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-2">
+    <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+    {children}
+  </div>
+);
+
+const ToolbarRadio = ({
+  value,
+  label,
+  currentValue,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  currentValue: string;
+  onChange: (value: string) => void;
+}) => (
+  <Button
+    variant={currentValue === value ? "default" : "outline"}
+    size="sm"
+    onClick={() => onChange(value)}
+    className="h-8"
+  >
+    {label}
+  </Button>
+);
+
+const ColorPicker = ({
+  color,
+  onChange,
+}: {
+  color: Record<"r" | "g" | "b" | "a", string>;
+  onChange: (color: Record<"r" | "g" | "b" | "a", string>) => void;
+}) => {
+  const rgbToHex = (r: number, g: number, b: number) => {
+    return (
+      "#" +
+      [r, g, b]
+        .map((x) => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? "0" + hex : hex;
+        })
+        .join("")
+    );
+  };
+
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rgb = hexToRgb(e.target.value);
+    if (rgb) {
+      onChange({
+        r: rgb.r.toString(),
+        g: rgb.g.toString(),
+        b: rgb.b.toString(),
+        a: color.a,
+      });
+    }
+  };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: `${-offset}px`,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: `${handleSize}px`,
-        height: `${handleSize}px`,
-        backgroundColor: "#2563eb",
-        border: `${borderWidth}px solid white`,
-        borderRadius: "50%",
-        cursor: "ns-resize",
-        zIndex: 1000,
-        // Add box shadow for better visibility
-        boxShadow: `0 ${2 * handleScale}px ${4 * handleScale}px rgba(0, 0, 0, 0.2)`,
-        // Ensure minimum and maximum sizes for usability
-        minWidth: "8px",
-        minHeight: "8px",
-        maxWidth: "20px",
-        maxHeight: "20px",
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={rgbToHex(
+          parseInt(color.r),
+          parseInt(color.g),
+          parseInt(color.b)
+        )}
+        onChange={handleColorChange}
+        className="w-10 h-8 rounded border border-input cursor-pointer"
+      />
+      <div
+        className="w-6 h-6 rounded border border-input"
+        style={{
+          backgroundColor: `rgba(${Object.values(color).join(", ")})`,
+        }}
+      />
+    </div>
+  );
+};
+
+// Text Settings Component
+export const TextSettings = () => {
+  const { fontSize, fontWeight, textAlign, margin, color, shadow } = useNode(
+    (node) => node.data.props
+  );
+
+  const { setProp } = useNode();
+
+  return (
+    <div className="w-80 p-4 bg-background border-l">
+      <ToolbarSection title="Typography" icon={Type}>
+        <ToolbarItem label="Font Size">
+          <div className="px-3">
+            <Slider
+              value={[parseInt(fontSize)]}
+              onValueChange={([value]) =>
+                setProp((props: Record<string, any>) => {
+                  props.fontSize = value.toString();
+                })
+              }
+              max={72}
+              min={8}
+              step={1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>8px</span>
+              <span>{fontSize}px</span>
+              <span>72px</span>
+            </div>
+          </div>
+        </ToolbarItem>
+
+        <ToolbarItem label="Align">
+          <div className="flex gap-1">
+            <Button
+              variant={textAlign === "left" ? "default" : "outline"}
+              size="sm"
+              onClick={() =>
+                setProp((props: Record<string, any>) => {
+                  props.textAlign = "left";
+                })
+              }
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={textAlign === "center" ? "default" : "outline"}
+              size="sm"
+              onClick={() =>
+                setProp((props: Record<string, any>) => {
+                  props.textAlign = "center";
+                })
+              }
+            >
+              <AlignCenter className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={textAlign === "right" ? "default" : "outline"}
+              size="sm"
+              onClick={() =>
+                setProp((props: Record<string, any>) => {
+                  props.textAlign = "right";
+                })
+              }
+            >
+              <AlignRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </ToolbarItem>
+
+        <ToolbarItem label="Weight">
+          <div className="flex gap-1">
+            <ToolbarRadio
+              value="400"
+              label="Regular"
+              currentValue={fontWeight}
+              onChange={(value) =>
+                setProp((props: Record<string, any>) => {
+                  props.fontWeight = value;
+                })
+              }
+            />
+            <ToolbarRadio
+              value="500"
+              label="Medium"
+              currentValue={fontWeight}
+              onChange={(value) =>
+                setProp((props: Record<string, any>) => {
+                  props.fontWeight = value;
+                })
+              }
+            />
+            <ToolbarRadio
+              value="700"
+              label="Bold"
+              currentValue={fontWeight}
+              onChange={(value) =>
+                setProp((props: Record<string, any>) => {
+                  props.fontWeight = value;
+                })
+              }
+            />
+          </div>
+        </ToolbarItem>
+      </ToolbarSection>
+
+      <ToolbarSection title="Margin" icon={Move}>
+        {["Top", "Right", "Bottom", "Left"].map((direction, index) => (
+          <ToolbarItem key={direction} label={direction}>
+            <div className="px-3">
+              <Slider
+                value={[parseInt(margin[index])]}
+                onValueChange={([value]) =>
+                  setProp((props: Record<string, any>) => {
+                    const newMargin = [...props.margin];
+                    newMargin[index] = value.toString();
+                    props.margin = newMargin as [
+                      string,
+                      string,
+                      string,
+                      string,
+                    ];
+                  })
+                }
+                max={100}
+                min={0}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>0px</span>
+                <span>{margin[index]}px</span>
+                <span>100px</span>
+              </div>
+            </div>
+          </ToolbarItem>
+        ))}
+      </ToolbarSection>
+
+      <ToolbarSection title="Appearance" icon={Palette}>
+        <ToolbarItem label="Text Color">
+          <ColorPicker
+            color={color}
+            onChange={(newColor) =>
+              setProp((props: Record<string, any>) => {
+                props.color = newColor;
+              })
+            }
+          />
+        </ToolbarItem>
+
+        <ToolbarItem label="Shadow">
+          <div className="px-3">
+            <Slider
+              value={[shadow]}
+              onValueChange={([value]) =>
+                setProp((props: Record<string, any>) => {
+                  props.shadow = value;
+                })
+              }
+              max={100}
+              min={0}
+              step={1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>0%</span>
+              <span>{shadow}%</span>
+              <span>100%</span>
+            </div>
+          </div>
+        </ToolbarItem>
+      </ToolbarSection>
+    </div>
+  );
+};
+
+// Main Text Component
+export const Text = ({
+  fontSize = "15",
+  textAlign = "left",
+  fontWeight = "500",
+  color = { r: "92", g: "90", b: "90", a: "1" },
+  shadow = 0,
+  text = "Text",
+  margin = ["0", "0", "0", "0"],
+}: Partial<TextProps>) => {
+  const {
+    connectors: { connect },
+    setProp,
+  } = useNode();
+
+  const { enabled } = useEditor((state) => ({
+    enabled: state.options.enabled,
+  }));
+
+  return (
+    <ContentEditable
+      innerRef={connect}
+      html={text}
+      disabled={!enabled}
+      onChange={(e) => {
+        setProp((props: Record<string, any>) => {
+          props.text = e.target.value;
+        }, 500);
       }}
-      onMouseDown={onMouseDown}
+      tagName="h2"
+      className="w-full outline-none"
+      style={{
+        margin: `${margin[0]}px ${margin[1]}px ${margin[2]}px ${margin[3]}px`,
+        color: `rgba(${Object.values(color).join(", ")})`,
+        fontSize: `${fontSize}px`,
+        textShadow: `0px 0px 2px rgba(0,0,0,${(shadow || 0) / 100})`,
+        fontWeight,
+        textAlign: textAlign as any,
+      }}
     />
   );
 };
 
-export const Text = ({
-  text,
-  responsiveStyles,
-}: {
-  text: string;
-  responsiveStyles: ResponsiveStyles;
-}) => {
-  const {
-    connectors: { connect, drag },
-    hasSelectedNode,
-    actions: { setProp },
-  } = useNode((state) => ({
-    hasSelectedNode: state.events.selected,
-  }));
-
-  const { query } = useEditor();
-  const [editable, setEditable] = useState(false);
-  const [isScaling, setIsScaling] = useState(false);
-  const [canvasScale, setCanvasScale] = useState(1);
-  const { currentViewport } = useViewport();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const startDataRef = useRef<{
-    startY: number;
-    startFontSize: number;
-  }>({ startY: 0, startFontSize: 0 });
-
-  useEffect(() => {
-    !hasSelectedNode && setEditable(false);
-  }, [hasSelectedNode]);
-
-  // Enhanced canvas scale detection
-  useEffect(() => {
-    const updateCanvasScale = () => {
-      // Method 1: Look for the canvas container with specific ref or class
-      let canvasContainer = document.querySelector('[style*="transform"]');
-      
-      // Method 2: Walk up the DOM tree to find the scaled container
-      if (!canvasContainer && containerRef.current) {
-        let element = containerRef.current.parentElement;
-        while (element && element !== document.body) {
-          const transform = window.getComputedStyle(element).transform;
-          if (transform && transform !== "none" && transform.includes("scale")) {
-            canvasContainer = element;
-            break;
-          }
-          element = element.parentElement;
-        }
-      }
-
-      // Method 3: Look for common canvas container patterns
-      if (!canvasContainer) {
-        const possibleContainers = [
-          '[ref*="container"]',
-          '[class*="canvas"]',
-          '[style*="translate"]',
-          '.canvas-container',
-          '#canvas-container'
-        ];
-
-        for (const selector of possibleContainers) {
-          const element = document.querySelector(selector);
-          if (element) {
-            const transform = window.getComputedStyle(element).transform;
-            if (transform && transform !== "none") {
-              canvasContainer = element;
-              break;
-            }
-          }
-        }
-      }
-
-      if (canvasContainer) {
-        const transform = window.getComputedStyle(canvasContainer).transform;
-        if (transform && transform !== "none") {
-          try {
-            const matrix = new DOMMatrix(transform);
-            // Calculate scale from the transformation matrix
-            const scaleX = Math.sqrt(matrix.a * matrix.a + matrix.b * matrix.b);
-            const scaleY = Math.sqrt(matrix.c * matrix.c + matrix.d * matrix.d);
-            const scale = (scaleX + scaleY) / 2; // Average of X and Y scales
-            
-            if (scale > 0 && isFinite(scale)) {
-              setCanvasScale(scale);
-            }
-          } catch (error) {
-            console.warn("Failed to parse transform matrix:", error);
-          }
-        }
-      }
-    };
-
-    // Update scale when selected
-    if (hasSelectedNode) {
-      updateCanvasScale();
-
-      // Set up mutation observer to watch for transform changes
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            updateCanvasScale();
-          }
-        });
-      });
-
-      // Observe multiple potential containers
-      const elementsToObserve = [
-        ...document.querySelectorAll('[style*="transform"]'),
-        ...document.querySelectorAll('[style*="scale"]'),
-      ];
-
-      elementsToObserve.forEach((element) => {
-        observer.observe(element, {
-          attributes: true,
-          attributeFilter: ['style'],
-        });
-      });
-
-      // Also set up a periodic check as fallback
-      const intervalId = setInterval(updateCanvasScale, 100);
-
-      return () => {
-        observer.disconnect();
-        clearInterval(intervalId);
-      };
-    }
-  }, [hasSelectedNode]);
-
-  const getCurrentStyles = () => {
-    return responsiveStyles[currentViewport || "desktop"];
-  };
-
-  const handleScaleStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    setIsScaling(true);
-    startDataRef.current = {
-      startY: e.clientY,
-      startFontSize: getCurrentStyles().fontSize,
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const deltaY = e.clientY - startDataRef.current.startY;
-      // Adjust sensitivity based on canvas scale for consistent feel
-      const scaleFactor = (deltaY * 0.5) / Math.max(canvasScale, 0.1);
-
-      const newFontSize = Math.max(
-        8,
-        Math.min(200, startDataRef.current.startFontSize + scaleFactor)
-      );
-
-      setProp((props: { responsiveStyles: ResponsiveStyles }) => {
-        props.responsiveStyles[currentViewport || "desktop"].fontSize =
-          Math.round(newFontSize);
-      });
-    };
-
-    const handleMouseUp = () => {
-      setIsScaling(false);
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditable(true);
-  };
-
-  // Calculate consistent outline width based on canvas scale
-  const getOutlineWidth = () => {
-    const baseWidth = 2; // Base outline width in pixels
-    return Math.max(0.5, baseWidth / Math.max(canvasScale, 0.1));
-  };
-
-  const outlineWidth = hasSelectedNode ? getOutlineWidth() : 0;
-
-  return (
-    <div
-      ref={(ref) => {
-        if (ref) {
-          containerRef.current = ref;
-          connect(drag(ref));
-        }
-      }}
-      onDoubleClick={handleDoubleClick}
-      style={{
-        position: "relative",
-        display: "inline-block",
-        outline: hasSelectedNode ? `${getOutlineWidth()}px solid #2563eb` : "none",
-        outlineOffset: "0px",
-        borderRadius: "0px",
-        minWidth: "20px",
-        minHeight: "20px",
-      }}
-    >
-      <ContentEditable
-        disabled={!editable}
-        html={text}
-        onChange={(e) =>
-          setProp(
-            (props: { text: string }) =>
-              (props.text = e.target.value.replace(/<\/?[^>]+(>|$)/g, ""))
-          )
-        }
-        tagName="div"
-        style={{
-          fontSize: `${getCurrentStyles().fontSize}px`,
-          color: getCurrentStyles().color,
-          backgroundColor:
-            getCurrentStyles().bgcolor === "none"
-              ? "transparent"
-              : getCurrentStyles().bgcolor,
-          outline: "none",
-          cursor: editable ? "text" : "default",
-          userSelect: editable ? "text" : "none",
-        }}
-      />
-
-      {/* Scale Handle - Only show when selected and not editing */}
-      {hasSelectedNode && !editable && (
-        <ScaleHandle
-          onMouseDown={handleScaleStart}
-          isVisible={true}
-          canvasScale={canvasScale}
-        />
-      )}
-
-      {/* Visual feedback during scaling */}
-      {isScaling && (
-        <div
-          style={{
-            position: "absolute",
-            top: `${-25 / Math.max(canvasScale, 0.1)}px`,
-            left: "50%",
-            transform: `translateX(-50%) scale(${1 / Math.max(canvasScale, 0.1)})`,
-            backgroundColor: "#2563eb",
-            color: "white",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "12px",
-            fontWeight: "bold",
-            zIndex: 1001,
-            pointerEvents: "none",
-            transformOrigin: "center bottom",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-            // Ensure tooltip doesn't get too small or large
-            minWidth: "30px",
-            textAlign: "center",
-          }}
-        >
-          {getCurrentStyles().fontSize}px
-        </div>
-      )}
-    </div>
-  );
-};
-
-const TextSettings = () => {
-  const {
-    actions: { setProp },
-    responsiveStyles,
-  } = useNode((node) => ({
-    responsiveStyles: node.data.props.responsiveStyles,
-  }));
-
-  const { currentViewport, setCurrentViewport } = useViewport();
-  const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport
-  );
-
-  useEffect(() => {
-    setTab(currentViewport);
-  }, [currentViewport]);
-
-  const updateStyle = <K extends keyof ViewportStyles>(
-    viewport: keyof ResponsiveStyles,
-    property: K,
-    value: ViewportStyles[K]
-  ) => {
-    setProp((props: { responsiveStyles: ResponsiveStyles }) => {
-      props.responsiveStyles[viewport][property] = value;
-    });
-  };
-
-  return (
-    <div className="space-y-4">
-      <Tabs
-        value={tab}
-        onValueChange={(v) => {
-          setTab(v as "desktop" | "tablet" | "mobile");
-          setCurrentViewport(v as "desktop" | "tablet" | "mobile");
-        }}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="desktop">Desktop</TabsTrigger>
-          <TabsTrigger value="tablet">Tablet</TabsTrigger>
-          <TabsTrigger value="mobile">Mobile</TabsTrigger>
-        </TabsList>
-
-        {(["desktop", "tablet", "mobile"] as const).map((viewport) => (
-          <TabsContent key={viewport} value={viewport}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div>
-                  <Label htmlFor={`font-size-${viewport}`}>Font size</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id={`font-size-${viewport}`}
-                      type="number"
-                      value={responsiveStyles[viewport].fontSize}
-                      onChange={(e) =>
-                        updateStyle(
-                          viewport,
-                          "fontSize",
-                          parseInt(e.target.value) || 1
-                        )
-                      }
-                    />
-                    <span className="text-sm text-muted-foreground">px</span>
-                  </div>
-                  <div className="mt-2">
-                    <Slider
-                      value={[responsiveStyles[viewport].fontSize]}
-                      onValueChange={([value]) =>
-                        updateStyle(viewport, "fontSize", value)
-                      }
-                      max={200}
-                      min={8}
-                      step={1}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Text Color</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={responsiveStyles[viewport].color}
-                      onChange={(e) =>
-                        updateStyle(viewport, "color", e.target.value)
-                      }
-                      className="h-8 w-8 rounded-md border border-input bg-background p-1"
-                    />
-                    <Input
-                      value={responsiveStyles[viewport].color}
-                      onChange={(e) =>
-                        updateStyle(viewport, "color", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Background Color</Label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={
-                        responsiveStyles[viewport].bgcolor === "none"
-                          ? "#ffffff"
-                          : responsiveStyles[viewport].bgcolor
-                      }
-                      onChange={(e) =>
-                        updateStyle(viewport, "bgcolor", e.target.value)
-                      }
-                      className="h-8 w-8 rounded-md border border-input bg-background p-1"
-                    />
-                    <Input
-                      value={responsiveStyles[viewport].bgcolor}
-                      onChange={(e) =>
-                        updateStyle(
-                          viewport,
-                          "bgcolor",
-                          e.target.value === "#ffffff" ? "none" : e.target.value
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
-};
-
 Text.craft = {
+  displayName: "Text",
   props: {
-    text: "Hi",
-    responsiveStyles: {
-      desktop: {
-        fontSize: 20,
-        color: "#000000",
-        bgcolor: "none",
-      },
-      tablet: {
-        fontSize: 18,
-        color: "#000000",
-        bgcolor: "none",
-      },
-      mobile: {
-        fontSize: 16,
-        color: "#000000",
-        bgcolor: "none",
-      },
-    },
+    fontSize: "15",
+    textAlign: "left",
+    fontWeight: "500",
+    color: { r: "92", g: "90", b: "90", a: "1" },
+    margin: ["0", "0", "0", "0"],
+    shadow: 0,
+    text: "Text",
   },
   related: {
     settings: TextSettings,

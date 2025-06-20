@@ -471,6 +471,10 @@ export default function App() {
     <div className="h-screen flex flex-col">
       <Editor
         resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
+        indicator={{
+          error: "#ef4444",
+          success: "#0055ff",
+        }}
       >
         <ViewportContext.Provider
           value={{

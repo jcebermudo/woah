@@ -235,6 +235,7 @@ export const ContainerDefaultProps = {
 };
 
 Container.craft = {
+  
   related: {
     settings: ContainerSettings,
   },

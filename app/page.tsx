@@ -14,7 +14,7 @@ import { Card, CardTop, CardBottom } from "./components/user/Card";
 import { Text } from "./components/user/Text";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
 import { RenderNode } from "@/app/components/RenderNode";
-import { Page } from "./components/user/Page";
+import { Body } from "./components/user/Body";
 
 // Canvas state interface
 interface CanvasState {
@@ -472,13 +472,20 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Editor
-        resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom, Page }}
+        resolver={{
+          Card,
+          UserButton,
+          Text,
+          Container,
+          CardTop,
+          CardBottom,
+          Body,
+        }}
         indicator={{
           error: "#ef4444",
           success: "#0055ff",
         }}
         onRender={RenderNode}
-        
       >
         <ViewportContext.Provider
           value={{
@@ -608,20 +615,20 @@ export default function App() {
                   >
                     <Frame>
                       <Element
-                        is={Page}
+                        is={Body}
                         responsiveStyles={{
                           desktop: {
-                            width: getFrameWidth(),
+                            maxWidth: getFrameWidth(),
                             minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },
                           tablet: {
-                            width: 768,
+                            maxWidth: getFrameWidth(),
                             minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },
                           mobile: {
-                            width: 375,
+                            maxWidth: getFrameWidth(),
                             minHeight: getFrameHeight(),
                             bgcolor: "#ffffff",
                           },

@@ -1,13 +1,11 @@
 // components/user/Container.js
 import React from "react";
-import { useNode } from "@craftjs/core";
+import { useNode, Node } from "@craftjs/core";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewport } from "@/app/components/context/ViewportContext";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import ContentEditable from "react-contenteditable";
 
 const defaultViewportStyles = {
   fontSize: 16,
@@ -16,7 +14,8 @@ const defaultViewportStyles = {
   padding: 0,
   margin: 0,
   width: 100,
-  height: 100,
+  height: "100vh",
+  minHeight: "800px",
 };
 
 type ViewportStyles = {
@@ -25,8 +24,9 @@ type ViewportStyles = {
   bgcolor: string;
   padding?: number;
   margin?: number;
-  width?: string | number;
   height?: string | number;
+  width?: string | number;
+  minHeight: string | number;
 };
 
 type ResponsiveStyles = {
@@ -35,57 +35,15 @@ type ResponsiveStyles = {
   mobile: ViewportStyles;
 };
 
-export const Page = ({
-  responsiveStyles,
-  children,
-}: {
+interface PageProps extends Omit<React.HTMLAttributes<HTMLElement>, "is"> {
   responsiveStyles: ResponsiveStyles;
   children?: React.ReactNode;
-}) => {
-  const {
-    connectors: { connect, drag },
-  } = useNode();
+  is?: React.ElementType;
+  canvas?: boolean;
+  style?: React.CSSProperties;
+}
 
-  const { currentViewport } = useViewport();
-
-  const getCurrentStyles = () => {
-    return responsiveStyles?.[currentViewport || "desktop"] || {};
-  };
-
-  return (
-    <div
-      ref={(ref) => void (ref && connect(drag(ref)))}
-      style={{
-        borderRadius: "0px",
-        backgroundColor:
-          getCurrentStyles().bgcolor === "none"
-            ? "transparent"
-            : getCurrentStyles().bgcolor,
-        color: getCurrentStyles().color,
-        fontSize: getCurrentStyles().fontSize
-          ? `${getCurrentStyles().fontSize}px`
-          : undefined,
-
-        padding: getCurrentStyles().padding
-          ? `${getCurrentStyles().padding}px`
-          : undefined,
-        margin: getCurrentStyles().margin
-          ? `${getCurrentStyles().margin}px`
-          : undefined,
-        width: getCurrentStyles().width
-          ? `${getCurrentStyles().width}px`
-          : undefined,
-        height: getCurrentStyles().height
-          ? `${getCurrentStyles().height}px`
-          : undefined,
-        // Add padding/background as needed
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
+// Move PageSettings to the top to fix hoisting issue
 export const PageSettings = () => {
   const {
     actions: { setProp },
@@ -194,28 +152,6 @@ export const PageSettings = () => {
                   }
                 />
               </div>
-              {/* Width */}
-              <div>
-                <Label>Width (px or %)</Label>
-                <Input
-                  type="text"
-                  value={responsiveStyles[viewport].width ?? ""}
-                  onChange={(e) =>
-                    updateStyle(viewport, "width", e.target.value)
-                  }
-                />
-              </div>
-              {/* Height */}
-              <div>
-                <Label>Height (px or %)</Label>
-                <Input
-                  type="text"
-                  value={responsiveStyles[viewport].height ?? ""}
-                  onChange={(e) =>
-                    updateStyle(viewport, "height", e.target.value)
-                  }
-                />
-              </div>
             </div>
           </TabsContent>
         ))}
@@ -223,6 +159,114 @@ export const PageSettings = () => {
     </div>
   );
 };
+
+// Define the Page component with Craft.js types
+const Page = ({
+  responsiveStyles,
+  children,
+  is: Component = "div",
+  canvas = false,
+  style,
+  ...props
+}: PageProps) => {
+  const {
+    connectors: { connect, drag },
+  } = useNode((node: Node) => ({
+    isActive: node.events.selected,
+  }));
+
+  const { currentViewport } = useViewport();
+
+  const getCurrentStyles = () => {
+    return responsiveStyles?.[currentViewport || "desktop"] || {};
+  };
+
+  const currentStyles = getCurrentStyles();
+
+  // Base styles that apply to both canvas and non-canvas modes
+  const baseStyle: React.CSSProperties = {
+    width: "100vw",
+    minHeight: "100vh",
+    backgroundColor:
+      currentStyles.bgcolor === "none" ? "transparent" : currentStyles.bgcolor,
+    color: currentStyles.color,
+    fontSize: currentStyles.fontSize
+      ? `${currentStyles.fontSize}px`
+      : undefined,
+    padding: currentStyles.padding ? `${currentStyles.padding}px` : undefined,
+    margin: 0,
+  };
+
+  // Canvas-specific styles
+  const canvasStyle: React.CSSProperties = canvas
+    ? {
+        position: "relative",
+        margin: "0 auto",
+        width: currentStyles.width ? `${currentStyles.width}px` : "100%",
+        minHeight: currentStyles.minHeight
+          ? `${currentStyles.minHeight}px`
+          : "100vh",
+        boxSizing: "border-box",
+        overflow: "visible",
+        height: "auto",
+        maxWidth: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }
+    : {};
+
+  // Content container styles for canvas mode
+  const contentStyle: React.CSSProperties = canvas
+    ? {
+        width: "100%",
+        minHeight: currentStyles.minHeight
+          ? `${currentStyles.minHeight}px`
+          : "100%",
+        flexGrow: 1,
+        position: "relative",
+      }
+    : {};
+
+  // Combine all styles
+  const combinedStyle = {
+    ...baseStyle,
+    ...(canvas ? canvasStyle : {}),
+  };
+
+  const componentProps = {
+    ...props,
+    style: {
+      ...combinedStyle,
+      ...(style || {}),
+    },
+    ...(canvas ? { ref: (ref: HTMLElement) => ref && connect(drag(ref)) } : {}),
+  };
+
+  return (
+    <Component {...componentProps}>
+      {canvas ? <div style={contentStyle}>{children}</div> : children}
+    </Component>
+  );
+};
+
+// Add Craft.js specific properties to the Page component
+const PageWithCraft = Object.assign(Page, {
+  craft: {
+    displayName: "Page",
+    props: {
+      responsiveStyles: {
+        desktop: { width: 1200, minHeight: 800, bgcolor: "#ffffff" },
+        tablet: { width: 768, minHeight: 1024, bgcolor: "#ffffff" },
+        mobile: { width: 375, minHeight: 667, bgcolor: "#ffffff" },
+      },
+    },
+    related: {
+      settings: PageSettings,
+    },
+  },
+});
+
+export { PageWithCraft as Page };
 
 export const PageDefaultProps = {
   background: "#fff",

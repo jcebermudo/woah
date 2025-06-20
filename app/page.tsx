@@ -633,7 +633,7 @@ export default function App() {
             </div>
 
             {/* Settings Panel */}
-            <div className="w-80 bg-card rounded-none shadow-sm flex flex-col h-full">
+            <div className="w-80 bg-card rounded-none shadow-sm flex flex-col h-screen overflow-hidden">
               <SettingsPanel />
             </div>
           </div>

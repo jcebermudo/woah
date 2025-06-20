@@ -26,7 +26,7 @@ export const SettingsPanel = () => {
   });
 
   return selected ? (
-    <div className="bg-muted/60 mt-2 px-2 py-2">
+    <div className="bg-muted/60 mt-2 px-2 py-2 h-screen overflow-y-auto">
       <div className="flex flex-col gap-4">
         <div className="pb-2">
           <div className="flex items-center justify-between">

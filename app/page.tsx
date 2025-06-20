@@ -13,6 +13,7 @@ import { Button as UserButton } from "./components/user/Button";
 import { Card, CardTop, CardBottom } from "./components/user/Card";
 import { Text } from "./components/user/Text";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
+import { RenderNode } from "./components/RenderNode";
 
 // Canvas state interface
 interface CanvasState {
@@ -468,13 +469,16 @@ export default function App() {
   }, [canvasState, mainContentScale]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <Editor
         resolver={{ Card, UserButton, Text, Container, CardTop, CardBottom }}
         indicator={{
           error: "#ef4444",
           success: "#0055ff",
         }}
+        onRender={(props) => (
+          <RenderNode {...props} canvasScale={canvasState.scale} />
+        )}
       >
         <ViewportContext.Provider
           value={{

@@ -16,23 +16,18 @@ export default function PublishedSite() {
       isCanvas: true,
       props: {
         responsiveStyles: {
-          desktop: {
-            maxWidth: 1200,
-            minHeight: 800,
-            bgcolor: "#ffffff",
-            padding: 90,
-          },
-          tablet: { maxWidth: 1200, minHeight: 800, bgcolor: "#ffffff" },
-          mobile: { maxWidth: 1200, minHeight: 800, bgcolor: "#ffffff" },
+          desktop: { width: 1200, minHeight: 800, bgcolor: "#ffffff" },
+          tablet: { width: 768, minHeight: 1024, bgcolor: "#ffffff" },
+          mobile: { width: 375, minHeight: 667, bgcolor: "#ffffff" },
         },
       },
       displayName: "Body",
       custom: {},
       hidden: false,
-      nodes: ["fpUO3PdkT0"],
+      nodes: ["OC0VzSh7Ym"],
       linkedNodes: {},
     },
-    fpUO3PdkT0: {
+    OC0VzSh7Ym: {
       type: { resolvedName: "Text" },
       isCanvas: false,
       props: {
@@ -40,7 +35,7 @@ export default function PublishedSite() {
         textAlign: "left",
         fontWeight: "500",
         color: { r: "92", g: "90", b: "90", a: "1" },
-        margin: ["0", "0", "0", "0"],
+        margin: ["100", "0", "0", "0"],
         shadow: 0,
         text: "Hi world",
       },

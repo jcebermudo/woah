@@ -1,80 +1,77 @@
-// ... existing imports ...
+// app/components/RenderNode.tsx
+
+import React from "react";
 import { useNode } from "@craftjs/core";
-import * as React from "react";
+import { GripVertical } from "lucide-react";
 
-interface RenderNodeProps {
-  render: React.ReactNode;
-  canvasScale: number;
-}
+type RenderNodeProps = {
+  render: React.ReactElement;
+};
 
-export const RenderNode: React.FC<RenderNodeProps> = ({
-  render,
-  canvasScale = 1,
-}) => {
+export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
   const {
-    connectors: { drag },
-    data,
     selected,
+    hovered,
+    connectors: { connect, drag },
+    data,
   } = useNode((node) => ({
-    data: node.data,
     selected: node.events.selected,
+    hovered: node.events.hovered,
+    data: node.data,
   }));
 
-  const nodeType = data?.custom?.displayName || data?.displayName || "Node";
-  const handleScale = 1 / Math.max(canvasScale, 0.1);
-
-  const scaledBorder = 2 * handleScale;
-  const scaledFontSize = 12 * handleScale;
-
-  const borderStyle = selected ? "1px solid #3b82f6" : "none";
-
-  const dragRef = React.useCallback(
-    (ref: HTMLDivElement | null) => {
-      if (ref) drag(ref);
-    },
-    [drag]
-  );
+  // Get the display name/type of the node
+  const nodeType =
+    data?.displayName ||
+    (typeof data?.type === "string" ? data.type : data?.type?.name || "Node");
 
   return (
     <div
+      ref={(ref) => connect(ref as any)}
       style={{
         position: "relative",
-        background: "white",
-        border: borderStyle,
+        border: selected
+          ? "2px solid #1976d2"
+          : hovered
+            ? "1px dashed #90caf9"
+            : "none",
+        transition: "border 0.2s",
+        boxSizing: "border-box",
       }}
     >
-      {/* Overlay for border and label */}
       {selected && (
         <div
           style={{
-            pointerEvents: "none",
             position: "absolute",
-            inset: 0,
+            top: -23,
+            left: 0,
+            background: "#1976d2",
+            color: "#fff",
+            fontSize: 12,
+            padding: "2px 8px",
+            borderRadius: "4px 4px 0 0",
             zIndex: 10,
-            transform: `scale(${handleScale})`,
-            transformOrigin: "top left",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            pointerEvents: "auto",
           }}
         >
           <span
+            ref={drag as any}
             style={{
-              position: "absolute",
-              top: -19,
-              left: -1.8,
-              background: "#3b82f6",
-              color: "white",
-              fontSize: `${scaledFontSize}px`,
-              padding: "0 6px",
-              pointerEvents: "none",
-              zIndex: 1,
+              display: "flex",
+              alignItems: "center",
+              cursor: "grab",
+              marginRight: 6,
             }}
           >
-            {nodeType}
+            <GripVertical size={14} />
           </span>
+          {nodeType}
         </div>
       )}
-
-      {/* Make this the draggable area */}
-      <div ref={dragRef}>{render}</div>
+      {render}
     </div>
   );
 };

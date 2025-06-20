@@ -13,7 +13,7 @@ type ViewportStyles = {
   color?: string;
   bgcolor: string;
   padding?: number;
-  maxWidth?: string | number;
+  width?: string | number;
   minHeight?: string | number;
 };
 
@@ -50,8 +50,11 @@ export const Body = ({
     // When the editor is active (enabled), we render the styles directly on the wrapper <div>.
     // Applying them to document.body during edit mode causes the entire editor chrome to shift,
     // so only mirror the styles to <body> when the editor is NOT enabled (i.e. in preview / publish).
-    if (enabled) return;
-
+    if (enabled) {
+      console.log("enabled");
+      return;
+    }
+    
     const styles = getCurrentStyles();
 
     const prev = {
@@ -87,6 +90,7 @@ export const Body = ({
   return (
     <div
       ref={(ref) => void (ref && connect(drag(ref)))}
+      className="flow-root"
       style={
         enabled
           ? {
@@ -101,16 +105,12 @@ export const Body = ({
               padding: getCurrentStyles().padding
                 ? `${getCurrentStyles().padding}px`
                 : undefined,
-              maxWidth: getCurrentStyles().maxWidth
-                ? `${getCurrentStyles().maxWidth}px`
-                : undefined,
-              width: getCurrentStyles().maxWidth
-                ? `${getCurrentStyles().maxWidth}px`
+              width: getCurrentStyles().width
+                ? `${getCurrentStyles().width}px`
                 : undefined,
               minHeight: getCurrentStyles().minHeight
                 ? `${getCurrentStyles().minHeight}px`
                 : undefined,
-              // Add padding/background as needed
             }
           : { display: "contents" }
       }

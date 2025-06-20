@@ -618,18 +618,18 @@ export default function App() {
                         is={Body}
                         responsiveStyles={{
                           desktop: {
-                            maxWidth: getFrameWidth(),
-                            minHeight: getFrameHeight(),
+                            width: 1200,
+                            minHeight: 800,
                             bgcolor: "#ffffff",
                           },
                           tablet: {
-                            maxWidth: getFrameWidth(),
-                            minHeight: getFrameHeight(),
+                            width: 768,
+                            minHeight: 1024,
                             bgcolor: "#ffffff",
                           },
                           mobile: {
-                            maxWidth: getFrameWidth(),
-                            minHeight: getFrameHeight(),
+                            width: 375,
+                            minHeight: 667,
                             bgcolor: "#ffffff",
                           },
                         }}

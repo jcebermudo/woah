@@ -19,6 +19,12 @@ const defaultViewportStyles = {
   height: 100,
 };
 
+const defaultResponsiveStyles: ResponsiveStyles = {
+  desktop: { ...defaultViewportStyles },
+  tablet: { ...defaultViewportStyles },
+  mobile: { ...defaultViewportStyles },
+};
+
 type ViewportStyles = {
   fontSize?: number;
   color?: string;
@@ -36,10 +42,10 @@ type ResponsiveStyles = {
 };
 
 export const Container = ({
-  responsiveStyles,
+  responsiveStyles = defaultResponsiveStyles,
   children,
 }: {
-  responsiveStyles: ResponsiveStyles;
+  responsiveStyles?: ResponsiveStyles;
   children?: React.ReactNode;
 }) => {
   const {
@@ -49,7 +55,11 @@ export const Container = ({
   const { currentViewport } = useViewport();
 
   const getCurrentStyles = () => {
-    return responsiveStyles?.[currentViewport || "desktop"] || {};
+    return (
+      (responsiveStyles || defaultResponsiveStyles)[
+        currentViewport || "desktop"
+      ] || {}
+    );
   };
 
   return (
@@ -89,14 +99,17 @@ export const Container = ({
 export const ContainerSettings = () => {
   const {
     actions: { setProp },
-    responsiveStyles,
+    responsiveStyles: nodeResponsiveStyles,
   } = useNode((node) => ({
     responsiveStyles: node.data.props.responsiveStyles,
   }));
 
+  const responsiveStyles: ResponsiveStyles =
+    nodeResponsiveStyles ?? defaultResponsiveStyles;
+
   const { currentViewport, setCurrentViewport } = useViewport();
   const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport
+    currentViewport,
   );
 
   useEffect(() => {
@@ -106,7 +119,7 @@ export const ContainerSettings = () => {
   const updateStyle = <K extends keyof ViewportStyles>(
     viewport: keyof ResponsiveStyles,
     property: K,
-    value: ViewportStyles[K]
+    value: ViewportStyles[K],
   ) => {
     setProp((props: { responsiveStyles: ResponsiveStyles }) => {
       props.responsiveStyles[viewport][property] = value;
@@ -154,7 +167,7 @@ export const ContainerSettings = () => {
                       updateStyle(
                         viewport,
                         "bgcolor",
-                        e.target.value === "#ffffff" ? "none" : e.target.value
+                        e.target.value === "#ffffff" ? "none" : e.target.value,
                       )
                     }
                   />
@@ -172,7 +185,7 @@ export const ContainerSettings = () => {
                     updateStyle(
                       viewport,
                       "padding",
-                      parseInt(e.target.value) || 0
+                      parseInt(e.target.value) || 0,
                     )
                   }
                 />
@@ -189,7 +202,7 @@ export const ContainerSettings = () => {
                     updateStyle(
                       viewport,
                       "margin",
-                      parseInt(e.target.value) || 0
+                      parseInt(e.target.value) || 0,
                     )
                   }
                 />

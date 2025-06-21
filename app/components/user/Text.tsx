@@ -145,7 +145,7 @@ const ColorPicker = ({
         value={rgbToHex(
           parseInt(color.r),
           parseInt(color.g),
-          parseInt(color.b),
+          parseInt(color.b)
         )}
         onChange={handleColorChange}
         className="w-10 h-8 rounded border border-input cursor-pointer"
@@ -163,7 +163,7 @@ const ColorPicker = ({
 // Text Settings Component
 export const TextSettings = () => {
   const { fontSize, fontWeight, textAlign, margin, color, shadow } = useNode(
-    (node) => node.data.props,
+    (node) => node.data.props
   );
 
   const { setProp } = useNode();
@@ -368,7 +368,7 @@ export const Text = ({
         }, 500);
       }}
       tagName="h2"
-      className="outline-none w-fit flex-none inline-block"
+      className="outline-none w-fit"
       style={{
         margin: `${margin[0]}px ${margin[1]}px ${margin[2]}px ${margin[3]}px`,
         color: `rgba(${Object.values(color).join(", ")})`,

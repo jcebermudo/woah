@@ -25,6 +25,9 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
     data?.displayName ||
     (typeof data?.type === "string" ? data.type : data?.type?.name || "Node");
 
+  // Determine if the current node represents the page <Body>
+  const isBody = nodeType === "Body";
+
   return (
     <div
       ref={(ref) => connect(ref as any)}
@@ -37,6 +40,8 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
             : "none",
         transition: "outline 0.2s",
         boxSizing: "border-box",
+        display: isBody ? "block" : "inline-block",
+        width: isBody ? undefined : "fit-content",
       }}
     >
       {selected && (
@@ -57,17 +62,19 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
             pointerEvents: "auto",
           }}
         >
-          <span
-            ref={drag as any}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              cursor: "grab",
-              marginRight: 6,
-            }}
-          >
-            <GripVertical size={14} />
-          </span>
+          {!isBody && (
+            <span
+              ref={drag as any}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "grab",
+                marginRight: 6,
+              }}
+            >
+              <GripVertical size={14} />
+            </span>
+          )}
           {nodeType}
         </div>
       )}

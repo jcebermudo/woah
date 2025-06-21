@@ -15,6 +15,7 @@ import { Text } from "./components/user/Text";
 import { ViewportContext } from "@/app/components/context/ViewportContext";
 import { RenderNode } from "@/app/components/RenderNode";
 import { Body } from "./components/user/Body";
+import { CanvasClickHandler } from "@/app/components/CanvasClickHandler";
 
 // Canvas state interface
 interface CanvasState {
@@ -391,6 +392,45 @@ export default function App() {
     }
   }, [isSpacePressed]);
 
+  // Handle clicks outside the frame to deselect
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't deselect if we were panning
+      if (isPanning) return;
+
+      // Check if the click was outside the frame
+      if (frameRef.current && canvasRef.current) {
+        const frameRect = frameRef.current.getBoundingClientRect();
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+
+        // Convert click coordinates to canvas space
+        const clickX = e.clientX - canvasRect.left;
+        const clickY = e.clientY - canvasRect.top;
+
+        // Convert frame position to canvas space
+        const frameLeft = frameRect.left - canvasRect.left;
+        const frameTop = frameRect.top - canvasRect.top;
+        const frameRight = frameLeft + frameRect.width;
+        const frameBottom = frameTop + frameRect.height;
+
+        // Check if click is outside the frame
+        const isOutsideFrame =
+          clickX < frameLeft ||
+          clickX > frameRight ||
+          clickY < frameTop ||
+          clickY > frameBottom;
+
+        if (isOutsideFrame) {
+          // Import useEditor hook and clear selection
+          // We'll need to pass the actions down via context or use a different approach
+          // For now, let's dispatch a custom event that the Editor can listen to
+          window.dispatchEvent(new CustomEvent("clearCraftSelection"));
+        }
+      }
+    },
+    [isPanning]
+  );
+
   // Wheel event handler for zoom and scroll
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -487,10 +527,12 @@ export default function App() {
         }}
         onRender={RenderNode}
       >
+        <CanvasClickHandler />
         <ViewportContext.Provider
           value={{
             currentViewport: currentDevice,
             setCurrentViewport: setCurrentDevice,
+            scale: canvasState.scale,
           }}
         >
           {/* Topbar */}
@@ -577,15 +619,38 @@ export default function App() {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onWheel={handleWheel}
+                onClick={(e) => {
+                  // Don't deselect if we were panning
+                  if (isPanning) return;
+
+                  // Check if the click was outside the frame
+                  if (frameRef.current) {
+                    const frameRect = frameRef.current.getBoundingClientRect();
+
+                    // Check if click is outside the frame
+                    const isOutsideFrame =
+                      e.clientX < frameRect.left ||
+                      e.clientX > frameRect.right ||
+                      e.clientY < frameRect.top ||
+                      e.clientY > frameRect.bottom;
+
+                    if (isOutsideFrame) {
+                      // We need to dispatch a custom event since we can't use useEditor here
+                      window.dispatchEvent(
+                        new CustomEvent("clearCraftSelection")
+                      );
+                    }
+                  }
+                }}
                 style={{
                   cursor: isSpacePressed
                     ? isPanning
                       ? "grabbing"
                       : "grab"
                     : "default",
-                  overflow: "hidden", // Hide scrollbars
-                  scrollbarWidth: "none", // Firefox
-                  msOverflowStyle: "none", // IE/Edge
+                  overflow: "hidden",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                 }}
               >
                 {/* Canvas container */}
@@ -613,6 +678,8 @@ export default function App() {
                       background: "white",
                       boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                       transform: "translate(-50%, -50%)",
+                      position: "relative",
+                      zIndex: 10,
                     }}
                   >
                     <Frame>

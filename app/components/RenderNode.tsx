@@ -36,7 +36,7 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
       style={{
         position: "relative",
         outline: selected
-          ? `${2 / scale}px solid #1976d2`
+          ? `${2 / scale}px solid #2C7FFF`
           : hovered
             ? `${1 / scale}px dashed #90caf9`
             : "none",
@@ -50,13 +50,14 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
         <div
           style={{
             position: "absolute",
-            top: `${-23 / scale}px`,
+            top: `${-32 / scale}px`,
             left: 0,
-            background: "#1976d2",
+            background: "#2C7FFF",
             color: "#fff",
             fontSize: `${12 / scale}px`,
-            padding: `${2 / scale}px ${8 / scale}px`,
-            borderRadius: `${4 / scale}px ${4 / scale}px 0 0`,
+            fontWeight: "bold",
+            padding: `${5 / scale}px ${8 / scale}px`,
+            borderRadius: `${4 / scale}px`,
             zIndex: 10,
             display: "flex",
             alignItems: "center",

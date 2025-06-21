@@ -102,7 +102,7 @@ export default function App() {
         y: (canvasY + canvasState.translateY) * canvasState.scale,
       };
     },
-    [canvasState]
+    [canvasState],
   );
 
   // Transform screen coordinates to canvas coordinates
@@ -113,7 +113,7 @@ export default function App() {
         y: screenY / canvasState.scale - canvasState.translateY,
       };
     },
-    [canvasState]
+    [canvasState],
   );
 
   // Update canvas transform
@@ -201,7 +201,7 @@ export default function App() {
         setIsScrolling(false);
       }, 150);
     },
-    [canvasState, isPanning]
+    [canvasState, isPanning],
   );
 
   // Handle zoom
@@ -210,7 +210,7 @@ export default function App() {
       const scaleFactor = 1 + delta * 0.1;
       const newScale = Math.max(
         0.1,
-        Math.min(5, canvasState.scale * scaleFactor)
+        Math.min(5, canvasState.scale * scaleFactor),
       );
 
       if (newScale === canvasState.scale) return;
@@ -228,7 +228,7 @@ export default function App() {
         translateY: newTranslateY,
       });
     },
-    [canvasState, updateCanvasTransform]
+    [canvasState, updateCanvasTransform],
   );
 
   // Handle pan
@@ -244,7 +244,7 @@ export default function App() {
         translateY: canvasState.translateY + deltaY,
       });
     },
-    [canvasState, updateCanvasTransform]
+    [canvasState, updateCanvasTransform],
   );
 
   // Go back to main content (center and fit)
@@ -367,7 +367,7 @@ export default function App() {
         }
       }
     },
-    [isSpacePressed]
+    [isSpacePressed],
   );
 
   const handleMouseMove = useCallback(
@@ -380,7 +380,7 @@ export default function App() {
         setLastPanPoint({ x: e.clientX, y: e.clientY });
       }
     },
-    [isPanning, lastPanPoint, isSpacePressed, handlePan]
+    [isPanning, lastPanPoint, isSpacePressed, handlePan],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -410,7 +410,7 @@ export default function App() {
         handleScroll(-e.deltaX, -e.deltaY);
       }
     },
-    [handleZoom, handleScroll]
+    [handleZoom, handleScroll],
   );
 
   // Zoom controls
@@ -461,7 +461,7 @@ export default function App() {
     const scaleThreshold = 0.05;
 
     const translateDistance = Math.sqrt(
-      Math.pow(canvasState.translateX, 2) + Math.pow(canvasState.translateY, 2)
+      Math.pow(canvasState.translateX, 2) + Math.pow(canvasState.translateY, 2),
     );
 
     const scaleDistance = Math.abs(canvasState.scale - mainContentScale);

@@ -29,6 +29,7 @@ export const Toolbox = () => {
               )
             }
             variant="default"
+            className="cursor-grab active:cursor-grabbing"
           >
             Button
           </ShadcnButton>
@@ -37,6 +38,7 @@ export const Toolbox = () => {
           <ShadcnButton
             ref={(ref) => connectors.create(ref, <Text text="Hi world" />)}
             variant="default"
+            className="cursor-grab active:cursor-grabbing"
           >
             Text
           </ShadcnButton>
@@ -50,6 +52,7 @@ export const Toolbox = () => {
               )
             }
             variant="default"
+            className="cursor-grab active:cursor-grabbing"
           >
             Container
           </ShadcnButton>
@@ -58,6 +61,7 @@ export const Toolbox = () => {
           <ShadcnButton
             ref={(ref) => connectors.create(ref, <Card />)}
             variant="default"
+            className="cursor-grab active:cursor-grabbing"
           >
             Card
           </ShadcnButton>

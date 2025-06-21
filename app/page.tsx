@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Editor, Frame, Element } from "@craftjs/core";
 
-import { Toolbox } from "./components/Toolbox";
+import { Toolbox } from "./components/toolbox";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Topbar } from "./components/Topbar";
 import { PreviewControls } from "./components/PreviewControls";

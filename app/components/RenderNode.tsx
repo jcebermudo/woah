@@ -1,14 +1,16 @@
 // app/components/RenderNode.tsx
 
-import React from "react";
+import React, { useContext } from "react";
 import { useNode } from "@craftjs/core";
 import { GripVertical } from "lucide-react";
+import { ViewportContext } from "./context/ViewportContext";
 
 type RenderNodeProps = {
   render: React.ReactElement;
 };
 
 export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
+  const { scale = 1 } = useContext(ViewportContext);
   const {
     selected,
     hovered,
@@ -34,9 +36,9 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
       style={{
         position: "relative",
         outline: selected
-          ? "2px solid #1976d2"
+          ? `${2 / scale}px solid #1976d2`
           : hovered
-            ? "1px dashed #90caf9"
+            ? `${1 / scale}px dashed #90caf9`
             : "none",
         transition: "outline 0.2s",
         boxSizing: "border-box",
@@ -48,17 +50,17 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
         <div
           style={{
             position: "absolute",
-            top: -23,
+            top: `${-23 / scale}px`,
             left: 0,
             background: "#1976d2",
             color: "#fff",
-            fontSize: 12,
-            padding: "2px 8px",
-            borderRadius: "4px 4px 0 0",
+            fontSize: `${12 / scale}px`,
+            padding: `${2 / scale}px ${8 / scale}px`,
+            borderRadius: `${4 / scale}px ${4 / scale}px 0 0`,
             zIndex: 10,
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: `${6 / scale}px`,
             pointerEvents: "auto",
           }}
         >
@@ -69,10 +71,10 @@ export const RenderNode: React.FC<RenderNodeProps> = ({ render }) => {
                 display: "flex",
                 alignItems: "center",
                 cursor: "grab",
-                marginRight: 6,
+                marginRight: `${6 / scale}px`,
               }}
             >
-              <GripVertical size={14} />
+              <GripVertical size={14 / scale} />
             </span>
           )}
           {nodeType}

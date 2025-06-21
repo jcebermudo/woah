@@ -9,7 +9,8 @@ import { useState, useEffect } from "react";
 import { useEditor } from "@craftjs/core";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Plus, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 
 type ViewportStyles = {
   /* typography & colors */
@@ -44,10 +45,9 @@ type ViewportStyles = {
   rows?: number;
 
   columnsMode?: "auto" | "fixed";
-  sizeModeX?: "fixed" | "fill" | "fit"; // width
+  sizeModeX?: "fixed" | "min"; // width
   sizeModeY?: "fixed" | "fill" | "fit"; // height
   justifyItems?: "start" | "center" | "end";
-  alignItems?: "start" | "center" | "end";
 };
 
 type ResponsiveStyles = {
@@ -105,9 +105,13 @@ export const Body = ({
           : "row"
         : undefined,
     justifyContent:
-      current.layout && current.layout !== "grid"
-        ? current.justify || "flex-start"
-        : undefined,
+      current.layout === "grid"
+        ? current.columnsMode !== "fixed"
+          ? current.justify || "flex-start"
+          : undefined
+        : current.layout
+          ? current.justify || "flex-start"
+          : undefined,
     alignItems:
       current.layout && current.layout !== "grid"
         ? current.align || "flex-start"
@@ -123,12 +127,18 @@ export const Body = ({
       (current.gapX !== undefined || current.gapY !== undefined)
         ? `${current.gapY ?? 0}px ${current.gapX ?? current.gapY ?? 0}px`
         : undefined,
+
+    // Grid definitions
     gridTemplateColumns:
-      current.layout === "grid" && current.columns
-        ? `repeat(${current.columns}, 1fr)`
+      current.layout === "grid"
+        ? current.columnsMode === "fixed"
+          ? `repeat(${current.columns ?? 1}, 1fr)`
+          : "repeat(auto-fit,minmax(0,1fr))"
         : undefined,
     gridTemplateRows:
-      current.layout === "grid" && current.rows
+      current.layout === "grid" &&
+      current.columnsMode === "fixed" &&
+      current.rows
         ? `repeat(${current.rows}, auto)`
         : undefined,
 
@@ -140,8 +150,33 @@ export const Body = ({
     color: current.color,
     fontSize: current.fontSize ? `${current.fontSize}px` : undefined,
     padding: current.padding ? `${current.padding}px` : undefined,
+
+    // Width: simple fixed value (sizeModeX handled elsewhere)
     width: current.width ? `${current.width}px` : undefined,
-    minHeight: current.minHeight ? `${current.minHeight}px` : undefined,
+
+    // Height handling based on sizeModeY when using grid
+    height:
+      current.layout === "grid"
+        ? current.sizeModeY === "fill"
+          ? "100%"
+          : current.sizeModeY === "fit"
+            ? "fit-content"
+            : current.minHeight
+              ? `${current.minHeight}px`
+              : undefined
+        : undefined,
+
+    // minHeight:
+    // • For non-grid layouts always honour the value (was lost causing 0-height canvas)
+    // • For grid, only when sizeModeY === "fixed" so fill/fit keep working
+    minHeight:
+      current.layout !== "grid"
+        ? current.minHeight !== undefined
+          ? `${current.minHeight}px`
+          : undefined
+        : current.sizeModeY === "fixed" && current.minHeight !== undefined
+          ? `${current.minHeight}px`
+          : undefined,
   };
 
   // Mirror the current page styles onto the real <body> element so that this
@@ -211,42 +246,12 @@ export const Body = ({
       if (styles.columns) {
         document.body.style.gridTemplateColumns = `repeat(${styles.columns}, 1fr)`;
       }
-      if (styles.rows) {
+      if (styles.columnsMode === "fixed" && styles.rows) {
         document.body.style.gridTemplateRows = `repeat(${styles.rows}, auto)`;
       }
       if (styles.gapX !== undefined || styles.gapY !== undefined) {
         document.body.style.gap = `${styles.gapY ?? 0}px ${styles.gapX ?? styles.gapY ?? 0}px`;
       }
-    }
-
-    /* grid options */
-    if (current.layout === "grid") {
-      editorStyles.gridTemplateColumns =
-        current.columnsMode === "fixed"
-          ? `repeat(${current.columns ?? 1}, 1fr)`
-          : "repeat(auto-fit,minmax(0,1fr))";
-
-      // width / height modes
-      editorStyles.width =
-        current.sizeModeX === "fill"
-          ? "100%"
-          : current.sizeModeX === "fit"
-            ? "fit-content"
-            : current.width
-              ? `${current.width}px`
-              : undefined;
-
-      editorStyles.height =
-        current.sizeModeY === "fill"
-          ? "100%"
-          : current.sizeModeY === "fit"
-            ? "fit-content"
-            : current.minHeight
-              ? `${current.minHeight}px`
-              : undefined;
-
-      editorStyles.justifyItems = current.justifyItems ?? undefined;
-      editorStyles.alignItems = current.alignItems ?? undefined;
     }
 
     // Restore previous body styles on unmount / viewport switch
@@ -287,7 +292,7 @@ export const BodySettings = () => {
 
   const { currentViewport, setCurrentViewport } = useViewport();
   const [tab, setTab] = useState<"desktop" | "tablet" | "mobile">(
-    currentViewport,
+    currentViewport
   );
 
   useEffect(() => {
@@ -297,7 +302,7 @@ export const BodySettings = () => {
   const updateStyle = <K extends keyof ViewportStyles>(
     viewport: keyof ResponsiveStyles,
     property: K,
-    value: ViewportStyles[K],
+    value: ViewportStyles[K]
   ) => {
     setProp((props: { responsiveStyles: ResponsiveStyles }) => {
       props.responsiveStyles[viewport][property] = value;
@@ -351,7 +356,7 @@ export const BodySettings = () => {
                       updateStyle(
                         viewport,
                         "bgcolor",
-                        e.target.value === "#ffffff" ? "none" : e.target.value,
+                        e.target.value === "#ffffff" ? "none" : e.target.value
                       )
                     }
                   />
@@ -412,7 +417,7 @@ export const BodySettings = () => {
                         updateStyle(
                           viewport,
                           "direction",
-                          e.target.value as any,
+                          e.target.value as any
                         )
                       }
                       className="w-full border rounded-md px-2 py-1 bg-background"
@@ -473,7 +478,7 @@ export const BodySettings = () => {
                           updateStyle(
                             viewport,
                             "gapX",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                       />
@@ -489,7 +494,7 @@ export const BodySettings = () => {
                           updateStyle(
                             viewport,
                             "gapY",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                       />
@@ -526,30 +531,32 @@ export const BodySettings = () => {
                           updateStyle(
                             viewport,
                             "columns",
-                            parseInt(e.target.value) || 1,
+                            parseInt(e.target.value) || 1
                           )
                         }
                       />
                     )}
                   </div>
 
-                  {/* Rows */}
-                  <div>
-                    <Label>Rows</Label>
-                    <Input
-                      type="number"
-                      value={responsiveStyles[viewport].rows ?? 1}
-                      min={1}
-                      max={12}
-                      onChange={(e) =>
-                        updateStyle(
-                          viewport,
-                          "rows",
-                          parseInt(e.target.value) || 1,
-                        )
-                      }
-                    />
-                  </div>
+                  {/* Rows (only when fixed columns) */}
+                  {responsiveStyles[viewport].columnsMode === "fixed" && (
+                    <div>
+                      <Label>Rows</Label>
+                      <Input
+                        type="number"
+                        value={responsiveStyles[viewport].rows ?? 1}
+                        min={1}
+                        max={12}
+                        onChange={(e) =>
+                          updateStyle(
+                            viewport,
+                            "rows",
+                            parseInt(e.target.value) || 1
+                          )
+                        }
+                      />
+                    </div>
+                  )}
 
                   {/* Gap */}
                   <div className="grid grid-cols-2 gap-2">
@@ -564,7 +571,7 @@ export const BodySettings = () => {
                           updateStyle(
                             viewport,
                             "gapX",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                       />
@@ -580,7 +587,7 @@ export const BodySettings = () => {
                           updateStyle(
                             viewport,
                             "gapY",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                       />
@@ -595,14 +602,12 @@ export const BodySettings = () => {
                         <Input
                           type="number"
                           value={responsiveStyles[viewport].width ?? 200}
-                          disabled={
-                            responsiveStyles[viewport].sizeModeX !== "fixed"
-                          }
+                          disabled={false}
                           onChange={(e) =>
                             updateStyle(
                               viewport,
                               "width",
-                              parseInt(e.target.value) || 0,
+                              parseInt(e.target.value) || 0
                             )
                           }
                         />
@@ -614,14 +619,13 @@ export const BodySettings = () => {
                             updateStyle(
                               viewport,
                               "sizeModeX",
-                              e.target.value as any,
+                              e.target.value as any
                             )
                           }
                           className="border rounded-md bg-background px-2"
                         >
                           <option value="fixed">Fixed</option>
-                          <option value="fill">Fill</option>
-                          <option value="fit">Fit</option>
+                          <option value="min">Min</option>
                         </select>
                       </div>
                     </div>
@@ -632,13 +636,15 @@ export const BodySettings = () => {
                           type="number"
                           value={responsiveStyles[viewport].minHeight ?? 200}
                           disabled={
+                            responsiveStyles[viewport].sizeModeY !==
+                              undefined &&
                             responsiveStyles[viewport].sizeModeY !== "fixed"
                           }
                           onChange={(e) =>
                             updateStyle(
                               viewport,
                               "minHeight",
-                              parseInt(e.target.value) || 0,
+                              parseInt(e.target.value) || 0
                             )
                           }
                         />
@@ -650,7 +656,7 @@ export const BodySettings = () => {
                             updateStyle(
                               viewport,
                               "sizeModeY",
-                              e.target.value as any,
+                              e.target.value as any
                             )
                           }
                           className="border rounded-md bg-background px-2"
@@ -663,47 +669,46 @@ export const BodySettings = () => {
                     </div>
                   </div>
 
-                  {/* Alignment inside grid cell */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label>Justify Items</Label>
-                      <select
+                  {/* Horizontal alignment inside grid cell (hidden when width mode is min) */}
+                  {/* In auto-columns mode, align maps to justify (container). In fixed mode, align maps to justifyItems (cell) */}
+                  {responsiveStyles[viewport].sizeModeX !== "min" && (
+                    <div className="space-y-1">
+                      <Label>Align</Label>
+                      <ToggleGroup
+                        type="single"
                         value={
-                          responsiveStyles[viewport].justifyItems || "start"
+                          responsiveStyles[viewport].columnsMode === "fixed"
+                            ? responsiveStyles[viewport].justifyItems || "start"
+                            : (responsiveStyles[viewport].justify as any) ||
+                              "flex-start"
                         }
-                        onChange={(e) =>
+                        onValueChange={(v) =>
                           updateStyle(
                             viewport,
-                            "justifyItems",
-                            e.target.value as any,
+                            responsiveStyles[viewport].columnsMode === "fixed"
+                              ? "justifyItems"
+                              : "justify",
+                            (v ||
+                              (responsiveStyles[viewport].columnsMode ===
+                              "fixed"
+                                ? "start"
+                                : "flex-start")) as any
                           )
                         }
-                        className="w-full border rounded-md px-2 py-1 bg-background"
+                        className="w-full"
                       >
-                        <option value="start">Start</option>
-                        <option value="center">Center</option>
-                        <option value="end">End</option>
-                      </select>
+                        <ToggleGroupItem value="start" className="flex-1">
+                          <AlignLeft size={14} />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="center" className="flex-1">
+                          <AlignCenter size={14} />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="flex-end" className="flex-1">
+                          <AlignRight size={14} />
+                        </ToggleGroupItem>
+                      </ToggleGroup>
                     </div>
-                    <div>
-                      <Label>Align Items</Label>
-                      <select
-                        value={responsiveStyles[viewport].alignItems || "start"}
-                        onChange={(e) =>
-                          updateStyle(
-                            viewport,
-                            "alignItems",
-                            e.target.value as any,
-                          )
-                        }
-                        className="w-full border rounded-md px-2 py-1 bg-background"
-                      >
-                        <option value="start">Start</option>
-                        <option value="center">Center</option>
-                        <option value="end">End</option>
-                      </select>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -719,7 +724,7 @@ export const BodySettings = () => {
                     updateStyle(
                       viewport,
                       "padding",
-                      parseInt(e.target.value) || 0,
+                      parseInt(e.target.value) || 0
                     )
                   }
                 />

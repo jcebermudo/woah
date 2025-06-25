@@ -12,6 +12,7 @@ import {
   Group,
 } from "react-konva";
 import Konva from "konva";
+import { Download } from "lucide-react";
 
 // Define shape interfaces
 interface BaseShape {
@@ -161,9 +162,9 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
 
   // Determine stroke based on state
   const getStroke = () => {
-    if (isSelected) return "#0066ff";
-    if (isHovered || isDragging) return "#0066ff";
-    if (groupProps.showBorder) return "#ddd";
+    if (isSelected) return "#29A9FF";
+    if (isHovered || isDragging) return "#29A9FF";
+    if (groupProps.showBorder) return "#29A9FF";
     return "transparent";
   };
 
@@ -196,19 +197,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
         draggable={groupProps.draggable}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        style={{ cursor: "none !important" }}
       >
-        {/* Group label positioned above the group bounds - not part of selection */}
-        <Text
-          x={0}
-          y={-20}
-          text={`Group ${groupProps.id.slice(-1)}`}
-          fontSize={12}
-          fontFamily="Arial"
-          fill={isSelected || isHovered ? "#0066ff" : "#999"}
-          fontStyle="bold"
-          listening={false} // Prevents this from interfering with selection
-        />
-
         {/* Selectable Group - only this gets the transformer */}
         <Group
           ref={groupRef}
@@ -227,6 +217,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
             fill={getFill()}
             stroke={getStroke()}
             strokeWidth={getStrokeWidth()}
+            strokeScaleEnabled={false}
             dash={getDash()}
           />
 
@@ -254,9 +245,9 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
             return newBox;
           }}
           // Figma-like styling
-          borderStroke="#0066ff"
+          borderStroke="#29A9FF"
           borderStrokeWidth={2}
-          anchorStroke="#0066ff"
+          anchorStroke="#29A9FF"
           anchorFill="white"
           anchorStrokeWidth={2}
           anchorSize={isDragging && !isSelected ? 6 : 8}
@@ -386,8 +377,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
 
   // Determine stroke based on state
   const getStroke = () => {
-    if (isSelected) return "#0066ff";
-    if (isHovered || isDragging) return "#0066ff";
+    if (isSelected) return "#29A9FF";
+    if (isHovered || isDragging) return "#29A9FF";
     return "transparent";
   };
 
@@ -470,9 +461,9 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
             return newBox;
           }}
           // Figma-like styling
-          borderStroke="#0066ff"
+          borderStroke="#29A9FF"
           borderStrokeWidth={2}
-          anchorStroke="#0066ff"
+          anchorStroke="#29A9FF"
           anchorFill="white"
           anchorStrokeWidth={2}
           anchorSize={isDragging && !isSelected ? 6 : 8}
@@ -499,31 +490,31 @@ const initialShapes: Shape[] = [
   {
     id: "rect1",
     type: "rect",
-    x: 50,
-    y: 50,
+    x: 200,
+    y: 100,
     width: 100,
-    height: 100,
-    fill: "red",
+    height: 80,
+    fill: "#4F46E5",
     draggable: true,
   },
   {
     id: "circle1",
     type: "circle",
-    x: 200,
-    y: 100,
+    x: 400,
+    y: 200,
     radius: 50,
-    fill: "green",
+    fill: "#EF4444",
     draggable: true,
   },
   {
     id: "star1",
     type: "star",
-    x: 350,
-    y: 100,
+    x: 600,
+    y: 150,
     numPoints: 5,
-    innerRadius: 20,
-    outerRadius: 40,
-    fill: "blue",
+    innerRadius: 30,
+    outerRadius: 50,
+    fill: "#F59E0B",
     draggable: true,
   },
 ];
@@ -535,20 +526,8 @@ const initialGroups: GroupContainer[] = [
     type: "group",
     x: 100,
     y: 250,
-    width: 200,
-    height: 150,
-    fill: "transparent",
-    draggable: true,
-    children: [],
-    showBorder: true,
-  },
-  {
-    id: "group2",
-    type: "group",
-    x: 350,
-    y: 250,
-    width: 180,
-    height: 120,
+    width: 100,
+    height: 100,
     fill: "transparent",
     draggable: true,
     children: [],
@@ -567,6 +546,19 @@ const App: React.FC = () => {
     height: 600, // Default height
   });
 
+  // Infinite canvas state
+  const [stageScale, setStageScale] = useState(1);
+  const [stageX, setStageX] = useState(0);
+  const [stageY, setStageY] = useState(0);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+  const [lastPointerPosition, setLastPointerPosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  const stageRef = useRef<Konva.Stage>(null);
+
   useEffect(() => {
     // Update dimensions when component mounts
     setDimensions({
@@ -582,17 +574,133 @@ const App: React.FC = () => {
       });
     }
 
+    // Handle keyboard events for space key
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.code === "Space" && !isSpacePressed) {
+        setIsSpacePressed(true);
+        document.body.style.cursor = "grab";
+        e.preventDefault();
+      }
+    }
+
+    function handleKeyUp(e: KeyboardEvent) {
+      if (e.code === "Space") {
+        setIsSpacePressed(false);
+        setIsDraggingCanvas(false);
+        document.body.style.cursor = "default";
+        e.preventDefault();
+      }
+    }
+
+    // Handle zoom with wheel
+    function handleWheel(e: WheelEvent) {
+      // Check if Cmd (Mac) or Ctrl (Windows/Linux) is pressed for zoom
+      if (e.metaKey || e.ctrlKey) {
+        e.preventDefault();
+
+        const stage = stageRef.current;
+        if (!stage) return;
+
+        const oldScale = stageScale;
+        const pointer = stage.getPointerPosition();
+
+        if (!pointer) return;
+
+        const mousePointTo = {
+          x: (pointer.x - stageX) / oldScale,
+          y: (pointer.y - stageY) / oldScale,
+        };
+
+        // Determine zoom direction and amount
+        const direction = e.deltaY > 0 ? -1 : 1;
+        const zoomFactor = 1.1;
+        const newScale =
+          direction > 0 ? oldScale * zoomFactor : oldScale / zoomFactor;
+
+        // Clamp scale between reasonable limits
+        const clampedScale = Math.max(0.1, Math.min(5, newScale));
+
+        const newPos = {
+          x: pointer.x - mousePointTo.x * clampedScale,
+          y: pointer.y - mousePointTo.y * clampedScale,
+        };
+
+        setStageScale(clampedScale);
+        setStageX(newPos.x);
+        setStageY(newPos.y);
+      } else {
+        // Regular scrolling for panning up/down and left/right
+        e.preventDefault();
+
+        const scrollSpeed = 1; // Adjust scroll sensitivity
+        const deltaX = e.deltaX * scrollSpeed;
+        const deltaY = e.deltaY * scrollSpeed;
+
+        // Update stage position for scrolling
+        setStageX(stageX - deltaX);
+        setStageY(stageY - deltaY);
+      }
+    }
+
     window.addEventListener("resize", handleResize);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("wheel", handleWheel, { passive: false });
 
     // Cleanup
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [stageScale, stageX, stageY, isSpacePressed]);
 
   const checkDeselect = (e: any) => {
+    // Don't deselect when panning
+    if (isDraggingCanvas) return;
+
     // Deselect when clicked on empty area
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
       selectShape(null);
+    }
+  };
+
+  const handleStageMouseDown = (e: any) => {
+    if (isSpacePressed) {
+      setIsDraggingCanvas(true);
+      document.body.style.cursor = "grabbing";
+      const pos = e.target.getStage().getPointerPosition();
+      setLastPointerPosition({ x: pos.x, y: pos.y });
+      return;
+    }
+    checkDeselect(e);
+  };
+
+  const handleStageMouseMove = (e: any) => {
+    if (isDraggingCanvas && isSpacePressed) {
+      const stage = e.target.getStage();
+      const pos = stage.getPointerPosition();
+
+      const dx = pos.x - lastPointerPosition.x;
+      const dy = pos.y - lastPointerPosition.y;
+
+      setStageX(stageX + dx);
+      setStageY(stageY + dy);
+
+      setLastPointerPosition({ x: pos.x, y: pos.y });
+    }
+  };
+
+  const handleStageMouseUp = () => {
+    if (isDraggingCanvas) {
+      setIsDraggingCanvas(false);
+      if (isSpacePressed) {
+        document.body.style.cursor = "grab";
+      } else {
+        document.body.style.cursor = "default";
+      }
     }
   };
 
@@ -644,12 +752,37 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen relative">
+      {/* Toolbar */}
+      <div className="absolute top-0 left-0 w-full bg-white border-b-1 border-[#E3E3E3] z-10 p-[15px]">
+        <div className="flex flex-row items-center justify-between h-full w-full">
+          <div className="flex items-center justify-between h-full w-full">
+            <span className="text-[16px] font-semibold text-black">
+              Untitled
+            </span>
+          </div>
+          <div className="flex items-center justify-end h-full w-full gap-[10px]">
+            <span className="text-[16px] font-semibold text-black px-[17px] py-[7px] bg-[#F2F1F3] rounded-[12px]">
+              {Math.round(stageScale * 100)}%
+            </span>
+            <span className="flex gap-[10px] items-center cursor-pointer text-[16px] font-semibold text-white px-[17px] py-[7px] bg-[#29A9FF] rounded-[12px]">
+              <Download className="w-[16px] h-[16px] text-white stroke-[3px]" />
+              Export
+            </span>
+          </div>
+        </div>
+      </div>
       <Stage
         width={dimensions.width}
         height={dimensions.height}
-        onMouseDown={checkDeselect}
-        onTouchStart={checkDeselect}
+        onMouseDown={handleStageMouseDown}
+        onMouseMove={handleStageMouseMove}
+        onMouseUp={handleStageMouseUp}
+        ref={stageRef}
+        scaleX={stageScale}
+        scaleY={stageScale}
+        x={stageX}
+        y={stageY}
       >
         <Layer>
           {/* Render groups first (as background containers) */}
@@ -735,75 +868,6 @@ const App: React.FC = () => {
                 />
               );
             })}
-
-          {/* Instructions */}
-          <Rect
-            x={10}
-            y={10}
-            width={500}
-            height={140}
-            fill="rgba(255, 255, 255, 0.9)"
-            stroke="#ccc"
-            strokeWidth={1}
-            cornerRadius={5}
-          />
-
-          {/* Title */}
-          <Text
-            x={20}
-            y={30}
-            text="Multi-Shape Transformer with Groups Demo"
-            fontSize={16}
-            fontFamily="Arial"
-            fill="#333"
-            fontStyle="bold"
-          />
-
-          {/* Instructions */}
-          <Text
-            x={20}
-            y={50}
-            text="Hover to see blue outline • Click to select • Drag to move with boundary"
-            fontSize={12}
-            fontFamily="Arial"
-            fill="#666"
-          />
-
-          <Text
-            x={20}
-            y={70}
-            text="Use handles to resize/rotate • Red Rectangle • Green Circle • Blue Star"
-            fontSize={12}
-            fontFamily="Arial"
-            fill="#666"
-          />
-
-          <Text
-            x={20}
-            y={90}
-            text="Groups act as containers with clipping • Drag shapes into groups to organize"
-            fontSize={12}
-            fontFamily="Arial"
-            fill="#666"
-          />
-
-          <Text
-            x={20}
-            y={110}
-            text="Notice: Groups show dashed borders • Shapes inside groups are clipped to boundaries"
-            fontSize={11}
-            fontFamily="Arial"
-            fill="#888"
-          />
-
-          <Text
-            x={20}
-            y={130}
-            text="Try selecting and transforming both individual shapes and entire groups"
-            fontSize={11}
-            fontFamily="Arial"
-            fill="#888"
-          />
         </Layer>
       </Stage>
     </div>

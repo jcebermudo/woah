@@ -6,22 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "remotion": "remotion studio remotion/index.ts",
-    "render": "remotion render remotion/index.ts MyVideo out.mp4"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@remotion/cli": "4.0.319",
-    "@remotion/player": "4.0.319",
-    "@remotion/renderer": "4.0.319",
+    "canvas": "^3.0.0-rc3",
+    "konva": "^9.3.20",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "remotion": "4.0.319"
+    "react-konva": "^19.0.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@remotion/eslint-plugin": "^4.0.319",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

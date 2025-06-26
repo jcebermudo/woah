@@ -90,6 +90,7 @@ interface SideAnchorProps {
   side: "top" | "bottom" | "left" | "right";
   onDrag: (deltaX: number, deltaY: number) => void;
   visible: boolean;
+  rotation?: number;
 }
 
 // Custom Rotation Anchor Component
@@ -112,6 +113,7 @@ const SideAnchor: React.FC<SideAnchorProps> = ({
   side,
   onDrag,
   visible,
+  rotation = 0,
 }) => {
   const dragStartPos = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
@@ -119,15 +121,40 @@ const SideAnchor: React.FC<SideAnchorProps> = ({
   if (!visible) return null;
 
   const getCursor = () => {
+    // For perpendicular cursors, we need the perpendicular direction to the edge
+    const rotationRad = (rotation * Math.PI) / 180;
+
+    // Calculate the perpendicular direction to the edge (resize direction)
+    let perpAngle = 0;
     switch (side) {
       case "top":
       case "bottom":
-        return "ns-resize";
+        // For horizontal edges, perpendicular direction is vertical (rotated)
+        perpAngle = rotationRad + Math.PI / 2; // 90 degrees from edge direction
+        break;
       case "left":
       case "right":
-        return "ew-resize";
-      default:
-        return "pointer";
+        // For vertical edges, perpendicular direction is horizontal (rotated)
+        perpAngle = rotationRad; // Same as rotation for horizontal direction
+        break;
+    }
+
+    // Normalize angle to 0-π range (we only need direction, not orientation)
+    perpAngle = ((perpAngle % Math.PI) + Math.PI) % Math.PI;
+
+    // Convert to degrees for cursor selection
+    const perpDegrees = (perpAngle * 180) / Math.PI;
+
+    // Map angle to appropriate cursor with 4 directions (each covers 45° range)
+    // The cursor should indicate the resize direction (perpendicular to edge)
+    if (perpDegrees < 22.5 || perpDegrees >= 157.5) {
+      return "ew-resize"; // Horizontal resize
+    } else if (perpDegrees >= 22.5 && perpDegrees < 67.5) {
+      return "nwse-resize"; // Diagonal ↖↘ resize
+    } else if (perpDegrees >= 67.5 && perpDegrees < 112.5) {
+      return "ns-resize"; // Vertical resize
+    } else {
+      return "nesw-resize"; // Diagonal ↗↙ resize
     }
   };
 
@@ -320,58 +347,92 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
     const node = groupRef.current;
-    if (!node) return;
+    const transformer = trRef.current;
+    if (!node || !transformer) return;
 
+    // Scale that was just applied by Konva
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
 
-    // Reset scale to 1
+    // Reset scaling on the node so we can work with explicit width/height
     node.scaleX(1);
     node.scaleY(1);
 
-    // Calculate new dimensions
-    const newWidth = Math.max(50, groupProps.width * scaleX);
-    const newHeight = Math.max(50, groupProps.height * scaleY);
+    // New explicit dimensions
+    const newWidth = Math.max(50, groupProps.width * Math.abs(scaleX));
+    const newHeight = Math.max(50, groupProps.height * Math.abs(scaleY));
 
-    // Calculate which corner was used for resizing based on scale direction
-    const isResizingFromLeft = scaleX < 0;
-    const isResizingFromTop = scaleY < 0;
+    // Which anchor was dragged?
+    const activeAnchor: string | undefined = (transformer as any)
+      ._movingAnchorName;
 
-    // Calculate position adjustment to keep the anchor corner fixed
-    let newX = groupProps.x;
-    let newY = groupProps.y;
+    // Keep the inner node centered inside its own coordinate space
+    node.x(newWidth / 2);
+    node.y(newHeight / 2);
 
-    // Adjust position based on size change and which corner was used
-    const widthDelta = newWidth - groupProps.width;
-    const heightDelta = newHeight - groupProps.height;
-
-    if (isResizingFromLeft) {
-      // Resizing from left side, adjust X position
-      newX = groupProps.x - widthDelta / 2;
-    } else {
-      // Resizing from right side, adjust X position
-      newX = groupProps.x + widthDelta / 2;
+    // If we failed to detect the anchor or it is not a corner, just update size in place
+    if (!activeAnchor || !activeAnchor.includes("-")) {
+      onChange({ ...groupProps, width: newWidth, height: newHeight });
+      return;
     }
 
-    if (isResizingFromTop) {
-      // Resizing from top side, adjust Y position
-      newY = groupProps.y - heightDelta / 2;
-    } else {
-      // Resizing from bottom side, adjust Y position
-      newY = groupProps.y + heightDelta / 2;
-    }
+    // Old & new half-sizes
+    const oldHalfW = groupProps.width / 2;
+    const oldHalfH = groupProps.height / 2;
+    const newHalfW = newWidth / 2;
+    const newHalfH = newHeight / 2;
 
-    // Update group with new dimensions and adjusted position
-    const updatedGroup: GroupContainer = {
-      ...groupProps,
-      x: newX,
-      y: newY,
-      width: newWidth,
-      height: newHeight,
-      rotation: groupProps.rotation || 0,
+    // Rotation helpers
+    const rotation = ((groupProps.rotation ?? 0) * Math.PI) / 180;
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+
+    // Convert local (object) coordinates to world coordinates
+    const toWorld = (lx: number, ly: number) => ({
+      x: groupProps.x + lx * cos - ly * sin,
+      y: groupProps.y + lx * sin + ly * cos,
+    });
+
+    // Determine which corner should stay fixed (the opposite one)
+    const fixedCorner = (() => {
+      switch (activeAnchor) {
+        case "top-left":
+          return toWorld(oldHalfW, oldHalfH); // bottom-right is fixed
+        case "top-right":
+          return toWorld(-oldHalfW, oldHalfH); // bottom-left is fixed
+        case "bottom-left":
+          return toWorld(oldHalfW, -oldHalfH); // top-right is fixed
+        case "bottom-right":
+          return toWorld(-oldHalfW, -oldHalfH); // top-left is fixed
+        default:
+          return { x: groupProps.x, y: groupProps.y };
+      }
+    })();
+
+    // Map for local vector from center to the fixed corner after resize
+    const anchorVectorMap: Record<string, [number, number]> = {
+      "top-left": [newHalfW, newHalfH],
+      "top-right": [-newHalfW, newHalfH],
+      "bottom-left": [newHalfW, -newHalfH],
+      "bottom-right": [-newHalfW, -newHalfH],
     };
 
-    onChange(updatedGroup);
+    const [vecLX, vecLY] = anchorVectorMap[activeAnchor];
+
+    const vecWX = vecLX * cos - vecLY * sin;
+    const vecWY = vecLX * sin + vecLY * cos;
+
+    const newCenterX = fixedCorner.x - vecWX;
+    const newCenterY = fixedCorner.y - vecWY;
+
+    // Commit the updated props
+    onChange({
+      ...groupProps,
+      x: newCenterX,
+      y: newCenterY,
+      width: newWidth,
+      height: newHeight,
+    });
   };
 
   const handleMouseEnter = () => {
@@ -421,38 +482,93 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     const adjustedDeltaX = deltaX / stageScale;
     const adjustedDeltaY = deltaY / stageScale;
 
+    // Convert rotation to radians for calculations
+    const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+
+    // Transform the drag delta to the group's local coordinate system
+    const localDeltaX = adjustedDeltaX * cos + adjustedDeltaY * sin;
+    const localDeltaY = -adjustedDeltaX * sin + adjustedDeltaY * cos;
+
+    // Calculate current center and half dimensions
+    const centerX = groupProps.x;
+    const centerY = groupProps.y;
+    const halfWidth = groupProps.width / 2;
+    const halfHeight = groupProps.height / 2;
+
+    // The key insight: we need to keep the OPPOSITE edge fixed, not the dragged edge
+    // Calculate the position of the fixed edge (opposite to the one being dragged)
+    let fixedEdgeCenterX = centerX;
+    let fixedEdgeCenterY = centerY;
     let newWidth = groupProps.width;
     let newHeight = groupProps.height;
-    let newX = groupProps.x;
-    let newY = groupProps.y;
 
     switch (side) {
       case "top":
-        // Resize from top edge - increase height upward, adjust center position
-        newHeight = Math.max(50, groupProps.height - adjustedDeltaY);
-        newY = groupProps.y + adjustedDeltaY / 2; // Move center by half the delta
+        // Dragging top edge, so keep bottom edge fixed
+        fixedEdgeCenterX = centerX + (0 * cos - halfHeight * sin);
+        fixedEdgeCenterY = centerY + (0 * sin + halfHeight * cos);
+        // Calculate new height based on local movement (negative because top edge moves up to reduce height)
+        newHeight = Math.max(50, groupProps.height - localDeltaY);
         break;
       case "bottom":
-        // Resize from bottom edge - increase height downward, adjust center position
-        newHeight = Math.max(50, groupProps.height + adjustedDeltaY);
-        newY = groupProps.y + adjustedDeltaY / 2; // Move center by half the delta
+        // Dragging bottom edge, so keep top edge fixed
+        fixedEdgeCenterX = centerX + (0 * cos - -halfHeight * sin);
+        fixedEdgeCenterY = centerY + (0 * sin + -halfHeight * cos);
+        // Calculate new height based on local movement
+        newHeight = Math.max(50, groupProps.height + localDeltaY);
         break;
       case "left":
-        // Resize from left edge - increase width leftward, adjust center position
-        newWidth = Math.max(50, groupProps.width - adjustedDeltaX);
-        newX = groupProps.x + adjustedDeltaX / 2; // Move center by half the delta
+        // Dragging left edge, so keep right edge fixed
+        fixedEdgeCenterX = centerX + (halfWidth * cos - 0 * sin);
+        fixedEdgeCenterY = centerY + (halfWidth * sin + 0 * cos);
+        // Calculate new width based on local movement (negative because left edge moves left to increase width)
+        newWidth = Math.max(50, groupProps.width - localDeltaX);
         break;
       case "right":
-        // Resize from right edge - increase width rightward, adjust center position
-        newWidth = Math.max(50, groupProps.width + adjustedDeltaX);
-        newX = groupProps.x + adjustedDeltaX / 2; // Move center by half the delta
+        // Dragging right edge, so keep left edge fixed
+        fixedEdgeCenterX = centerX + (-halfWidth * cos - 0 * sin);
+        fixedEdgeCenterY = centerY + (-halfWidth * sin + 0 * cos);
+        // Calculate new width based on local movement
+        newWidth = Math.max(50, groupProps.width + localDeltaX);
+        break;
+    }
+
+    // Calculate where the new center should be to keep the fixed edge (opposite edge) in place
+    const newHalfWidth = newWidth / 2;
+    const newHalfHeight = newHeight / 2;
+
+    let newCenterX = centerX;
+    let newCenterY = centerY;
+
+    switch (side) {
+      case "top":
+        // Keep bottom edge center fixed, calculate new center position
+        newCenterX = fixedEdgeCenterX - (0 * cos - newHalfHeight * sin);
+        newCenterY = fixedEdgeCenterY - (0 * sin + newHalfHeight * cos);
+        break;
+      case "bottom":
+        // Keep top edge center fixed, calculate new center position
+        newCenterX = fixedEdgeCenterX - (0 * cos - -newHalfHeight * sin);
+        newCenterY = fixedEdgeCenterY - (0 * sin + -newHalfHeight * cos);
+        break;
+      case "left":
+        // Keep right edge center fixed, calculate new center position
+        newCenterX = fixedEdgeCenterX - (newHalfWidth * cos - 0 * sin);
+        newCenterY = fixedEdgeCenterY - (newHalfWidth * sin + 0 * cos);
+        break;
+      case "right":
+        // Keep left edge center fixed, calculate new center position
+        newCenterX = fixedEdgeCenterX - (-newHalfWidth * cos - 0 * sin);
+        newCenterY = fixedEdgeCenterY - (-newHalfWidth * sin + 0 * cos);
         break;
     }
 
     onChange({
       ...groupProps,
-      x: newX,
-      y: newY,
+      x: newCenterX,
+      y: newCenterY,
       width: newWidth,
       height: newHeight,
     });
@@ -585,6 +701,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                     width={groupProps.width}
                     height={anchorThickness}
                     side="top"
+                    rotation={groupProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("top", deltaX, deltaY, stageScale)
                     }
@@ -606,6 +723,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                     width={groupProps.width}
                     height={anchorThickness}
                     side="bottom"
+                    rotation={groupProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("bottom", deltaX, deltaY, stageScale)
                     }
@@ -627,6 +745,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                     width={anchorThickness}
                     height={groupProps.height}
                     side="left"
+                    rotation={groupProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("left", deltaX, deltaY, stageScale)
                     }
@@ -648,6 +767,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                     width={anchorThickness}
                     height={groupProps.height}
                     side="right"
+                    rotation={groupProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("right", deltaX, deltaY, stageScale)
                     }

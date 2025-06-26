@@ -78,7 +78,201 @@ interface GroupComponentProps {
   onDragStart: () => void;
   onDragEnd: () => void;
   children: React.ReactNode;
+  stageScale: number;
 }
+
+// Custom Side Anchor Component
+interface SideAnchorProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  side: "top" | "bottom" | "left" | "right";
+  onDrag: (deltaX: number, deltaY: number) => void;
+  visible: boolean;
+}
+
+// Custom Rotation Anchor Component
+interface RotationAnchorProps {
+  x: number;
+  y: number;
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  groupCenterX: number;
+  groupCenterY: number;
+  onRotate: (angle: number) => void;
+  visible: boolean;
+  stageScale: number;
+}
+
+const SideAnchor: React.FC<SideAnchorProps> = ({
+  x,
+  y,
+  width,
+  height,
+  side,
+  onDrag,
+  visible,
+}) => {
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+
+  if (!visible) return null;
+
+  const getCursor = () => {
+    switch (side) {
+      case "top":
+      case "bottom":
+        return "ns-resize";
+      case "left":
+      case "right":
+        return "ew-resize";
+      default:
+        return "pointer";
+    }
+  };
+
+  return (
+    <Rect
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill="transparent"
+      stroke="transparent"
+      draggable
+      onMouseEnter={() => {
+        if (!isDragging.current) {
+          document.body.style.cursor = getCursor();
+        }
+      }}
+      onMouseLeave={() => {
+        if (!isDragging.current) {
+          document.body.style.cursor = "default";
+        }
+      }}
+      onDragStart={(e) => {
+        isDragging.current = true;
+        document.body.style.cursor = getCursor();
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (pos) {
+          dragStartPos.current = { x: pos.x, y: pos.y };
+        }
+      }}
+      onDragMove={(e) => {
+        document.body.style.cursor = getCursor();
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (pos) {
+          const deltaX = pos.x - dragStartPos.current.x;
+          const deltaY = pos.y - dragStartPos.current.y;
+          onDrag(deltaX, deltaY);
+          dragStartPos.current = { x: pos.x, y: pos.y };
+
+          // Reset anchor position to prevent it from moving
+          e.target.x(x);
+          e.target.y(y);
+        }
+      }}
+      onDragEnd={() => {
+        isDragging.current = false;
+        document.body.style.cursor = "default";
+      }}
+    />
+  );
+};
+
+const RotationAnchor: React.FC<RotationAnchorProps> = ({
+  x,
+  y,
+  corner,
+  groupCenterX,
+  groupCenterY,
+  onRotate,
+  visible,
+  stageScale,
+}) => {
+  const initialAngle = useRef(0);
+  const isDragging = useRef(false);
+
+  if (!visible) return null;
+
+  const getOffset = (stageScale: number) => {
+    // Position rotation anchors just next to the corner anchors
+    const baseOffset = 12; // Small offset to place next to corner anchor
+    const offset = baseOffset / stageScale; // Adjust for zoom level
+
+    switch (corner) {
+      case "top-left":
+        return { x: x - offset, y: y }; // Left of top-left corner
+      case "top-right":
+        return { x: x + offset, y: y }; // Right of top-right corner
+      case "bottom-left":
+        return { x: x, y: y + offset }; // Below bottom-left corner
+      case "bottom-right":
+        return { x: x, y: y + offset }; // Below bottom-right corner
+      default:
+        return { x, y };
+    }
+  };
+
+  const offsetPos = getOffset(stageScale);
+
+  // Larger scale-adjusted radius for easier targeting
+  const anchorRadius = Math.max(8, 16 / stageScale);
+
+  const calculateAngle = (pointX: number, pointY: number) => {
+    const deltaX = pointX - groupCenterX;
+    const deltaY = pointY - groupCenterY;
+    return Math.atan2(deltaY, deltaX);
+  };
+
+  return (
+    <Circle
+      x={offsetPos.x}
+      y={offsetPos.y}
+      radius={anchorRadius}
+      fill="transparent"
+      stroke="transparent"
+      draggable
+      onMouseEnter={() => {
+        document.body.style.cursor = "crosshair";
+      }}
+      onMouseLeave={() => {
+        if (!isDragging.current) {
+          document.body.style.cursor = "default";
+        }
+      }}
+      onDragStart={(e) => {
+        isDragging.current = true;
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (pos) {
+          initialAngle.current = calculateAngle(pos.x, pos.y);
+        }
+        document.body.style.cursor = "crosshair";
+      }}
+      onDragMove={(e) => {
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (pos) {
+          const currentAngle = calculateAngle(pos.x, pos.y);
+          const deltaAngle = currentAngle - initialAngle.current;
+
+          // Convert to degrees and apply rotation
+          const deltaRotation = (deltaAngle * 180) / Math.PI;
+          onRotate(deltaRotation);
+
+          initialAngle.current = currentAngle;
+
+          // Reset anchor position to prevent it from moving
+          e.target.x(offsetPos.x);
+          e.target.y(offsetPos.y);
+        }
+      }}
+      onDragEnd={() => {
+        isDragging.current = false;
+        document.body.style.cursor = "default";
+      }}
+    />
+  );
+};
 
 // Group Component for containers
 const GroupComponent: React.FC<GroupComponentProps> = ({
@@ -92,6 +286,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
   onDragStart,
   onDragEnd,
   children,
+  stageScale,
 }) => {
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -111,6 +306,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // The drag is handled by the outer container group
     // e.target is the outer container group, so we get its position
+    // Account for the offset since we're now rotating around center
     onChange({
       ...groupProps,
       x: e.target.x(),
@@ -133,18 +329,46 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     node.scaleX(1);
     node.scaleY(1);
 
-    // The inner group (groupRef) handles the transformation
-    // but we need to update the outer container position and the dimensions
-    const outerGroup = node.getParent();
+    // Calculate new dimensions
+    const newWidth = Math.max(50, groupProps.width * scaleX);
+    const newHeight = Math.max(50, groupProps.height * scaleY);
 
-    // Update group dimensions and keep the outer container position
+    // Calculate which corner was used for resizing based on scale direction
+    const isResizingFromLeft = scaleX < 0;
+    const isResizingFromTop = scaleY < 0;
+
+    // Calculate position adjustment to keep the anchor corner fixed
+    let newX = groupProps.x;
+    let newY = groupProps.y;
+
+    // Adjust position based on size change and which corner was used
+    const widthDelta = newWidth - groupProps.width;
+    const heightDelta = newHeight - groupProps.height;
+
+    if (isResizingFromLeft) {
+      // Resizing from left side, adjust X position
+      newX = groupProps.x - widthDelta / 2;
+    } else {
+      // Resizing from right side, adjust X position
+      newX = groupProps.x + widthDelta / 2;
+    }
+
+    if (isResizingFromTop) {
+      // Resizing from top side, adjust Y position
+      newY = groupProps.y - heightDelta / 2;
+    } else {
+      // Resizing from bottom side, adjust Y position
+      newY = groupProps.y + heightDelta / 2;
+    }
+
+    // Update group with new dimensions and adjusted position
     const updatedGroup: GroupContainer = {
       ...groupProps,
-      x: outerGroup ? outerGroup.x() : groupProps.x, // Get position from outer container
-      y: outerGroup ? outerGroup.y() : groupProps.y, // Get position from outer container
-      width: Math.max(50, groupProps.width * scaleX),
-      height: Math.max(50, groupProps.height * scaleY),
-      rotation: outerGroup ? outerGroup.rotation() : groupProps.rotation || 0, // Get rotation from outer container
+      x: newX,
+      y: newY,
+      width: newWidth,
+      height: newHeight,
+      rotation: groupProps.rotation || 0,
     };
 
     onChange(updatedGroup);
@@ -169,10 +393,10 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
   };
 
   const getStrokeWidth = () => {
-    if (isSelected) return 1.5;
-    if (isHovered) return 1.5;
-    if (isDragging) return 1.5;
-    if (groupProps.showBorder) return 1.5;
+    if (isSelected) return 1;
+    if (isHovered) return 1;
+    if (isDragging) return 1;
+    if (groupProps.showBorder) return 1;
     return 0;
   };
 
@@ -187,12 +411,71 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     return "transparent";
   };
 
+  const handleSideAnchorDrag = (
+    side: "top" | "bottom" | "left" | "right",
+    deltaX: number,
+    deltaY: number,
+    stageScale: number
+  ) => {
+    // Adjust deltas for stage scale to fix zoom sensitivity
+    const adjustedDeltaX = deltaX / stageScale;
+    const adjustedDeltaY = deltaY / stageScale;
+
+    let newWidth = groupProps.width;
+    let newHeight = groupProps.height;
+    let newX = groupProps.x;
+    let newY = groupProps.y;
+
+    switch (side) {
+      case "top":
+        // Resize from top edge - increase height upward, adjust center position
+        newHeight = Math.max(50, groupProps.height - adjustedDeltaY);
+        newY = groupProps.y + adjustedDeltaY / 2; // Move center by half the delta
+        break;
+      case "bottom":
+        // Resize from bottom edge - increase height downward, adjust center position
+        newHeight = Math.max(50, groupProps.height + adjustedDeltaY);
+        newY = groupProps.y + adjustedDeltaY / 2; // Move center by half the delta
+        break;
+      case "left":
+        // Resize from left edge - increase width leftward, adjust center position
+        newWidth = Math.max(50, groupProps.width - adjustedDeltaX);
+        newX = groupProps.x + adjustedDeltaX / 2; // Move center by half the delta
+        break;
+      case "right":
+        // Resize from right edge - increase width rightward, adjust center position
+        newWidth = Math.max(50, groupProps.width + adjustedDeltaX);
+        newX = groupProps.x + adjustedDeltaX / 2; // Move center by half the delta
+        break;
+    }
+
+    onChange({
+      ...groupProps,
+      x: newX,
+      y: newY,
+      width: newWidth,
+      height: newHeight,
+    });
+  };
+
+  const handleRotation = (deltaRotation: number) => {
+    const currentRotation = groupProps.rotation || 0;
+    const newRotation = currentRotation + deltaRotation;
+
+    onChange({
+      ...groupProps,
+      rotation: newRotation,
+    });
+  };
+
   return (
     <React.Fragment>
       {/* Container Group that moves together but only the inner group gets selected */}
       <Group
         x={groupProps.x}
         y={groupProps.y}
+        offsetX={groupProps.width / 2}
+        offsetY={groupProps.height / 2}
         rotation={groupProps.rotation || 0}
         draggable={groupProps.draggable}
         onDragStart={handleDragStart}
@@ -202,6 +485,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
         {/* Selectable Group - only this gets the transformer */}
         <Group
           ref={groupRef}
+          x={groupProps.width / 2}
+          y={groupProps.height / 2}
           width={groupProps.width}
           height={groupProps.height}
           onTransformEnd={handleTransformEnd}
@@ -212,6 +497,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
         >
           {/* Background rectangle for the group */}
           <Rect
+            x={-groupProps.width / 2}
+            y={-groupProps.height / 2}
             width={groupProps.width}
             height={groupProps.height}
             fill={getFill()}
@@ -223,6 +510,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
 
           {/* Children shapes with clipping */}
           <Group
+            x={-groupProps.width / 2}
+            y={-groupProps.height / 2}
             clipFunc={(ctx: any) => {
               // Clip children to group bounds
               ctx.rect(0, 0, groupProps.width, groupProps.height);
@@ -233,10 +522,229 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
         </Group>
       </Group>
 
+      {/* Custom Side Anchors */}
+      {isSelected && (
+        <React.Fragment>
+          {(() => {
+            // Calculate rotated side anchor positions
+            const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
+            const halfWidth = groupProps.width / 2;
+            const halfHeight = groupProps.height / 2;
+
+            // Calculate anchor strip thickness
+            const anchorThickness = 5;
+
+            // Calculate rotated positions for each side anchor
+            // Top side anchor
+            const topCenterX =
+              groupProps.x +
+              (0 * cos - (-halfHeight - anchorThickness / 2) * sin);
+            const topCenterY =
+              groupProps.y +
+              (0 * sin + (-halfHeight - anchorThickness / 2) * cos);
+
+            // Bottom side anchor
+            const bottomCenterX =
+              groupProps.x +
+              (0 * cos - (halfHeight + anchorThickness / 2) * sin);
+            const bottomCenterY =
+              groupProps.y +
+              (0 * sin + (halfHeight + anchorThickness / 2) * cos);
+
+            // Left side anchor
+            const leftCenterX =
+              groupProps.x +
+              ((-halfWidth - anchorThickness / 2) * cos - 0 * sin);
+            const leftCenterY =
+              groupProps.y +
+              ((-halfWidth - anchorThickness / 2) * sin + 0 * cos);
+
+            // Right side anchor
+            const rightCenterX =
+              groupProps.x +
+              ((halfWidth + anchorThickness / 2) * cos - 0 * sin);
+            const rightCenterY =
+              groupProps.y +
+              ((halfWidth + anchorThickness / 2) * sin + 0 * cos);
+
+            return (
+              <>
+                {/* Top anchor - rotated strip along the top border */}
+                <Group
+                  x={topCenterX}
+                  y={topCenterY}
+                  rotation={groupProps.rotation || 0}
+                  offsetX={groupProps.width / 2}
+                  offsetY={anchorThickness / 2}
+                >
+                  <SideAnchor
+                    x={0}
+                    y={0}
+                    width={groupProps.width}
+                    height={anchorThickness}
+                    side="top"
+                    onDrag={(deltaX, deltaY) =>
+                      handleSideAnchorDrag("top", deltaX, deltaY, stageScale)
+                    }
+                    visible={true}
+                  />
+                </Group>
+
+                {/* Bottom anchor - rotated strip along the bottom border */}
+                <Group
+                  x={bottomCenterX}
+                  y={bottomCenterY}
+                  rotation={groupProps.rotation || 0}
+                  offsetX={groupProps.width / 2}
+                  offsetY={anchorThickness / 2}
+                >
+                  <SideAnchor
+                    x={0}
+                    y={0}
+                    width={groupProps.width}
+                    height={anchorThickness}
+                    side="bottom"
+                    onDrag={(deltaX, deltaY) =>
+                      handleSideAnchorDrag("bottom", deltaX, deltaY, stageScale)
+                    }
+                    visible={true}
+                  />
+                </Group>
+
+                {/* Left anchor - rotated strip along the left border */}
+                <Group
+                  x={leftCenterX}
+                  y={leftCenterY}
+                  rotation={groupProps.rotation || 0}
+                  offsetX={anchorThickness / 2}
+                  offsetY={groupProps.height / 2}
+                >
+                  <SideAnchor
+                    x={0}
+                    y={0}
+                    width={anchorThickness}
+                    height={groupProps.height}
+                    side="left"
+                    onDrag={(deltaX, deltaY) =>
+                      handleSideAnchorDrag("left", deltaX, deltaY, stageScale)
+                    }
+                    visible={true}
+                  />
+                </Group>
+
+                {/* Right anchor - rotated strip along the right border */}
+                <Group
+                  x={rightCenterX}
+                  y={rightCenterY}
+                  rotation={groupProps.rotation || 0}
+                  offsetX={anchorThickness / 2}
+                  offsetY={groupProps.height / 2}
+                >
+                  <SideAnchor
+                    x={0}
+                    y={0}
+                    width={anchorThickness}
+                    height={groupProps.height}
+                    side="right"
+                    onDrag={(deltaX, deltaY) =>
+                      handleSideAnchorDrag("right", deltaX, deltaY, stageScale)
+                    }
+                    visible={true}
+                  />
+                </Group>
+              </>
+            );
+          })()}
+
+          {/* Custom Rotation Anchors - positioned offset from corner anchors */}
+          {(() => {
+            // Calculate rotated corner positions
+            const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
+            const halfWidth = groupProps.width / 2;
+            const halfHeight = groupProps.height / 2;
+
+            // Calculate actual corner positions after rotation
+            const topLeftX =
+              groupProps.x + (-halfWidth * cos - -halfHeight * sin);
+            const topLeftY =
+              groupProps.y + (-halfWidth * sin + -halfHeight * cos);
+
+            const topRightX =
+              groupProps.x + (halfWidth * cos - -halfHeight * sin);
+            const topRightY =
+              groupProps.y + (halfWidth * sin + -halfHeight * cos);
+
+            const bottomLeftX =
+              groupProps.x + (-halfWidth * cos - halfHeight * sin);
+            const bottomLeftY =
+              groupProps.y + (-halfWidth * sin + halfHeight * cos);
+
+            const bottomRightX =
+              groupProps.x + (halfWidth * cos - halfHeight * sin);
+            const bottomRightY =
+              groupProps.y + (halfWidth * sin + halfHeight * cos);
+
+            return (
+              <>
+                <RotationAnchor
+                  x={topLeftX}
+                  y={topLeftY}
+                  corner="top-left"
+                  groupCenterX={groupProps.x}
+                  groupCenterY={groupProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={topRightX}
+                  y={topRightY}
+                  corner="top-right"
+                  groupCenterX={groupProps.x}
+                  groupCenterY={groupProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={bottomLeftX}
+                  y={bottomLeftY}
+                  corner="bottom-left"
+                  groupCenterX={groupProps.x}
+                  groupCenterY={groupProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={bottomRightX}
+                  y={bottomRightY}
+                  corner="bottom-right"
+                  groupCenterX={groupProps.x}
+                  groupCenterY={groupProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+              </>
+            );
+          })()}
+        </React.Fragment>
+      )}
+
+      {/* Keep corner anchors with transformer for corner resizing */}
       {(isSelected || isDragging) && (
         <Transformer
           ref={trRef}
           flipEnabled={false}
+          centeredScaling={false}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (Math.abs(newBox.width) < 50 || Math.abs(newBox.height) < 50) {
@@ -249,19 +757,15 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
           borderStrokeWidth={2}
           anchorStroke="#29A9FF"
           anchorFill="white"
-          anchorStrokeWidth={2}
+          anchorStrokeWidth={1}
           anchorSize={isDragging && !isSelected ? 6 : 8}
-          anchorCornerRadius={2}
-          rotateAnchorOffset={30}
+          anchorCornerRadius={1}
+          rotateEnabled={false}
           enabledAnchors={[
             "top-left",
-            "top-center",
             "top-right",
-            "middle-right",
             "bottom-right",
-            "bottom-center",
             "bottom-left",
-            "middle-left",
           ]}
         />
       )}
@@ -805,6 +1309,7 @@ const App: React.FC = () => {
               isSelected={group.id === selectedId}
               isHovered={group.id === hoveredId}
               isDragging={group.id === draggingId}
+              stageScale={stageScale}
               onSelect={() => {
                 selectShape(group.id);
               }}

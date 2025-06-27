@@ -5,7 +5,7 @@ import {
   Stage,
   Layer,
   Rect,
-  Circle,
+  Ellipse,
   Star,
   Transformer,
   Text,
@@ -32,11 +32,14 @@ interface RectShape extends BaseShape {
 
 interface CircleShape extends BaseShape {
   type: "circle";
-  radius: number;
+  width: number;
+  height: number;
 }
 
 interface StarShape extends BaseShape {
   type: "star";
+  width: number;
+  height: number;
   numPoints: number;
   innerRadius: number;
   outerRadius: number;
@@ -253,10 +256,11 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   };
 
   return (
-    <Circle
+    <Ellipse
       x={offsetPos.x}
       y={offsetPos.y}
-      radius={anchorRadius}
+      radiusX={anchorRadius}
+      radiusY={anchorRadius}
       fill="transparent"
       stroke="transparent"
       draggable
@@ -462,7 +466,6 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
   };
 
   const getDash = () => {
-    if (isDragging && !isSelected) return [5, 5];
     if (groupProps.showBorder && !isSelected && !isHovered) return [3, 3];
     return undefined;
   };
@@ -865,6 +868,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
           ref={trRef}
           flipEnabled={false}
           centeredScaling={false}
+          padding={0}
+          ignoreStroke={true}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (Math.abs(newBox.width) < 50 || Math.abs(newBox.height) < 50) {
@@ -956,14 +961,13 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
         rotation: node.rotation(),
       } as RectShape;
     } else if (shapeProps.type === "circle") {
+      const circleShape = shapeProps as CircleShape;
       updatedShape = {
         ...shapeProps,
         x: node.x(),
         y: node.y(),
-        radius: Math.max(
-          5,
-          (shapeProps as CircleShape).radius * Math.max(scaleX, scaleY)
-        ),
+        width: Math.max(5, node.width() * scaleX),
+        height: Math.max(5, node.height() * scaleY),
         rotation: node.rotation(),
       } as CircleShape;
     } else if (shapeProps.type === "star") {
@@ -972,14 +976,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
         ...shapeProps,
         x: node.x(),
         y: node.y(),
-        innerRadius: Math.max(
-          5,
-          starShape.innerRadius * Math.max(scaleX, scaleY)
-        ),
-        outerRadius: Math.max(
-          10,
-          starShape.outerRadius * Math.max(scaleX, scaleY)
-        ),
+        width: Math.max(5, node.width() * scaleX),
+        height: Math.max(5, node.height() * scaleY),
         rotation: node.rotation(),
       } as StarShape;
     } else {
@@ -1014,7 +1012,6 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
   };
 
   const getDash = () => {
-    if (isDragging && !isSelected) return [5, 5];
     return undefined;
   };
 
@@ -1046,22 +1043,38 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
             {...commonProps}
             width={rectShape.width}
             height={rectShape.height}
-            cornerRadius={5}
+            cornerRadius={0}
+            strokeScaleEnabled={false}
           />
         );
 
       case "circle":
         const circleShape = shapeProps as CircleShape;
-        return <Circle {...commonProps} radius={circleShape.radius} />;
+        return (
+          <Ellipse
+            {...commonProps}
+            radiusX={circleShape.width / 2}
+            radiusY={circleShape.height / 2}
+            strokeScaleEnabled={false}
+          />
+        );
 
       case "star":
         const starShape = shapeProps as StarShape;
+        // Calculate scale factors based on width/height vs base radius
+        const baseOuterRadius = starShape.outerRadius;
+        const scaleX = starShape.width / (baseOuterRadius * 2);
+        const scaleY = starShape.height / (baseOuterRadius * 2);
+
         return (
           <Star
             {...commonProps}
             numPoints={starShape.numPoints}
             innerRadius={starShape.innerRadius}
             outerRadius={starShape.outerRadius}
+            scaleX={scaleX}
+            scaleY={scaleY}
+            strokeScaleEnabled={false}
           />
         );
 
@@ -1077,6 +1090,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
         <Transformer
           ref={trRef}
           flipEnabled={false}
+          padding={0}
+          ignoreStroke={true}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
@@ -1126,7 +1141,8 @@ const initialShapes: Shape[] = [
     type: "circle",
     x: 400,
     y: 200,
-    radius: 50,
+    width: 100,
+    height: 100,
     fill: "#EF4444",
     draggable: true,
   },
@@ -1135,9 +1151,11 @@ const initialShapes: Shape[] = [
     type: "star",
     x: 600,
     y: 150,
+    width: 100,
+    height: 100,
     numPoints: 5,
-    innerRadius: 30,
-    outerRadius: 50,
+    innerRadius: 17,
+    outerRadius: 40,
     fill: "#F59E0B",
     draggable: true,
   },
@@ -1376,7 +1394,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen relative">
+    <div className="bg-[#F2F1F3] min-h-screen relative">
       {/* Toolbar */}
       <div className="absolute top-0 left-0 w-full bg-white border-b-1 border-[#E3E3E3] z-10 p-[15px]">
         <div className="flex flex-row items-center justify-between h-full w-full gap-[10px]">

@@ -662,35 +662,26 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
             const halfWidth = groupProps.width / 2;
             const halfHeight = groupProps.height / 2;
 
-            // Calculate anchor strip thickness - spans both inside and outside the edge
+            // Calculate anchor strip thickness - spans equally inside and outside the edge
             const anchorThickness = 20 / stageScale;
-            // Position anchors to straddle the edge (half inside, half outside)
-            const anchorOffset = anchorThickness / 2;
 
             // Calculate rotated positions for each side anchor
-            // Top side anchor - straddles the top edge
-            const topCenterX =
-              groupProps.x + (0 * cos - (-halfHeight - anchorOffset) * sin);
-            const topCenterY =
-              groupProps.y + (0 * sin + (-halfHeight - anchorOffset) * cos);
+            // Position anchors centered on the edge (half thickness inside, half outside)
+            // Top side anchor - centered on top edge
+            const topCenterX = groupProps.x + (0 * cos - -halfHeight * sin);
+            const topCenterY = groupProps.y + (0 * sin + -halfHeight * cos);
 
-            // Bottom side anchor - straddles the bottom edge
-            const bottomCenterX =
-              groupProps.x + (0 * cos - (halfHeight + anchorOffset) * sin);
-            const bottomCenterY =
-              groupProps.y + (0 * sin + (halfHeight + anchorOffset) * cos);
+            // Bottom side anchor - centered on bottom edge
+            const bottomCenterX = groupProps.x + (0 * cos - halfHeight * sin);
+            const bottomCenterY = groupProps.y + (0 * sin + halfHeight * cos);
 
-            // Left side anchor - straddles the left edge
-            const leftCenterX =
-              groupProps.x + ((-halfWidth - anchorOffset) * cos - 0 * sin);
-            const leftCenterY =
-              groupProps.y + ((-halfWidth - anchorOffset) * sin + 0 * cos);
+            // Left side anchor - centered on left edge
+            const leftCenterX = groupProps.x + (-halfWidth * cos - 0 * sin);
+            const leftCenterY = groupProps.y + (-halfWidth * sin + 0 * cos);
 
-            // Right side anchor - straddles the right edge
-            const rightCenterX =
-              groupProps.x + ((halfWidth + anchorOffset) * cos - 0 * sin);
-            const rightCenterY =
-              groupProps.y + ((halfWidth + anchorOffset) * sin + 0 * cos);
+            // Right side anchor - centered on right edge
+            const rightCenterX = groupProps.x + (halfWidth * cos - 0 * sin);
+            const rightCenterY = groupProps.y + (halfWidth * sin + 0 * cos);
 
             return (
               <>
@@ -1216,35 +1207,26 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
             const halfWidth = width / 2;
             const halfHeight = height / 2;
 
-            // Calculate anchor strip thickness - spans both inside and outside the edge
+            // Calculate anchor strip thickness - spans equally inside and outside the edge
             const anchorThickness = 30 / stageScale;
-            // Position anchors to straddle the edge (half inside, half outside)
-            const anchorOffset = anchorThickness / 2;
 
             // Calculate rotated positions for each side anchor
-            // Top side anchor - straddles the top edge
-            const topCenterX =
-              shapeProps.x + (0 * cos - (-halfHeight - anchorOffset) * sin);
-            const topCenterY =
-              shapeProps.y + (0 * sin + (-halfHeight - anchorOffset) * cos);
+            // Position anchors centered on the edge (half thickness inside, half outside)
+            // Top side anchor - centered on top edge
+            const topCenterX = shapeProps.x + (0 * cos - -halfHeight * sin);
+            const topCenterY = shapeProps.y + (0 * sin + -halfHeight * cos);
 
-            // Bottom side anchor - straddles the bottom edge
-            const bottomCenterX =
-              shapeProps.x + (0 * cos - (halfHeight + anchorOffset) * sin);
-            const bottomCenterY =
-              shapeProps.y + (0 * sin + (halfHeight + anchorOffset) * cos);
+            // Bottom side anchor - centered on bottom edge
+            const bottomCenterX = shapeProps.x + (0 * cos - halfHeight * sin);
+            const bottomCenterY = shapeProps.y + (0 * sin + halfHeight * cos);
 
-            // Left side anchor - straddles the left edge
-            const leftCenterX =
-              shapeProps.x + ((-halfWidth - anchorOffset) * cos - 0 * sin);
-            const leftCenterY =
-              shapeProps.y + ((-halfWidth - anchorOffset) * sin + 0 * cos);
+            // Left side anchor - centered on left edge
+            const leftCenterX = shapeProps.x + (-halfWidth * cos - 0 * sin);
+            const leftCenterY = shapeProps.y + (-halfWidth * sin + 0 * cos);
 
-            // Right side anchor - straddles the right edge
-            const rightCenterX =
-              shapeProps.x + ((halfWidth + anchorOffset) * cos - 0 * sin);
-            const rightCenterY =
-              shapeProps.y + ((halfWidth + anchorOffset) * sin + 0 * cos);
+            // Right side anchor - centered on right edge
+            const rightCenterX = shapeProps.x + (halfWidth * cos - 0 * sin);
+            const rightCenterY = shapeProps.y + (halfWidth * sin + 0 * cos);
 
             return (
               <>

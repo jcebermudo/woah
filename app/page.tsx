@@ -222,7 +222,7 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   visible,
   stageScale,
 }) => {
-  const initialAngle = useRef(0);
+  const lastAngle = useRef(0);
   const isDragging = useRef(false);
 
   if (!visible) return null;
@@ -249,7 +249,7 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   const offsetPos = getOffset(stageScale);
 
   // Larger scale-adjusted radius for easier targeting
-  const anchorRadius = Math.max(8, 16 / stageScale);
+  const anchorRadius = Math.max(12, 24 / stageScale);
 
   const calculateAngle = (pointX: number, pointY: number) => {
     const deltaX = pointX - groupCenterX;
@@ -278,7 +278,7 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
         isDragging.current = true;
         const pos = e.target.getStage()?.getPointerPosition();
         if (pos) {
-          initialAngle.current = calculateAngle(pos.x, pos.y);
+          lastAngle.current = calculateAngle(pos.x, pos.y);
         }
         document.body.style.cursor = "crosshair";
       }}
@@ -286,13 +286,22 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
         const pos = e.target.getStage()?.getPointerPosition();
         if (pos) {
           const currentAngle = calculateAngle(pos.x, pos.y);
-          const deltaAngle = currentAngle - initialAngle.current;
+          let deltaAngle = currentAngle - lastAngle.current;
+
+          // Normalize angle difference to prevent jumps at boundaries
+          // Keep the delta between -π and π for the shortest rotation path
+          if (deltaAngle > Math.PI) {
+            deltaAngle -= 2 * Math.PI;
+          } else if (deltaAngle < -Math.PI) {
+            deltaAngle += 2 * Math.PI;
+          }
 
           // Convert to degrees and apply rotation
           const deltaRotation = (deltaAngle * 180) / Math.PI;
           onRotate(deltaRotation);
 
-          initialAngle.current = currentAngle;
+          // Update last angle for next iteration
+          lastAngle.current = currentAngle;
 
           // Reset anchor position to prevent it from moving
           e.target.x(offsetPos.x);
@@ -1156,6 +1165,35 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
     onChange(updatedShape);
   };
 
+  const handleRotation = (deltaRotation: number) => {
+    const currentRotation = shapeProps.rotation || 0;
+    const newRotation = currentRotation + deltaRotation;
+
+    // Create updated shape based on type
+    let updatedShape: Shape;
+
+    if (shapeProps.type === "rect") {
+      updatedShape = {
+        ...shapeProps,
+        rotation: newRotation,
+      } as RectShape;
+    } else if (shapeProps.type === "circle") {
+      updatedShape = {
+        ...shapeProps,
+        rotation: newRotation,
+      } as CircleShape;
+    } else if (shapeProps.type === "star") {
+      updatedShape = {
+        ...shapeProps,
+        rotation: newRotation,
+      } as StarShape;
+    } else {
+      updatedShape = shapeProps;
+    }
+
+    onChange(updatedShape);
+  };
+
   const renderShape = () => {
     const commonProps = {
       onClick: onSelect,
@@ -1387,6 +1425,91 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                     visible={true}
                   />
                 </Group>
+              </>
+            );
+          })()}
+        </React.Fragment>
+      )}
+
+      {/* Custom Rotation Anchors - positioned offset from corner anchors */}
+      {isSelected && (
+        <React.Fragment>
+          {(() => {
+            const { width, height } = getShapeDimensions();
+
+            // Calculate rotated corner positions
+            const rotation = ((shapeProps.rotation || 0) * Math.PI) / 180;
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
+            const halfWidth = width / 2;
+            const halfHeight = height / 2;
+
+            // Calculate actual corner positions after rotation
+            const topLeftX =
+              shapeProps.x + (-halfWidth * cos - -halfHeight * sin);
+            const topLeftY =
+              shapeProps.y + (-halfWidth * sin + -halfHeight * cos);
+
+            const topRightX =
+              shapeProps.x + (halfWidth * cos - -halfHeight * sin);
+            const topRightY =
+              shapeProps.y + (halfWidth * sin + -halfHeight * cos);
+
+            const bottomLeftX =
+              shapeProps.x + (-halfWidth * cos - halfHeight * sin);
+            const bottomLeftY =
+              shapeProps.y + (-halfWidth * sin + halfHeight * cos);
+
+            const bottomRightX =
+              shapeProps.x + (halfWidth * cos - halfHeight * sin);
+            const bottomRightY =
+              shapeProps.y + (halfWidth * sin + halfHeight * cos);
+
+            return (
+              <>
+                <RotationAnchor
+                  x={topLeftX}
+                  y={topLeftY}
+                  corner="top-left"
+                  groupCenterX={shapeProps.x}
+                  groupCenterY={shapeProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={topRightX}
+                  y={topRightY}
+                  corner="top-right"
+                  groupCenterX={shapeProps.x}
+                  groupCenterY={shapeProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={bottomLeftX}
+                  y={bottomLeftY}
+                  corner="bottom-left"
+                  groupCenterX={shapeProps.x}
+                  groupCenterY={shapeProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
+
+                <RotationAnchor
+                  x={bottomRightX}
+                  y={bottomRightY}
+                  corner="bottom-right"
+                  groupCenterX={shapeProps.x}
+                  groupCenterY={shapeProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                />
               </>
             );
           })()}

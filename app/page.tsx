@@ -50,6 +50,7 @@ interface GroupContainer extends BaseShape {
   type: "group";
   width: number;
   height: number;
+  fill: string;
   children: string[]; // Array of shape IDs contained in this group
   showBorder: boolean;
 }
@@ -461,18 +462,13 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     if (isSelected) return 1;
     if (isHovered) return 1;
     if (isDragging) return 1;
-    if (groupProps.showBorder) return 1;
+    if (groupProps.showBorder) return 0;
     return 0;
   };
 
   const getDash = () => {
     if (groupProps.showBorder && !isSelected && !isHovered) return [3, 3];
     return undefined;
-  };
-
-  const getFill = () => {
-    if (isSelected || isHovered) return "rgba(0, 102, 255, 0.05)";
-    return "transparent";
   };
 
   const handleSideAnchorDrag = (
@@ -620,7 +616,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
             y={-groupProps.height / 2}
             width={groupProps.width}
             height={groupProps.height}
-            fill={getFill()}
+            fill={groupProps.fill}
             stroke={getStroke()}
             strokeWidth={getStrokeWidth()}
             strokeScaleEnabled={false}
@@ -1092,6 +1088,7 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
           flipEnabled={false}
           padding={0}
           ignoreStroke={true}
+          rotateEnabled={false}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to minimum size
             if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
@@ -1110,13 +1107,13 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
           rotateAnchorOffset={30}
           enabledAnchors={[
             "top-left",
-            "top-center",
+
             "top-right",
-            "middle-right",
+
             "bottom-right",
-            "bottom-center",
+
             "bottom-left",
-            "middle-left",
+
           ]}
         />
       )}
@@ -1169,8 +1166,8 @@ const initialGroups: GroupContainer[] = [
     x: 100,
     y: 250,
     width: 100,
-    height: 100,
-    fill: "transparent",
+    height: 100,  
+    fill: "#ffffff",
     draggable: true,
     children: [],
     showBorder: true,

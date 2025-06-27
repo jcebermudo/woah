@@ -108,6 +108,7 @@ interface RotationAnchorProps {
   onRotate: (angle: number) => void;
   visible: boolean;
   stageScale: number;
+  currentRotation: number;
 }
 
 const SideAnchor: React.FC<SideAnchorProps> = ({
@@ -221,9 +222,11 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   onRotate,
   visible,
   stageScale,
+  currentRotation,
 }) => {
-  const lastAngle = useRef(0);
   const isDragging = useRef(false);
+  const startAngle = useRef(0);
+  const initialRotation = useRef(0);
 
   if (!visible) return null;
 
@@ -251,12 +254,6 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   // Larger scale-adjusted radius for easier targeting
   const anchorRadius = Math.max(12, 24 / stageScale);
 
-  const calculateAngle = (pointX: number, pointY: number) => {
-    const deltaX = pointX - groupCenterX;
-    const deltaY = pointY - groupCenterY;
-    return Math.atan2(deltaY, deltaX);
-  };
-
   return (
     <Ellipse
       x={offsetPos.x}
@@ -276,32 +273,42 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
       }}
       onDragStart={(e) => {
         isDragging.current = true;
+        document.body.style.cursor = "crosshair";
+
+        // Store the initial angle and rotation when drag starts
         const pos = e.target.getStage()?.getPointerPosition();
         if (pos) {
-          lastAngle.current = calculateAngle(pos.x, pos.y);
+          startAngle.current = Math.atan2(
+            pos.y - groupCenterY,
+            pos.x - groupCenterX
+          );
+          initialRotation.current = currentRotation; // Use the current rotation from props
         }
-        document.body.style.cursor = "crosshair";
       }}
       onDragMove={(e) => {
         const pos = e.target.getStage()?.getPointerPosition();
         if (pos) {
-          const currentAngle = calculateAngle(pos.x, pos.y);
-          let deltaAngle = currentAngle - lastAngle.current;
+          // Calculate current angle
+          const currentAngle = Math.atan2(
+            pos.y - groupCenterY,
+            pos.x - groupCenterX
+          );
+
+          // Calculate the difference from start angle
+          let deltaAngle = currentAngle - startAngle.current;
 
           // Normalize angle difference to prevent jumps at boundaries
-          // Keep the delta between -π and π for the shortest rotation path
           if (deltaAngle > Math.PI) {
             deltaAngle -= 2 * Math.PI;
           } else if (deltaAngle < -Math.PI) {
             deltaAngle += 2 * Math.PI;
           }
 
-          // Convert to degrees and apply rotation
-          const deltaRotation = (deltaAngle * 180) / Math.PI;
-          onRotate(deltaRotation);
+          // Convert to degrees and add to initial rotation
+          const deltaRotationDegrees = (deltaAngle * 180) / Math.PI;
+          const newRotation = initialRotation.current + deltaRotationDegrees;
 
-          // Update last angle for next iteration
-          lastAngle.current = currentAngle;
+          onRotate(newRotation);
 
           // Reset anchor position to prevent it from moving
           e.target.x(offsetPos.x);
@@ -583,13 +590,10 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     });
   };
 
-  const handleRotation = (deltaRotation: number) => {
-    const currentRotation = groupProps.rotation || 0;
-    const newRotation = currentRotation + deltaRotation;
-
+  const handleRotation = (absoluteRotation: number) => {
     onChange({
       ...groupProps,
-      rotation: newRotation,
+      rotation: absoluteRotation,
     });
   };
 
@@ -658,41 +662,35 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
             const halfWidth = groupProps.width / 2;
             const halfHeight = groupProps.height / 2;
 
-            // Calculate anchor strip thickness
-            const anchorThickness = 5;
+            // Calculate anchor strip thickness - spans both inside and outside the edge
+            const anchorThickness = 20 / stageScale;
+            // Position anchors to straddle the edge (half inside, half outside)
+            const anchorOffset = anchorThickness / 2;
 
             // Calculate rotated positions for each side anchor
-            // Top side anchor
+            // Top side anchor - straddles the top edge
             const topCenterX =
-              groupProps.x +
-              (0 * cos - (-halfHeight - anchorThickness / 2) * sin);
+              groupProps.x + (0 * cos - (-halfHeight - anchorOffset) * sin);
             const topCenterY =
-              groupProps.y +
-              (0 * sin + (-halfHeight - anchorThickness / 2) * cos);
+              groupProps.y + (0 * sin + (-halfHeight - anchorOffset) * cos);
 
-            // Bottom side anchor
+            // Bottom side anchor - straddles the bottom edge
             const bottomCenterX =
-              groupProps.x +
-              (0 * cos - (halfHeight + anchorThickness / 2) * sin);
+              groupProps.x + (0 * cos - (halfHeight + anchorOffset) * sin);
             const bottomCenterY =
-              groupProps.y +
-              (0 * sin + (halfHeight + anchorThickness / 2) * cos);
+              groupProps.y + (0 * sin + (halfHeight + anchorOffset) * cos);
 
-            // Left side anchor
+            // Left side anchor - straddles the left edge
             const leftCenterX =
-              groupProps.x +
-              ((-halfWidth - anchorThickness / 2) * cos - 0 * sin);
+              groupProps.x + ((-halfWidth - anchorOffset) * cos - 0 * sin);
             const leftCenterY =
-              groupProps.y +
-              ((-halfWidth - anchorThickness / 2) * sin + 0 * cos);
+              groupProps.y + ((-halfWidth - anchorOffset) * sin + 0 * cos);
 
-            // Right side anchor
+            // Right side anchor - straddles the right edge
             const rightCenterX =
-              groupProps.x +
-              ((halfWidth + anchorThickness / 2) * cos - 0 * sin);
+              groupProps.x + ((halfWidth + anchorOffset) * cos - 0 * sin);
             const rightCenterY =
-              groupProps.y +
-              ((halfWidth + anchorThickness / 2) * sin + 0 * cos);
+              groupProps.y + ((halfWidth + anchorOffset) * sin + 0 * cos);
 
             return (
               <>
@@ -783,85 +781,6 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                     visible={true}
                   />
                 </Group>
-              </>
-            );
-          })()}
-
-          {/* Custom Rotation Anchors - positioned offset from corner anchors */}
-          {(() => {
-            // Calculate rotated corner positions
-            const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
-            const cos = Math.cos(rotation);
-            const sin = Math.sin(rotation);
-            const halfWidth = groupProps.width / 2;
-            const halfHeight = groupProps.height / 2;
-
-            // Calculate actual corner positions after rotation
-            const topLeftX =
-              groupProps.x + (-halfWidth * cos - -halfHeight * sin);
-            const topLeftY =
-              groupProps.y + (-halfWidth * sin + -halfHeight * cos);
-
-            const topRightX =
-              groupProps.x + (halfWidth * cos - -halfHeight * sin);
-            const topRightY =
-              groupProps.y + (halfWidth * sin + -halfHeight * cos);
-
-            const bottomLeftX =
-              groupProps.x + (-halfWidth * cos - halfHeight * sin);
-            const bottomLeftY =
-              groupProps.y + (-halfWidth * sin + halfHeight * cos);
-
-            const bottomRightX =
-              groupProps.x + (halfWidth * cos - halfHeight * sin);
-            const bottomRightY =
-              groupProps.y + (halfWidth * sin + halfHeight * cos);
-
-            return (
-              <>
-                <RotationAnchor
-                  x={topLeftX}
-                  y={topLeftY}
-                  corner="top-left"
-                  groupCenterX={groupProps.x}
-                  groupCenterY={groupProps.y}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                />
-
-                <RotationAnchor
-                  x={topRightX}
-                  y={topRightY}
-                  corner="top-right"
-                  groupCenterX={groupProps.x}
-                  groupCenterY={groupProps.y}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                />
-
-                <RotationAnchor
-                  x={bottomLeftX}
-                  y={bottomLeftY}
-                  corner="bottom-left"
-                  groupCenterX={groupProps.x}
-                  groupCenterY={groupProps.y}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                />
-
-                <RotationAnchor
-                  x={bottomRightX}
-                  y={bottomRightY}
-                  corner="bottom-right"
-                  groupCenterX={groupProps.x}
-                  groupCenterY={groupProps.y}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                />
               </>
             );
           })()}
@@ -1165,27 +1084,24 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
     onChange(updatedShape);
   };
 
-  const handleRotation = (deltaRotation: number) => {
-    const currentRotation = shapeProps.rotation || 0;
-    const newRotation = currentRotation + deltaRotation;
-
+  const handleRotation = (absoluteRotation: number) => {
     // Create updated shape based on type
     let updatedShape: Shape;
 
     if (shapeProps.type === "rect") {
       updatedShape = {
         ...shapeProps,
-        rotation: newRotation,
+        rotation: absoluteRotation,
       } as RectShape;
     } else if (shapeProps.type === "circle") {
       updatedShape = {
         ...shapeProps,
-        rotation: newRotation,
+        rotation: absoluteRotation,
       } as CircleShape;
     } else if (shapeProps.type === "star") {
       updatedShape = {
         ...shapeProps,
-        rotation: newRotation,
+        rotation: absoluteRotation,
       } as StarShape;
     } else {
       updatedShape = shapeProps;
@@ -1300,41 +1216,35 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
             const halfWidth = width / 2;
             const halfHeight = height / 2;
 
-            // Calculate anchor strip thickness
-            const anchorThickness = 5;
+            // Calculate anchor strip thickness - spans both inside and outside the edge
+            const anchorThickness = 30 / stageScale;
+            // Position anchors to straddle the edge (half inside, half outside)
+            const anchorOffset = anchorThickness / 2;
 
             // Calculate rotated positions for each side anchor
-            // Top side anchor
+            // Top side anchor - straddles the top edge
             const topCenterX =
-              shapeProps.x +
-              (0 * cos - (-halfHeight - anchorThickness / 2) * sin);
+              shapeProps.x + (0 * cos - (-halfHeight - anchorOffset) * sin);
             const topCenterY =
-              shapeProps.y +
-              (0 * sin + (-halfHeight - anchorThickness / 2) * cos);
+              shapeProps.y + (0 * sin + (-halfHeight - anchorOffset) * cos);
 
-            // Bottom side anchor
+            // Bottom side anchor - straddles the bottom edge
             const bottomCenterX =
-              shapeProps.x +
-              (0 * cos - (halfHeight + anchorThickness / 2) * sin);
+              shapeProps.x + (0 * cos - (halfHeight + anchorOffset) * sin);
             const bottomCenterY =
-              shapeProps.y +
-              (0 * sin + (halfHeight + anchorThickness / 2) * cos);
+              shapeProps.y + (0 * sin + (halfHeight + anchorOffset) * cos);
 
-            // Left side anchor
+            // Left side anchor - straddles the left edge
             const leftCenterX =
-              shapeProps.x +
-              ((-halfWidth - anchorThickness / 2) * cos - 0 * sin);
+              shapeProps.x + ((-halfWidth - anchorOffset) * cos - 0 * sin);
             const leftCenterY =
-              shapeProps.y +
-              ((-halfWidth - anchorThickness / 2) * sin + 0 * cos);
+              shapeProps.y + ((-halfWidth - anchorOffset) * sin + 0 * cos);
 
-            // Right side anchor
+            // Right side anchor - straddles the right edge
             const rightCenterX =
-              shapeProps.x +
-              ((halfWidth + anchorThickness / 2) * cos - 0 * sin);
+              shapeProps.x + ((halfWidth + anchorOffset) * cos - 0 * sin);
             const rightCenterY =
-              shapeProps.y +
-              ((halfWidth + anchorThickness / 2) * sin + 0 * cos);
+              shapeProps.y + ((halfWidth + anchorOffset) * sin + 0 * cos);
 
             return (
               <>
@@ -1476,6 +1386,7 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
+                  currentRotation={shapeProps.rotation || 0}
                 />
 
                 <RotationAnchor
@@ -1487,6 +1398,7 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
+                  currentRotation={shapeProps.rotation || 0}
                 />
 
                 <RotationAnchor
@@ -1498,6 +1410,7 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
+                  currentRotation={shapeProps.rotation || 0}
                 />
 
                 <RotationAnchor
@@ -1509,6 +1422,7 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
+                  currentRotation={shapeProps.rotation || 0}
                 />
               </>
             );

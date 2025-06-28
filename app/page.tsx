@@ -45,18 +45,18 @@ interface StarShape extends BaseShape {
   outerRadius: number;
 }
 
-// Define group interface
-interface GroupContainer extends BaseShape {
-  type: "group";
+// Define layer interface (renamed from GroupContainer)
+interface LayerContainer extends BaseShape {
+  type: "layer";
   width: number;
   height: number;
   fill: string;
-  children: string[]; // Array of shape IDs contained in this group
+  children: string[]; // Array of shape IDs contained in this layer
   showBorder: boolean;
 }
 
 type Shape = RectShape | CircleShape | StarShape;
-type Container = GroupContainer;
+type Container = LayerContainer;
 type CanvasElement = Shape | Container;
 
 interface ShapeComponentProps {
@@ -72,13 +72,13 @@ interface ShapeComponentProps {
   stageScale: number;
 }
 
-interface GroupComponentProps {
-  groupProps: GroupContainer;
+interface LayerComponentProps {
+  layerProps: LayerContainer;
   isSelected: boolean;
   isHovered: boolean;
   isDragging: boolean;
   onSelect: () => void;
-  onChange: (newAttrs: GroupContainer) => void;
+  onChange: (newAttrs: LayerContainer) => void;
   onHover: (hovered: boolean) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -323,9 +323,9 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
   );
 };
 
-// Group Component for containers
-const GroupComponent: React.FC<GroupComponentProps> = ({
-  groupProps,
+// Layer Component for containers
+const LayerComponent: React.FC<LayerComponentProps> = ({
+  layerProps,
   isSelected,
   isHovered,
   isDragging,
@@ -337,38 +337,30 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
   children,
   stageScale,
 }) => {
-  const groupRef = useRef<Konva.Group>(null);
+  const layerRef = useRef<Konva.Layer>(null);
+  const rectRef = useRef<Konva.Rect>(null);
   const trRef = useRef<Konva.Transformer>(null);
 
   useEffect(() => {
-    if ((isSelected || isDragging) && trRef.current && groupRef.current) {
+    if ((isSelected || isDragging) && trRef.current && rectRef.current) {
       // Attach transformer manually
-      trRef.current.nodes([groupRef.current]);
+      trRef.current.nodes([rectRef.current]);
       trRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected, isDragging]);
 
-  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onDragStart();
+  const handleMouseEnter = () => {
+    onHover(true);
+    document.body.style.cursor = "pointer";
   };
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // The drag is handled by the outer container group
-    // e.target is the outer container group, so we get its position
-    // Account for the offset since we're now rotating around center
-    onChange({
-      ...groupProps,
-      x: e.target.x(),
-      y: e.target.y(),
-    });
-
-    // Auto-select the group after dragging (Figma-like behavior)
-    onSelect();
-    onDragEnd();
+  const handleMouseLeave = () => {
+    onHover(false);
+    document.body.style.cursor = "default";
   };
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
-    const node = groupRef.current;
+    const node = rectRef.current;
     const transformer = trRef.current;
     if (!node || !transformer) return;
 
@@ -381,111 +373,18 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     node.scaleY(1);
 
     // New explicit dimensions
-    const newWidth = Math.max(50, groupProps.width * Math.abs(scaleX));
-    const newHeight = Math.max(50, groupProps.height * Math.abs(scaleY));
+    const newWidth = Math.max(50, layerProps.width * Math.abs(scaleX));
+    const newHeight = Math.max(50, layerProps.height * Math.abs(scaleY));
 
-    // Which anchor was dragged?
-    const activeAnchor: string | undefined = (transformer as any)
-      ._movingAnchorName;
-
-    // Keep the inner node centered inside its own coordinate space
-    node.x(newWidth / 2);
-    node.y(newHeight / 2);
-
-    // If we failed to detect the anchor or it is not a corner, just update size in place
-    if (!activeAnchor || !activeAnchor.includes("-")) {
-      onChange({ ...groupProps, width: newWidth, height: newHeight });
-      return;
-    }
-
-    // Old & new half-sizes
-    const oldHalfW = groupProps.width / 2;
-    const oldHalfH = groupProps.height / 2;
-    const newHalfW = newWidth / 2;
-    const newHalfH = newHeight / 2;
-
-    // Rotation helpers
-    const rotation = ((groupProps.rotation ?? 0) * Math.PI) / 180;
-    const cos = Math.cos(rotation);
-    const sin = Math.sin(rotation);
-
-    // Convert local (object) coordinates to world coordinates
-    const toWorld = (lx: number, ly: number) => ({
-      x: groupProps.x + lx * cos - ly * sin,
-      y: groupProps.y + lx * sin + ly * cos,
-    });
-
-    // Determine which corner should stay fixed (the opposite one)
-    const fixedCorner = (() => {
-      switch (activeAnchor) {
-        case "top-left":
-          return toWorld(oldHalfW, oldHalfH); // bottom-right is fixed
-        case "top-right":
-          return toWorld(-oldHalfW, oldHalfH); // bottom-left is fixed
-        case "bottom-left":
-          return toWorld(oldHalfW, -oldHalfH); // top-right is fixed
-        case "bottom-right":
-          return toWorld(-oldHalfW, -oldHalfH); // top-left is fixed
-        default:
-          return { x: groupProps.x, y: groupProps.y };
-      }
-    })();
-
-    // Map for local vector from center to the fixed corner after resize
-    const anchorVectorMap: Record<string, [number, number]> = {
-      "top-left": [newHalfW, newHalfH],
-      "top-right": [-newHalfW, newHalfH],
-      "bottom-left": [newHalfW, -newHalfH],
-      "bottom-right": [-newHalfW, -newHalfH],
-    };
-
-    const [vecLX, vecLY] = anchorVectorMap[activeAnchor];
-
-    const vecWX = vecLX * cos - vecLY * sin;
-    const vecWY = vecLX * sin + vecLY * cos;
-
-    const newCenterX = fixedCorner.x - vecWX;
-    const newCenterY = fixedCorner.y - vecWY;
-
-    // Commit the updated props
+    // Update the layer props
     onChange({
-      ...groupProps,
-      x: newCenterX,
-      y: newCenterY,
+      ...layerProps,
+      x: node.x(),
+      y: node.y(),
       width: newWidth,
       height: newHeight,
+      rotation: node.rotation(),
     });
-  };
-
-  const handleMouseEnter = () => {
-    onHover(true);
-    document.body.style.cursor = "pointer";
-  };
-
-  const handleMouseLeave = () => {
-    onHover(false);
-    document.body.style.cursor = "default";
-  };
-
-  // Determine stroke based on state
-  const getStroke = () => {
-    if (isSelected) return "#29A9FF";
-    if (isHovered || isDragging) return "#29A9FF";
-    if (groupProps.showBorder) return "#29A9FF";
-    return "transparent";
-  };
-
-  const getStrokeWidth = () => {
-    if (isSelected) return 1;
-    if (isHovered) return 1;
-    if (isDragging) return 1;
-    if (groupProps.showBorder) return 0;
-    return 0;
-  };
-
-  const getDash = () => {
-    if (groupProps.showBorder && !isSelected && !isHovered) return [3, 3];
-    return undefined;
   };
 
   const handleSideAnchorDrag = (
@@ -499,59 +398,50 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
     const adjustedDeltaY = deltaY / stageScale;
 
     // Convert rotation to radians for calculations
-    const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
+    const rotation = ((layerProps.rotation || 0) * Math.PI) / 180;
     const cos = Math.cos(rotation);
     const sin = Math.sin(rotation);
 
-    // Transform the drag delta to the group's local coordinate system
+    // Transform the drag delta to the layer's local coordinate system
     const localDeltaX = adjustedDeltaX * cos + adjustedDeltaY * sin;
     const localDeltaY = -adjustedDeltaX * sin + adjustedDeltaY * cos;
 
     // Calculate current center and half dimensions
-    const centerX = groupProps.x;
-    const centerY = groupProps.y;
-    const halfWidth = groupProps.width / 2;
-    const halfHeight = groupProps.height / 2;
+    const centerX = layerProps.x;
+    const centerY = layerProps.y;
+    const halfWidth = layerProps.width / 2;
+    const halfHeight = layerProps.height / 2;
 
-    // The key insight: we need to keep the OPPOSITE edge fixed, not the dragged edge
     // Calculate the position of the fixed edge (opposite to the one being dragged)
     let fixedEdgeCenterX = centerX;
     let fixedEdgeCenterY = centerY;
-    let newWidth = groupProps.width;
-    let newHeight = groupProps.height;
+    let newWidth = layerProps.width;
+    let newHeight = layerProps.height;
 
     switch (side) {
       case "top":
-        // Dragging top edge, so keep bottom edge fixed
         fixedEdgeCenterX = centerX + (0 * cos - halfHeight * sin);
         fixedEdgeCenterY = centerY + (0 * sin + halfHeight * cos);
-        // Calculate new height based on local movement (negative because top edge moves up to reduce height)
-        newHeight = Math.max(50, groupProps.height - localDeltaY);
+        newHeight = Math.max(50, layerProps.height - localDeltaY);
         break;
       case "bottom":
-        // Dragging bottom edge, so keep top edge fixed
         fixedEdgeCenterX = centerX + (0 * cos - -halfHeight * sin);
         fixedEdgeCenterY = centerY + (0 * sin + -halfHeight * cos);
-        // Calculate new height based on local movement
-        newHeight = Math.max(50, groupProps.height + localDeltaY);
+        newHeight = Math.max(50, layerProps.height + localDeltaY);
         break;
       case "left":
-        // Dragging left edge, so keep right edge fixed
         fixedEdgeCenterX = centerX + (halfWidth * cos - 0 * sin);
         fixedEdgeCenterY = centerY + (halfWidth * sin + 0 * cos);
-        // Calculate new width based on local movement (negative because left edge moves left to increase width)
-        newWidth = Math.max(50, groupProps.width - localDeltaX);
+        newWidth = Math.max(50, layerProps.width - localDeltaX);
         break;
       case "right":
-        // Dragging right edge, so keep left edge fixed
         fixedEdgeCenterX = centerX + (-halfWidth * cos - 0 * sin);
         fixedEdgeCenterY = centerY + (-halfWidth * sin + 0 * cos);
-        // Calculate new width based on local movement
-        newWidth = Math.max(50, groupProps.width + localDeltaX);
+        newWidth = Math.max(50, layerProps.width + localDeltaX);
         break;
     }
 
-    // Calculate where the new center should be to keep the fixed edge (opposite edge) in place
+    // Calculate where the new center should be to keep the fixed edge in place
     const newHalfWidth = newWidth / 2;
     const newHalfHeight = newHeight / 2;
 
@@ -560,29 +450,25 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
 
     switch (side) {
       case "top":
-        // Keep bottom edge center fixed, calculate new center position
         newCenterX = fixedEdgeCenterX - (0 * cos - newHalfHeight * sin);
         newCenterY = fixedEdgeCenterY - (0 * sin + newHalfHeight * cos);
         break;
       case "bottom":
-        // Keep top edge center fixed, calculate new center position
         newCenterX = fixedEdgeCenterX - (0 * cos - -newHalfHeight * sin);
         newCenterY = fixedEdgeCenterY - (0 * sin + -newHalfHeight * cos);
         break;
       case "left":
-        // Keep right edge center fixed, calculate new center position
         newCenterX = fixedEdgeCenterX - (newHalfWidth * cos - 0 * sin);
         newCenterY = fixedEdgeCenterY - (newHalfWidth * sin + 0 * cos);
         break;
       case "right":
-        // Keep left edge center fixed, calculate new center position
         newCenterX = fixedEdgeCenterX - (-newHalfWidth * cos - 0 * sin);
         newCenterY = fixedEdgeCenterY - (-newHalfWidth * sin + 0 * cos);
         break;
     }
 
     onChange({
-      ...groupProps,
+      ...layerProps,
       x: newCenterX,
       y: newCenterY,
       width: newWidth,
@@ -592,114 +478,104 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
 
   const handleRotation = (absoluteRotation: number) => {
     onChange({
-      ...groupProps,
+      ...layerProps,
       rotation: absoluteRotation,
     });
   };
 
   return (
-    <React.Fragment>
-      {/* Container Group that moves together but only the inner group gets selected */}
-      <Group
-        x={groupProps.x}
-        y={groupProps.y}
-        offsetX={groupProps.width / 2}
-        offsetY={groupProps.height / 2}
-        rotation={groupProps.rotation || 0}
-        draggable={groupProps.draggable}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        style={{ cursor: "none !important" }}
-      >
-        {/* Selectable Group - only this gets the transformer */}
-        <Group
-          ref={groupRef}
-          x={groupProps.width / 2}
-          y={groupProps.height / 2}
-          width={groupProps.width}
-          height={groupProps.height}
-          onTransformEnd={handleTransformEnd}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onClick={onSelect}
-          onTap={onSelect}
-        >
-          {/* Background rectangle for the group */}
-          <Rect
-            x={-groupProps.width / 2}
-            y={-groupProps.height / 2}
-            width={groupProps.width}
-            height={groupProps.height}
-            fill={groupProps.fill}
-            stroke={getStroke()}
-            strokeWidth={getStrokeWidth()}
-            strokeScaleEnabled={false}
-            dash={getDash()}
-          />
+    <Layer ref={layerRef}>
+      {/* Background rectangle to make layer visible */}
+      <Rect
+        ref={rectRef}
+        x={layerProps.x}
+        y={layerProps.y}
+        width={layerProps.width}
+        height={layerProps.height}
+        offsetX={layerProps.width / 2}
+        offsetY={layerProps.height / 2}
+        rotation={layerProps.rotation || 0}
+        fill="white"
+        stroke={
+          isSelected || isHovered
+            ? "#29A9FF"
+            : layerProps.showBorder
+            ? "#29A9FF"
+            : "transparent"
+        }
+        strokeWidth={
+          isSelected || isHovered ? 2 : layerProps.showBorder ? 1 : 0
+        }
+        dash={
+          layerProps.showBorder && !isSelected && !isHovered
+            ? [3, 3]
+            : undefined
+        }
+        draggable={layerProps.draggable}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragStart={onDragStart}
+        onDragEnd={(e) => {
+          onChange({
+            ...layerProps,
+            x: e.target.x(),
+            y: e.target.y(),
+          });
+          onSelect();
+          onDragEnd();
+        }}
+        onTransformEnd={handleTransformEnd}
+      />
 
-          {/* Children shapes with clipping */}
-          <Group
-            x={-groupProps.width / 2}
-            y={-groupProps.height / 2}
-            clipFunc={(ctx: any) => {
-              // Clip children to group bounds
-              ctx.rect(0, 0, groupProps.width, groupProps.height);
-            }}
-          >
-            {children}
-          </Group>
-        </Group>
-      </Group>
+      {/* Children shapes without group wrapper */}
+      {children}
 
       {/* Custom Side Anchors */}
       {isSelected && (
         <React.Fragment>
           {(() => {
             // Calculate rotated side anchor positions
-            const rotation = ((groupProps.rotation || 0) * Math.PI) / 180;
+            const rotation = ((layerProps.rotation || 0) * Math.PI) / 180;
             const cos = Math.cos(rotation);
             const sin = Math.sin(rotation);
-            const halfWidth = groupProps.width / 2;
-            const halfHeight = groupProps.height / 2;
+            const halfWidth = layerProps.width / 2;
+            const halfHeight = layerProps.height / 2;
 
-            // Calculate anchor strip thickness - spans equally inside and outside the edge
+            // Calculate anchor strip thickness
             const anchorThickness = 20 / stageScale;
 
             // Calculate rotated positions for each side anchor
-            // Position anchors centered on the edge (half thickness inside, half outside)
-            // Top side anchor - centered on top edge
-            const topCenterX = groupProps.x + (0 * cos - -halfHeight * sin);
-            const topCenterY = groupProps.y + (0 * sin + -halfHeight * cos);
+            const topCenterX = layerProps.x + (0 * cos - -halfHeight * sin);
+            const topCenterY = layerProps.y + (0 * sin + -halfHeight * cos);
 
-            // Bottom side anchor - centered on bottom edge
-            const bottomCenterX = groupProps.x + (0 * cos - halfHeight * sin);
-            const bottomCenterY = groupProps.y + (0 * sin + halfHeight * cos);
+            const bottomCenterX = layerProps.x + (0 * cos - halfHeight * sin);
+            const bottomCenterY = layerProps.y + (0 * sin + halfHeight * cos);
 
-            // Left side anchor - centered on left edge
-            const leftCenterX = groupProps.x + (-halfWidth * cos - 0 * sin);
-            const leftCenterY = groupProps.y + (-halfWidth * sin + 0 * cos);
+            const leftCenterX = layerProps.x + (-halfWidth * cos - 0 * sin);
+            const leftCenterY = layerProps.y + (-halfWidth * sin + 0 * cos);
 
-            // Right side anchor - centered on right edge
-            const rightCenterX = groupProps.x + (halfWidth * cos - 0 * sin);
-            const rightCenterY = groupProps.y + (halfWidth * sin + 0 * cos);
+            const rightCenterX = layerProps.x + (halfWidth * cos - 0 * sin);
+            const rightCenterY = layerProps.y + (halfWidth * sin + 0 * cos);
 
             return (
               <>
-                {/* Top anchor - rotated strip along the top border */}
+                {/* Top anchor */}
                 <Group
                   x={topCenterX}
                   y={topCenterY}
-                  rotation={groupProps.rotation || 0}
-                  offsetX={groupProps.width / 2}
+                  rotation={layerProps.rotation || 0}
+                  offsetX={layerProps.width / 2}
                   offsetY={anchorThickness / 2}
                 >
                   <SideAnchor
                     x={0}
                     y={0}
-                    width={groupProps.width}
+                    width={layerProps.width}
                     height={anchorThickness}
                     side="top"
-                    rotation={groupProps.rotation || 0}
+                    rotation={layerProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("top", deltaX, deltaY, stageScale)
                     }
@@ -707,21 +583,21 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                   />
                 </Group>
 
-                {/* Bottom anchor - rotated strip along the bottom border */}
+                {/* Bottom anchor */}
                 <Group
                   x={bottomCenterX}
                   y={bottomCenterY}
-                  rotation={groupProps.rotation || 0}
-                  offsetX={groupProps.width / 2}
+                  rotation={layerProps.rotation || 0}
+                  offsetX={layerProps.width / 2}
                   offsetY={anchorThickness / 2}
                 >
                   <SideAnchor
                     x={0}
                     y={0}
-                    width={groupProps.width}
+                    width={layerProps.width}
                     height={anchorThickness}
                     side="bottom"
-                    rotation={groupProps.rotation || 0}
+                    rotation={layerProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("bottom", deltaX, deltaY, stageScale)
                     }
@@ -729,21 +605,21 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                   />
                 </Group>
 
-                {/* Left anchor - rotated strip along the left border */}
+                {/* Left anchor */}
                 <Group
                   x={leftCenterX}
                   y={leftCenterY}
-                  rotation={groupProps.rotation || 0}
+                  rotation={layerProps.rotation || 0}
                   offsetX={anchorThickness / 2}
-                  offsetY={groupProps.height / 2}
+                  offsetY={layerProps.height / 2}
                 >
                   <SideAnchor
                     x={0}
                     y={0}
                     width={anchorThickness}
-                    height={groupProps.height}
+                    height={layerProps.height}
                     side="left"
-                    rotation={groupProps.rotation || 0}
+                    rotation={layerProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("left", deltaX, deltaY, stageScale)
                     }
@@ -751,21 +627,21 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
                   />
                 </Group>
 
-                {/* Right anchor - rotated strip along the right border */}
+                {/* Right anchor */}
                 <Group
                   x={rightCenterX}
                   y={rightCenterY}
-                  rotation={groupProps.rotation || 0}
+                  rotation={layerProps.rotation || 0}
                   offsetX={anchorThickness / 2}
-                  offsetY={groupProps.height / 2}
+                  offsetY={layerProps.height / 2}
                 >
                   <SideAnchor
                     x={0}
                     y={0}
                     width={anchorThickness}
-                    height={groupProps.height}
+                    height={layerProps.height}
                     side="right"
-                    rotation={groupProps.rotation || 0}
+                    rotation={layerProps.rotation || 0}
                     onDrag={(deltaX, deltaY) =>
                       handleSideAnchorDrag("right", deltaX, deltaY, stageScale)
                     }
@@ -778,7 +654,94 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
         </React.Fragment>
       )}
 
-      {/* Keep corner anchors with transformer for corner resizing */}
+      {/* Custom Rotation Anchors */}
+      {isSelected && (
+        <React.Fragment>
+          {(() => {
+            // Calculate rotated corner positions for rotation anchors
+            const rotation = ((layerProps.rotation || 0) * Math.PI) / 180;
+            const cos = Math.cos(rotation);
+            const sin = Math.sin(rotation);
+            const halfWidth = layerProps.width / 2;
+            const halfHeight = layerProps.height / 2;
+
+            // Calculate actual corner positions after rotation
+            const topLeftX =
+              layerProps.x + (-halfWidth * cos - -halfHeight * sin);
+            const topLeftY =
+              layerProps.y + (-halfWidth * sin + -halfHeight * cos);
+
+            const topRightX =
+              layerProps.x + (halfWidth * cos - -halfHeight * sin);
+            const topRightY =
+              layerProps.y + (halfWidth * sin + -halfHeight * cos);
+
+            const bottomLeftX =
+              layerProps.x + (-halfWidth * cos - halfHeight * sin);
+            const bottomLeftY =
+              layerProps.y + (-halfWidth * sin + halfHeight * cos);
+
+            const bottomRightX =
+              layerProps.x + (halfWidth * cos - halfHeight * sin);
+            const bottomRightY =
+              layerProps.y + (halfWidth * sin + halfHeight * cos);
+
+            return (
+              <>
+                <RotationAnchor
+                  x={topLeftX}
+                  y={topLeftY}
+                  corner="top-left"
+                  groupCenterX={layerProps.x}
+                  groupCenterY={layerProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                  currentRotation={layerProps.rotation || 0}
+                />
+
+                <RotationAnchor
+                  x={topRightX}
+                  y={topRightY}
+                  corner="top-right"
+                  groupCenterX={layerProps.x}
+                  groupCenterY={layerProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                  currentRotation={layerProps.rotation || 0}
+                />
+
+                <RotationAnchor
+                  x={bottomLeftX}
+                  y={bottomLeftY}
+                  corner="bottom-left"
+                  groupCenterX={layerProps.x}
+                  groupCenterY={layerProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                  currentRotation={layerProps.rotation || 0}
+                />
+
+                <RotationAnchor
+                  x={bottomRightX}
+                  y={bottomRightY}
+                  corner="bottom-right"
+                  groupCenterX={layerProps.x}
+                  groupCenterY={layerProps.y}
+                  onRotate={handleRotation}
+                  visible={true}
+                  stageScale={stageScale}
+                  currentRotation={layerProps.rotation || 0}
+                />
+              </>
+            );
+          })()}
+        </React.Fragment>
+      )}
+
+      {/* Corner anchors with transformer for corner resizing */}
       {(isSelected || isDragging) && (
         <Transformer
           ref={trRef}
@@ -810,7 +773,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({
           ]}
         />
       )}
-    </React.Fragment>
+    </Layer>
   );
 };
 
@@ -1483,27 +1446,38 @@ const initialShapes: Shape[] = [
     fill: "#F59E0B",
     draggable: true,
   },
+  // Sample rectangle inside the layer
+  {
+    id: "layerRect1",
+    type: "rect",
+    x: 130,
+    y: 280,
+    width: 40,
+    height: 30,
+    fill: "#10B981",
+    draggable: true,
+  },
 ];
 
-// Initial groups
-const initialGroups: GroupContainer[] = [
+// Initial layers (renamed from initialGroups)
+const initialLayers: LayerContainer[] = [
   {
-    id: "group1",
-    type: "group",
+    id: "layer1",
+    type: "layer",
     x: 100,
     y: 250,
     width: 100,
     height: 100,
     fill: "#ffffff",
     draggable: true,
-    children: [],
+    children: ["layerRect1"], // Add the sample rectangle to this layer
     showBorder: true,
   },
 ];
 
 const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>(initialShapes);
-  const [groups, setGroups] = useState<GroupContainer[]>(initialGroups);
+  const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
   const [selectedId, selectShape] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -1676,10 +1650,10 @@ const App: React.FC = () => {
     setShapes(newShapes);
   };
 
-  const handleGroupChange = (index: number, newAttrs: GroupContainer) => {
-    const newGroups = groups.slice();
-    newGroups[index] = newAttrs;
-    setGroups(newGroups);
+  const handleLayerChange = (index: number, newAttrs: LayerContainer) => {
+    const newLayers = layers.slice();
+    newLayers[index] = newAttrs;
+    setLayers(newLayers);
   };
 
   const handleShapeHover = (shapeId: string, hovered: boolean) => {
@@ -1694,27 +1668,27 @@ const App: React.FC = () => {
     setDraggingId(null);
   };
 
-  // Helper function to check if a shape is inside a group
-  const getShapeGroup = (shapeId: string): GroupContainer | null => {
-    return groups.find((group) => group.children.includes(shapeId)) || null;
+  // Helper function to check if a shape is inside a layer
+  const getShapeLayer = (shapeId: string): LayerContainer | null => {
+    return layers.find((layer) => layer.children.includes(shapeId)) || null;
   };
 
-  // Function to add a shape to a group
-  const addShapeToGroup = (shapeId: string, groupId: string) => {
-    const newGroups = groups.map((group) => {
-      if (group.id === groupId) {
+  // Function to add a shape to a layer
+  const addShapeToLayer = (shapeId: string, layerId: string) => {
+    const newLayers = layers.map((layer) => {
+      if (layer.id === layerId) {
         return {
-          ...group,
-          children: [...group.children.filter((id) => id !== shapeId), shapeId],
+          ...layer,
+          children: [...layer.children.filter((id) => id !== shapeId), shapeId],
         };
       }
-      // Remove from other groups
+      // Remove from other layers
       return {
-        ...group,
-        children: group.children.filter((id) => id !== shapeId),
+        ...layer,
+        children: layer.children.filter((id) => id !== shapeId),
       };
     });
-    setGroups(newGroups);
+    setLayers(newLayers);
   };
 
   return (
@@ -1762,71 +1736,11 @@ const App: React.FC = () => {
         x={stageX}
         y={stageY}
       >
+        {/* Base layer for ungrouped shapes */}
         <Layer>
-          {/* Render groups first (as background containers) */}
-          {groups.map((group, i) => (
-            <GroupComponent
-              key={group.id}
-              groupProps={group}
-              isSelected={group.id === selectedId}
-              isHovered={group.id === hoveredId}
-              isDragging={group.id === draggingId}
-              stageScale={stageScale}
-              onSelect={() => {
-                selectShape(group.id);
-              }}
-              onChange={(newAttrs) => handleGroupChange(i, newAttrs)}
-              onHover={(hovered) => handleShapeHover(group.id, hovered)}
-              onDragStart={() => handleDragStart(group.id)}
-              onDragEnd={() => handleDragEnd(group.id)}
-            >
-              {/* Render shapes that belong to this group */}
-              {shapes
-                .filter((shape, shapeIndex) => {
-                  const currentGroup = getShapeGroup(shape.id);
-                  return currentGroup?.id === group.id;
-                })
-                .map((shape, shapeIndex) => {
-                  const originalIndex = shapes.findIndex(
-                    (s) => s.id === shape.id
-                  );
-                  return (
-                    <ShapeComponent
-                      key={shape.id}
-                      shapeProps={{
-                        ...shape,
-                        // Adjust position relative to group
-                        x: shape.x - group.x,
-                        y: shape.y - group.y,
-                      }}
-                      isSelected={shape.id === selectedId}
-                      isHovered={shape.id === hoveredId}
-                      isDragging={shape.id === draggingId}
-                      stageScale={stageScale}
-                      onSelect={() => {
-                        selectShape(shape.id);
-                      }}
-                      onChange={(newAttrs) => {
-                        // Adjust position back to world coordinates
-                        const worldAttrs = {
-                          ...newAttrs,
-                          x: newAttrs.x + group.x,
-                          y: newAttrs.y + group.y,
-                        };
-                        handleShapeChange(originalIndex, worldAttrs);
-                      }}
-                      onHover={(hovered) => handleShapeHover(shape.id, hovered)}
-                      onDragStart={() => handleDragStart(shape.id)}
-                      onDragEnd={() => handleDragEnd(shape.id)}
-                    />
-                  );
-                })}
-            </GroupComponent>
-          ))}
-
           {/* Render ungrouped shapes */}
           {shapes
-            .filter((shape) => !getShapeGroup(shape.id))
+            .filter((shape) => !getShapeLayer(shape.id))
             .map((shape, i) => {
               const originalIndex = shapes.findIndex((s) => s.id === shape.id);
               return (
@@ -1850,6 +1764,67 @@ const App: React.FC = () => {
               );
             })}
         </Layer>
+
+        {/* Render layer containers as separate layers */}
+        {layers.map((layer, i) => (
+          <LayerComponent
+            key={layer.id}
+            layerProps={layer}
+            isSelected={layer.id === selectedId}
+            isHovered={layer.id === hoveredId}
+            isDragging={layer.id === draggingId}
+            stageScale={stageScale}
+            onSelect={() => {
+              selectShape(layer.id);
+            }}
+            onChange={(newAttrs) => handleLayerChange(i, newAttrs)}
+            onHover={(hovered) => handleShapeHover(layer.id, hovered)}
+            onDragStart={() => handleDragStart(layer.id)}
+            onDragEnd={() => handleDragEnd(layer.id)}
+          >
+            {/* Render shapes that belong to this layer */}
+            {shapes
+              .filter((shape, shapeIndex) => {
+                const currentLayer = getShapeLayer(shape.id);
+                return currentLayer?.id === layer.id;
+              })
+              .map((shape, shapeIndex) => {
+                const originalIndex = shapes.findIndex(
+                  (s) => s.id === shape.id
+                );
+                return (
+                  <ShapeComponent
+                    key={shape.id}
+                    shapeProps={{
+                      ...shape,
+                      // Adjust position relative to layer
+                      x: shape.x - layer.x,
+                      y: shape.y - layer.y,
+                    }}
+                    isSelected={shape.id === selectedId}
+                    isHovered={shape.id === hoveredId}
+                    isDragging={shape.id === draggingId}
+                    stageScale={stageScale}
+                    onSelect={() => {
+                      selectShape(shape.id);
+                    }}
+                    onChange={(newAttrs) => {
+                      // Adjust position back to world coordinates
+                      const worldAttrs = {
+                        ...newAttrs,
+                        x: newAttrs.x + layer.x,
+                        y: newAttrs.y + layer.y,
+                      };
+                      handleShapeChange(originalIndex, worldAttrs);
+                    }}
+                    onHover={(hovered) => handleShapeHover(shape.id, hovered)}
+                    onDragStart={() => handleDragStart(shape.id)}
+                    onDragEnd={() => handleDragEnd(shape.id)}
+                  />
+                );
+              })}
+          </LayerComponent>
+        ))}
       </Stage>
     </div>
   );

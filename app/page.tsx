@@ -1623,36 +1623,71 @@ const App: React.FC = () => {
     setLayers(newLayers);
   };
 
-  const addRectangleToSelectedLayer = () => {
+  const addShapeToSelectedLayer = (shapeType: "rect" | "circle" | "star") => {
     if (!selectedId) return;
 
     // Check if selected item is a layer
     const selectedLayer = layers.find((layer) => layer.id === selectedId);
     if (!selectedLayer) return;
 
-    // Create new rectangle shape centered within the layer
-    const newRectId = `rect_${Date.now()}`;
+    // Create new shape ID
+    const newShapeId = `${shapeType}_${Date.now()}`;
 
-    const newRect: RectShape = {
-      id: newRectId,
-      type: "rect",
-      // Position at layer center - both layer and rectangle use offsetX/offsetY for centering
-      x: selectedLayer.x,
-      y: selectedLayer.y,
-      width: 100,
-      height: 80,
-      fill: "#4F46E5",
-      draggable: true,
-    };
+    let newShape: Shape;
+
+    // Create shape based on type
+    switch (shapeType) {
+      case "rect":
+        newShape = {
+          id: newShapeId,
+          type: "rect",
+          x: selectedLayer.x,
+          y: selectedLayer.y,
+          width: 100,
+          height: 80,
+          fill: "#4F46E5",
+          draggable: true,
+        } as RectShape;
+        break;
+
+      case "circle":
+        newShape = {
+          id: newShapeId,
+          type: "circle",
+          x: selectedLayer.x,
+          y: selectedLayer.y,
+          width: 100,
+          height: 100,
+          fill: "#EF4444",
+          draggable: true,
+        } as CircleShape;
+        break;
+
+      case "star":
+        newShape = {
+          id: newShapeId,
+          type: "star",
+          x: selectedLayer.x,
+          y: selectedLayer.y,
+          width: 100,
+          height: 100,
+          numPoints: 5,
+          innerRadius: 17,
+          outerRadius: 40,
+          fill: "#F59E0B",
+          draggable: true,
+        } as StarShape;
+        break;
+    }
 
     // Add shape to shapes array
-    setShapes([...shapes, newRect]);
+    setShapes([...shapes, newShape]);
 
     // Add shape to layer's children
-    addShapeToLayer(newRectId, selectedLayer.id);
+    addShapeToLayer(newShapeId, selectedLayer.id);
 
-    // Select the newly created rectangle
-    selectShape(newRectId);
+    // Select the newly created shape
+    selectShape(newShapeId);
   };
 
   return (
@@ -1688,15 +1723,29 @@ const App: React.FC = () => {
                   isLayerSelected() ? "cursor-pointer" : "cursor-not-allowed"
                 }`}
                 style={{ opacity: isLayerSelected() ? 1 : 0.5 }}
-                onClick={addRectangleToSelectedLayer}
+                onClick={() => addShapeToSelectedLayer("rect")}
                 disabled={!isLayerSelected()}
               >
                 <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
-              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+              <button
+                className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
+                  isLayerSelected() ? "cursor-pointer" : "cursor-not-allowed"
+                }`}
+                style={{ opacity: isLayerSelected() ? 1 : 0.5 }}
+                onClick={() => addShapeToSelectedLayer("circle")}
+                disabled={!isLayerSelected()}
+              >
                 <Circle className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
-              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+              <button
+                className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
+                  isLayerSelected() ? "cursor-pointer" : "cursor-not-allowed"
+                }`}
+                style={{ opacity: isLayerSelected() ? 1 : 0.5 }}
+                onClick={() => addShapeToSelectedLayer("star")}
+                disabled={!isLayerSelected()}
+              >
                 <StarIcon className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">

@@ -345,7 +345,6 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
   children,
   stageScale,
 }) => {
-  const layerRef = useRef<Konva.Layer>(null);
   const rectRef = useRef<Konva.Rect>(null);
   const trRef = useRef<Konva.Transformer>(null);
 
@@ -492,7 +491,7 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
   };
 
   return (
-    <Layer ref={layerRef}>
+    <Layer draggable={true} width={layerProps.width} height={layerProps.height}>
       {/* Background rectangle to make layer visible */}
       <Rect
         ref={rectRef}
@@ -520,7 +519,7 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
             ? [3, 3]
             : undefined
         }
-        draggable={layerProps.draggable}
+        draggable={false}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={onSelect}
@@ -537,6 +536,23 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
         }}
         onTransformEnd={handleTransformEnd}
       />
+
+      {(() => {
+        const rectWidth = 100;
+        const rectHeight = 100;
+        return (
+          <Rect
+            x={layerProps.x}
+            y={layerProps.y}
+            width={rectWidth}
+            height={rectHeight}
+            offsetX={rectWidth / 2}
+            offsetY={rectHeight / 2}
+            fill="red"
+            draggable={true}
+          />
+        );
+      })()}
 
       {/* Children shapes without group wrapper */}
       {children}
@@ -1368,17 +1384,6 @@ const initialShapes: Shape[] = [
     fill: "#F59E0B",
     draggable: true,
   },
-  // Sample rectangle inside the layer
-  {
-    id: "layerRect1",
-    type: "rect",
-    x: 130,
-    y: 280,
-    width: 40,
-    height: 30,
-    fill: "#10B981",
-    draggable: true,
-  },
 ];
 
 // Initial layers (renamed from initialGroups)
@@ -1386,10 +1391,10 @@ const initialLayers: LayerContainer[] = [
   {
     id: "layer1",
     type: "layer",
-    x: 100,
-    y: 250,
-    width: 100,
-    height: 100,
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080,
     fill: "#ffffff",
     draggable: true,
     children: ["layerRect1"], // Add the sample rectangle to this layer

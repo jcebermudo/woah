@@ -20,6 +20,11 @@ import {
   Square,
   Star as StarIcon,
   Type,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // Define shape interfaces
@@ -1347,43 +1352,6 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
   );
 };
 
-// Initial shapes with different types
-const initialShapes: Shape[] = [
-  {
-    id: "rect1",
-    type: "rect",
-    x: 200,
-    y: 100,
-    width: 100,
-    height: 80,
-    fill: "#4F46E5",
-    draggable: true,
-  },
-  {
-    id: "circle1",
-    type: "circle",
-    x: 400,
-    y: 200,
-    width: 100,
-    height: 100,
-    fill: "#EF4444",
-    draggable: true,
-  },
-  {
-    id: "star1",
-    type: "star",
-    x: 600,
-    y: 150,
-    width: 100,
-    height: 100,
-    numPoints: 5,
-    innerRadius: 17,
-    outerRadius: 40,
-    fill: "#F59E0B",
-    draggable: true,
-  },
-];
-
 // Initial layers (renamed from initialGroups)
 const initialLayers: LayerContainer[] = [
   {
@@ -1400,8 +1368,142 @@ const initialLayers: LayerContainer[] = [
   },
 ];
 
+// Layer Panel Component
+interface LayerPanelProps {
+  layers: LayerContainer[];
+  shapes: Shape[];
+  selectedId: string | null;
+  onSelectLayer: (id: string) => void;
+  onSelectShape: (id: string) => void;
+  getShapeLayer: (shapeId: string) => LayerContainer | null;
+}
+
+const LayerPanel: React.FC<LayerPanelProps> = ({
+  layers,
+  shapes,
+  selectedId,
+  onSelectLayer,
+  onSelectShape,
+  getShapeLayer,
+}) => {
+  const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
+
+  const toggleLayerExpansion = (layerId: string) => {
+    const newExpanded = new Set(expandedLayers);
+    if (newExpanded.has(layerId)) {
+      newExpanded.delete(layerId);
+    } else {
+      newExpanded.add(layerId);
+    }
+    setExpandedLayers(newExpanded);
+  };
+
+  const getShapeIcon = (shape: Shape) => {
+    switch (shape.type) {
+      case "rect":
+        return <Square className="w-4 h-4" />;
+      case "circle":
+        return <Circle className="w-4 h-4" />;
+      case "star":
+        return <StarIcon className="w-4 h-4" />;
+      default:
+        return <Square className="w-4 h-4" />;
+    }
+  };
+
+  const getShapeName = (shape: Shape) => {
+    switch (shape.type) {
+      case "rect":
+        return "Rectangle";
+      case "circle":
+        return "Circle";
+      case "star":
+        return "Star";
+      default:
+        return "Shape";
+    }
+  };
+
+  // Get ungrouped shapes (not in any layer)
+  const ungroupedShapes = shapes.filter((shape) => !getShapeLayer(shape.id));
+
+  return (
+    <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
+      {/* Render layers */}
+      {layers.map((layer) => {
+        const isExpanded = expandedLayers.has(layer.id);
+        const layerShapes = shapes.filter((shape) =>
+          layer.children.includes(shape.id)
+        );
+
+        return (
+          <div key={layer.id} className="space-y-1">
+            {/* Layer header */}
+            <div
+              className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
+                selectedId === layer.id
+                  ? "bg-blue-100 border-l-2 border-blue-500"
+                  : ""
+              }`}
+              onClick={() => onSelectLayer(layer.id)}
+            >
+              <button
+                className="w-4 h-4 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleLayerExpansion(layer.id);
+                }}
+              >
+                {layerShapes.length > 0 ? (
+                  isExpanded ? (
+                    <ChevronDown className="w-3 h-3" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3" />
+                  )
+                ) : (
+                  <div className="w-3 h-3" />
+                )}
+              </button>
+              <Layers className="w-4 h-4 text-gray-600" />
+              <span className="text-sm text-gray-700 flex-1">
+                Layer {layer.id.replace("layer", "")}
+              </span>
+              <Eye className="w-3 h-3 text-gray-400" />
+            </div>
+
+            {/* Layer children */}
+            {isExpanded && layerShapes.length > 0 && (
+              <div className="ml-6 space-y-1">
+                {layerShapes.map((shape) => (
+                  <div
+                    key={shape.id}
+                    className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
+                      selectedId === shape.id
+                        ? "bg-blue-100 border-l-2 border-blue-500"
+                        : ""
+                    }`}
+                    onClick={() => onSelectShape(shape.id)}
+                  >
+                    <div className="w-4 h-4 flex items-center justify-center text-gray-500">
+                      {getShapeIcon(shape)}
+                    </div>
+                    <span className="text-sm text-gray-700 flex-1">
+                      {getShapeName(shape)}
+                    </span>
+                    <Eye className="w-3 h-3 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const App: React.FC = () => {
-  const [shapes, setShapes] = useState<Shape[]>(initialShapes);
+  const [shapes, setShapes] = useState<Shape[]>([]);
   const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
   const [selectedId, selectShape] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -1691,9 +1793,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F2F1F3] min-h-screen relative">
+    <div className="bg-[#F2F1F3] h-screen overflow-hidden">
       {/* Toolbar */}
-      <div className="absolute top-0 left-0 w-full bg-white border-b-1 border-[#E3E3E3] z-10 p-[15px]">
+      <div className="absolute top-0 left-0 w-full bg-white border-b border-[#E3E3E3] z-20 p-[15px]">
         <div className="flex flex-row items-center justify-between h-full w-full gap-[10px]">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -1764,9 +1866,21 @@ const App: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Sidebar */}
+      <div className="absolute top-0 left-0 w-[250px] h-screen bg-white border-r border-[#E3E3E3] z-10">
+        <LayerPanel
+          layers={layers}
+          shapes={shapes}
+          selectedId={selectedId}
+          onSelectLayer={(id) => selectShape(id)}
+          onSelectShape={(id) => selectShape(id)}
+          getShapeLayer={(id) => getShapeLayer(id)}
+        />
+      </div>
       <Stage
-        width={dimensions.width}
-        height={dimensions.height}
+        width={dimensions.width - 250}
+        height={dimensions.height - 70}
+        style={{ marginLeft: "250px", marginTop: "70px" }}
         onMouseDown={handleStageMouseDown}
         onMouseMove={handleStageMouseMove}
         onMouseUp={handleStageMouseUp}
@@ -1776,37 +1890,6 @@ const App: React.FC = () => {
         x={stageX}
         y={stageY}
       >
-        {/* Base layer for ungrouped shapes */}
-        <Layer>
-          {/* Render ungrouped shapes */}
-          {shapes
-            .filter((shape) => !getShapeLayer(shape.id))
-            .map((shape, i) => {
-              const originalIndex = shapes.findIndex((s) => s.id === shape.id);
-              return (
-                <ShapeComponent
-                  key={shape.id}
-                  shapeProps={shape}
-                  isSelected={shape.id === selectedId}
-                  isHovered={shape.id === hoveredId}
-                  isDragging={shape.id === draggingId}
-                  stageScale={stageScale}
-                  worldX={shape.x}
-                  worldY={shape.y}
-                  onSelect={() => {
-                    selectShape(shape.id);
-                  }}
-                  onChange={(newAttrs) =>
-                    handleShapeChange(originalIndex, newAttrs)
-                  }
-                  onHover={(hovered) => handleShapeHover(shape.id, hovered)}
-                  onDragStart={() => handleDragStart(shape.id)}
-                  onDragEnd={() => handleDragEnd(shape.id)}
-                />
-              );
-            })}
-        </Layer>
-
         {/* Render layer containers as separate layers */}
         {layers.map((layer, i) => (
           <LayerComponent

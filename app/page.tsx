@@ -12,7 +12,7 @@ import {
   Group,
 } from "react-konva";
 import Konva from "konva";
-import { Download, Frame, Square, Type } from "lucide-react";
+import { Circle, Download, Frame, Image, Square, Star as StarIcon, Type } from "lucide-react";
 
 // Define shape interfaces
 interface BaseShape {
@@ -1635,6 +1635,15 @@ const App: React.FC = () => {
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
                 <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+              </button>
+              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+                <Circle className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+              </button>
+              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+                <StarIcon className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+              </button>
+              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+                <Image className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
             </div>
           </div>

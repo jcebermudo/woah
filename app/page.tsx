@@ -12,7 +12,15 @@ import {
   Group,
 } from "react-konva";
 import Konva from "konva";
-import { Circle, Download, Frame, Image, Square, Star as StarIcon, Type } from "lucide-react";
+import {
+  Circle,
+  Download,
+  Frame,
+  Image,
+  Square,
+  Star as StarIcon,
+  Type,
+} from "lucide-react";
 
 // Define shape interfaces
 interface BaseShape {
@@ -1587,6 +1595,13 @@ const App: React.FC = () => {
     return layers.find((layer) => layer.children.includes(shapeId)) || null;
   };
 
+  // Helper function to check if a layer is currently selected
+  const isLayerSelected = (): boolean => {
+    if (!selectedId) return false;
+    console.log(selectedId);
+    return layers.some((layer) => layer.id === selectedId);
+  };
+
   // Function to add a shape to a layer
   const addShapeToLayer = (shapeId: string, layerId: string) => {
     const newLayers = layers.map((layer) => {
@@ -1633,7 +1648,10 @@ const App: React.FC = () => {
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
                 <Type className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
-              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+              <button
+                className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]"
+                style={{ opacity: isLayerSelected() ? 1 : 0.5 }}
+              >
                 <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">

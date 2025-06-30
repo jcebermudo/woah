@@ -544,7 +544,16 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
       />
 
       {/* Children shapes now rendered inside a group so they inherit the layer's position and rotation */}
-      <Group x={layerProps.x} y={layerProps.y}>
+      <Group
+        x={layerProps.x}
+        y={layerProps.y}
+        clip={{
+          x: -layerProps.width / 2,
+          y: -layerProps.height / 2,
+          width: layerProps.width,
+          height: layerProps.height,
+        }}
+      >
         {children}
       </Group>
 

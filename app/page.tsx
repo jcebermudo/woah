@@ -78,6 +78,8 @@ interface ShapeComponentProps {
   onDragStart: () => void;
   onDragEnd: () => void;
   stageScale: number;
+  worldX: number;
+  worldY: number;
 }
 
 interface LayerComponentProps {
@@ -194,14 +196,16 @@ const SideAnchor: React.FC<SideAnchorProps> = ({
       onDragStart={(e) => {
         isDragging.current = true;
         document.body.style.cursor = getCursor();
-        const pos = e.target.getStage()?.getPointerPosition();
+        const layer = e.target.getLayer();
+        const pos = layer?.getRelativePointerPosition();
         if (pos) {
           dragStartPos.current = { x: pos.x, y: pos.y };
         }
       }}
       onDragMove={(e) => {
         document.body.style.cursor = getCursor();
-        const pos = e.target.getStage()?.getPointerPosition();
+        const layer = e.target.getLayer();
+        const pos = layer?.getRelativePointerPosition();
         if (pos) {
           const deltaX = pos.x - dragStartPos.current.x;
           const deltaY = pos.y - dragStartPos.current.y;
@@ -284,7 +288,8 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
         document.body.style.cursor = "crosshair";
 
         // Store the initial angle and rotation when drag starts
-        const pos = e.target.getStage()?.getPointerPosition();
+        const layer = e.target.getLayer();
+        const pos = layer?.getRelativePointerPosition();
         if (pos) {
           startAngle.current = Math.atan2(
             pos.y - groupCenterY,
@@ -294,7 +299,8 @@ const RotationAnchor: React.FC<RotationAnchorProps> = ({
         }
       }}
       onDragMove={(e) => {
-        const pos = e.target.getStage()?.getPointerPosition();
+        const layer = e.target.getLayer();
+        const pos = layer?.getRelativePointerPosition();
         if (pos) {
           // Calculate current angle
           const currentAngle = Math.atan2(
@@ -537,25 +543,10 @@ const LayerComponent: React.FC<LayerComponentProps> = ({
         onTransformEnd={handleTransformEnd}
       />
 
-      {(() => {
-        const rectWidth = 100;
-        const rectHeight = 100;
-        return (
-          <Rect
-            x={layerProps.x}
-            y={layerProps.y}
-            width={rectWidth}
-            height={rectHeight}
-            offsetX={rectWidth / 2}
-            offsetY={rectHeight / 2}
-            fill="red"
-            draggable={true}
-          />
-        );
-      })()}
-
-      {/* Children shapes without group wrapper */}
-      {children}
+      {/* Children shapes now rendered inside a group so they inherit the layer's position and rotation */}
+      <Group x={layerProps.x} y={layerProps.y}>
+        {children}
+      </Group>
 
       {/* Custom Side Anchors */}
       {isSelected && (
@@ -727,6 +718,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
   onDragStart,
   onDragEnd,
   stageScale,
+  worldX,
+  worldY,
 }) => {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -1230,6 +1223,10 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
           {(() => {
             const { width, height } = getShapeDimensions();
 
+            // Center of shape in local coordinates (relative to parent group)
+            const centerX = shapeProps.x;
+            const centerY = shapeProps.y;
+
             // Calculate rotated corner positions
             const rotation = ((shapeProps.rotation || 0) * Math.PI) / 180;
             const cos = Math.cos(rotation);
@@ -1237,26 +1234,18 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
             const halfWidth = width / 2;
             const halfHeight = height / 2;
 
-            // Calculate actual corner positions after rotation
-            const topLeftX =
-              shapeProps.x + (-halfWidth * cos - -halfHeight * sin);
-            const topLeftY =
-              shapeProps.y + (-halfWidth * sin + -halfHeight * cos);
+            // Calculate actual corner positions after rotation in world coordinates
+            const topLeftX = centerX + (-halfWidth * cos - -halfHeight * sin);
+            const topLeftY = centerY + (-halfWidth * sin + -halfHeight * cos);
 
-            const topRightX =
-              shapeProps.x + (halfWidth * cos - -halfHeight * sin);
-            const topRightY =
-              shapeProps.y + (halfWidth * sin + -halfHeight * cos);
+            const topRightX = centerX + (halfWidth * cos - -halfHeight * sin);
+            const topRightY = centerY + (halfWidth * sin + -halfHeight * cos);
 
-            const bottomLeftX =
-              shapeProps.x + (-halfWidth * cos - halfHeight * sin);
-            const bottomLeftY =
-              shapeProps.y + (-halfWidth * sin + halfHeight * cos);
+            const bottomLeftX = centerX + (-halfWidth * cos - halfHeight * sin);
+            const bottomLeftY = centerY + (-halfWidth * sin + halfHeight * cos);
 
-            const bottomRightX =
-              shapeProps.x + (halfWidth * cos - halfHeight * sin);
-            const bottomRightY =
-              shapeProps.y + (halfWidth * sin + halfHeight * cos);
+            const bottomRightX = centerX + (halfWidth * cos - halfHeight * sin);
+            const bottomRightY = centerY + (halfWidth * sin + halfHeight * cos);
 
             return (
               <>
@@ -1264,8 +1253,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   x={topLeftX}
                   y={topLeftY}
                   corner="top-left"
-                  groupCenterX={shapeProps.x}
-                  groupCenterY={shapeProps.y}
+                  groupCenterX={worldX}
+                  groupCenterY={worldY}
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
@@ -1276,8 +1265,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   x={topRightX}
                   y={topRightY}
                   corner="top-right"
-                  groupCenterX={shapeProps.x}
-                  groupCenterY={shapeProps.y}
+                  groupCenterX={worldX}
+                  groupCenterY={worldY}
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
@@ -1288,8 +1277,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   x={bottomLeftX}
                   y={bottomLeftY}
                   corner="bottom-left"
-                  groupCenterX={shapeProps.x}
-                  groupCenterY={shapeProps.y}
+                  groupCenterX={worldX}
+                  groupCenterY={worldY}
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
@@ -1300,8 +1289,8 @@ const ShapeComponent: React.FC<ShapeComponentProps> = ({
                   x={bottomRightX}
                   y={bottomRightY}
                   corner="bottom-right"
-                  groupCenterX={shapeProps.x}
-                  groupCenterY={shapeProps.y}
+                  groupCenterX={worldX}
+                  groupCenterY={worldY}
                   onRotate={handleRotation}
                   visible={true}
                   stageScale={stageScale}
@@ -1391,13 +1380,13 @@ const initialLayers: LayerContainer[] = [
   {
     id: "layer1",
     type: "layer",
-    x: 0,
-    y: 0,
-    width: 1920,
-    height: 1080,
+    x: 400,
+    y: 300,
+    width: 600,
+    height: 400,
     fill: "#ffffff",
     draggable: true,
-    children: ["layerRect1"], // Add the sample rectangle to this layer
+    children: [], // No initial children
     showBorder: true,
   },
 ];
@@ -1625,6 +1614,38 @@ const App: React.FC = () => {
     setLayers(newLayers);
   };
 
+  const addRectangleToSelectedLayer = () => {
+    if (!selectedId) return;
+
+    // Check if selected item is a layer
+    const selectedLayer = layers.find((layer) => layer.id === selectedId);
+    if (!selectedLayer) return;
+
+    // Create new rectangle shape centered within the layer
+    const newRectId = `rect_${Date.now()}`;
+
+    const newRect: RectShape = {
+      id: newRectId,
+      type: "rect",
+      // Position at layer center - both layer and rectangle use offsetX/offsetY for centering
+      x: selectedLayer.x,
+      y: selectedLayer.y,
+      width: 100,
+      height: 80,
+      fill: "#4F46E5",
+      draggable: true,
+    };
+
+    // Add shape to shapes array
+    setShapes([...shapes, newRect]);
+
+    // Add shape to layer's children
+    addShapeToLayer(newRectId, selectedLayer.id);
+
+    // Select the newly created rectangle
+    selectShape(newRectId);
+  };
+
   return (
     <div className="bg-[#F2F1F3] min-h-screen relative">
       {/* Toolbar */}
@@ -1654,8 +1675,12 @@ const App: React.FC = () => {
                 <Type className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
               <button
-                className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]"
+                className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
+                  isLayerSelected() ? "cursor-pointer" : "cursor-not-allowed"
+                }`}
                 style={{ opacity: isLayerSelected() ? 1 : 0.5 }}
+                onClick={addRectangleToSelectedLayer}
+                disabled={!isLayerSelected()}
               >
                 <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
               </button>
@@ -1708,6 +1733,8 @@ const App: React.FC = () => {
                   isHovered={shape.id === hoveredId}
                   isDragging={shape.id === draggingId}
                   stageScale={stageScale}
+                  worldX={shape.x}
+                  worldY={shape.y}
                   onSelect={() => {
                     selectShape(shape.id);
                   }}
@@ -1762,6 +1789,8 @@ const App: React.FC = () => {
                     isHovered={shape.id === hoveredId}
                     isDragging={shape.id === draggingId}
                     stageScale={stageScale}
+                    worldX={shape.x}
+                    worldY={shape.y}
                     onSelect={() => {
                       selectShape(shape.id);
                     }}

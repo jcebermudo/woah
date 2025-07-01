@@ -27,6 +27,9 @@ import {
   EyeOff,
 } from "lucide-react";
 
+import { Swapy } from "swapy";
+import { createSwapy } from "swapy";
+
 // Define shape interfaces
 interface BaseShape {
   id: string;
@@ -1424,17 +1427,22 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
     }
   };
 
-  // Get ungrouped shapes (not in any layer)
-  const ungroupedShapes = shapes.filter((shape) => !getShapeLayer(shape.id));
-
   return (
-    <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
+    <div
+      className="h-screen pt-[80px] px-[10px] overflow-y-auto"
+    >
       {/* Render layers */}
       {layers.map((layer) => {
         const isExpanded = expandedLayers.has(layer.id);
-        const layerShapes = shapes.filter((shape) =>
-          layer.children.includes(shape.id)
-        );
+        const layerShapes = shapes
+          .filter((shape) => layer.children.includes(shape.id))
+          .sort((a, b) => {
+            // Sort by the order in the layer.children array, but reverse it
+            // so the last added (topmost) shapes appear first in the layer panel
+            const indexA = layer.children.indexOf(a.id);
+            const indexB = layer.children.indexOf(b.id);
+            return indexB - indexA; // Reverse order: later items first
+          });
 
         return (
           <div key={layer.id} className="space-y-1">
@@ -1815,10 +1823,10 @@ const App: React.FC = () => {
             </span>
             <div className="flex flex-row gap-[5px]">
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
-                <Frame className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <Frame className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
-                <Type className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <Type className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button
                 className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
@@ -1828,7 +1836,7 @@ const App: React.FC = () => {
                 onClick={() => addShapeToSelectedLayer("rect")}
                 disabled={!isLayerSelected()}
               >
-                <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <Square className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button
                 className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
@@ -1838,7 +1846,7 @@ const App: React.FC = () => {
                 onClick={() => addShapeToSelectedLayer("circle")}
                 disabled={!isLayerSelected()}
               >
-                <Circle className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <Circle className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button
                 className={`flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3] ${
@@ -1848,10 +1856,10 @@ const App: React.FC = () => {
                 onClick={() => addShapeToSelectedLayer("star")}
                 disabled={!isLayerSelected()}
               >
-                <StarIcon className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <StarIcon className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
-                <Image className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[3px]" />
+                <Image className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
             </div>
           </div>
@@ -1860,7 +1868,7 @@ const App: React.FC = () => {
               {Math.round(stageScale * 100)}%
             </span>
             <span className="flex gap-[10px] items-center cursor-pointer text-[16px] font-semibold text-white px-[17px] py-[7px] bg-[#29A9FF] rounded-[12px]">
-              <Download className="w-[16px] h-[16px] text-white stroke-[3px]" />
+              <Download className="w-[16px] h-[16px] text-white stroke-[2.5px]" />
               Export
             </span>
           </div>

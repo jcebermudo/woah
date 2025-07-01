@@ -1425,9 +1425,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
   };
 
   return (
-    <div
-      className="h-screen pt-[80px] px-[10px] overflow-y-auto"
-    >
+    <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
       {/* Render layers */}
       {layers.map((layer) => {
         const isExpanded = expandedLayers.has(layer.id);
@@ -1797,6 +1795,41 @@ const App: React.FC = () => {
     selectShape(newShapeId);
   };
 
+  const addNewLayer = () => {
+    // Find the rightmost position of existing layers
+    let rightmostX = 0;
+    if (layers.length > 0) {
+      rightmostX = Math.max(
+        ...layers.map((layer) => layer.x + layer.width / 2)
+      );
+    }
+
+    // Create new layer ID
+    const newLayerId = `layer${layers.length + 1}`;
+
+    // Position the new layer 50px to the right of the rightmost layer
+    const newX = rightmostX + 50 + 1920 / 2; // Add half width to center the layer
+
+    const newLayer: LayerContainer = {
+      id: newLayerId,
+      type: "layer",
+      x: newX,
+      y: 300, // Default y position
+      width: 1920,
+      height: 1080,
+      fill: "#ffffff",
+      draggable: true,
+      children: [],
+      showBorder: true,
+    };
+
+    // Add the new layer to the layers array
+    setLayers([...layers, newLayer]);
+
+    // Select the newly created layer
+    selectShape(newLayerId);
+  };
+
   return (
     <div className="bg-[#F2F1F3] h-screen overflow-hidden">
       {/* Toolbar */}
@@ -1819,7 +1852,10 @@ const App: React.FC = () => {
               Untitled
             </span>
             <div className="flex flex-row gap-[5px]">
-              <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">
+              <button
+                className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]"
+                onClick={addNewLayer}
+              >
                 <Frame className="text-[#6A6A6A] w-[20px] h-[20px] stroke-[2.5px]" />
               </button>
               <button className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[12px] bg-[#F2F1F3]">

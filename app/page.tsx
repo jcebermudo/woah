@@ -27,9 +27,6 @@ import {
   EyeOff,
 } from "lucide-react";
 
-import { Swapy } from "swapy";
-import { createSwapy } from "swapy";
-
 // Define shape interfaces
 interface BaseShape {
   id: string;

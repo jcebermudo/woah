@@ -2,6 +2,8 @@
 
 import { type Shape, type LayerContainer } from "@/types/canvasElements";
 import { ChevronDown, ChevronRight, Circle, Eye, Layers, Square, StarIcon } from "lucide-react";
+import Draggable from "../dnd/Draggable";
+import { DndContext } from "@dnd-kit/core";
 
 import { useState } from "react";
 
@@ -63,8 +65,10 @@ export default function LayerPanel({
 
   
   return (
+    
     <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
       {/* Render layers */}
+      
       {layers.map((layer) => {
         const isExpanded = expandedLayers.has(layer.id);
         const layerShapes = shapes
@@ -114,31 +118,39 @@ export default function LayerPanel({
 
             {/* Layer children */}
             {isExpanded && layerShapes.length > 0 && (
-              <div className="ml-6 space-y-1">
-                {layerShapes.map((shape) => (
-                  <div
-                    key={shape.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
-                      selectedId === shape.id
-                        ? "bg-blue-100 border-l-2 border-blue-500"
-                        : ""
-                    }`}
-                    onClick={() => onSelectShape(shape.id)}
-                  >
-                    <div className="w-4 h-4 flex items-center justify-center text-gray-500">
-                      {getShapeIcon(shape)}
-                    </div>
-                    <span className="text-sm text-gray-700 flex-1">
-                      {getShapeName(shape)}
-                    </span>
-                    <Eye className="w-3 h-3 text-gray-400" />
-                  </div>
-                ))}
+              <div className="ml-6 flex flex-col">
+                <DndContext>
+                  {layerShapes.map((shape) => (
+                    <Draggable id={shape.id} key={shape.id}>
+                      <div
+                        key={shape.id}
+                        className={`flex flex-row items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
+                          selectedId === shape.id
+                            ? "bg-blue-100 border-l-2 border-blue-500"
+                            : ""
+                        }`}
+                        onClick={() => onSelectShape(shape.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 flex items-center justify-center text-gray-500">
+                            {getShapeIcon(shape)}
+                          </div>
+                          <span className="text-sm text-gray-700 flex-1">
+                            {getShapeName(shape)}
+                          </span>
+                        </div>
+                        <Eye className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </Draggable>
+                  ))}
+                </DndContext>
               </div>
             )}
           </div>
         );
       })}
+      
     </div>
+    
   );
 }

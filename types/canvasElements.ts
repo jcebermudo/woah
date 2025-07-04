@@ -10,19 +10,19 @@ export interface BaseShape {
   rotation?: number;
 }
 
-interface RectShape extends BaseShape {
+export interface RectShape extends BaseShape {
   type: "rect";
   width: number;
   height: number;
 }
 
-interface CircleShape extends BaseShape {
+export interface CircleShape extends BaseShape {
   type: "circle";
   width: number;
   height: number;
 }
 
-interface StarShape extends BaseShape {
+export interface StarShape extends BaseShape {
   type: "star";
   width: number;
   height: number;
@@ -31,9 +31,9 @@ interface StarShape extends BaseShape {
   outerRadius: number;
 }
 
-type Shape = RectShape | CircleShape | StarShape;
+export type Shape = RectShape | CircleShape | StarShape;
 
-interface ShapeComponentProps {
+export interface ShapeComponentProps {
   shapeProps: Shape;
   isSelected: boolean;
   isHovered: boolean;
@@ -51,7 +51,7 @@ interface ShapeComponentProps {
 // LAYER TYPES
 
 // Define layer interface (renamed from GroupContainer)
-interface LayerContainer extends BaseShape {
+export interface LayerContainer extends BaseShape {
   type: "layer";
   width: number;
   height: number;
@@ -60,9 +60,9 @@ interface LayerContainer extends BaseShape {
   showBorder: boolean;
 }
 
-type Container = LayerContainer;
+export type Container = LayerContainer;
 
-interface LayerComponentProps {
+export interface LayerComponentProps {
   layerProps: LayerContainer;
   isSelected: boolean;
   isHovered: boolean;

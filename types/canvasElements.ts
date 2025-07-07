@@ -75,4 +75,3 @@ export interface LayerComponentProps {
   children: React.ReactNode;
   stageScale: number;
 }
-

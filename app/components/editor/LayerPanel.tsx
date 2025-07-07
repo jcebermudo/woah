@@ -1,7 +1,15 @@
 "use client";
 
 import { type Shape, type LayerContainer } from "@/types/canvasElements";
-import { ChevronDown, ChevronRight, Circle, Eye, Layers, Square, StarIcon } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Eye,
+  Layers,
+  Square,
+  StarIcon,
+} from "lucide-react";
 import Draggable from "../dnd/SortableItem";
 import { DndContext } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
@@ -26,7 +34,6 @@ export default function LayerPanel({
   onSelectShape,
   getShapeLayer,
 }: LayerPanelProps) {
-
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
 
   const toggleLayerExpansion = (layerId: string) => {
@@ -38,7 +45,7 @@ export default function LayerPanel({
     }
     setExpandedLayers(newExpanded);
   };
-  
+
   const getShapeIcon = (shape: Shape) => {
     switch (shape.type) {
       case "rect":
@@ -65,12 +72,10 @@ export default function LayerPanel({
     }
   };
 
-  
   return (
-    
     <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
       {/* Render layers */}
-      
+
       {layers.map((layer) => {
         const isExpanded = expandedLayers.has(layer.id);
         const layerShapes = shapes
@@ -153,8 +158,6 @@ export default function LayerPanel({
           </div>
         );
       })}
-      
     </div>
-    
   );
 }

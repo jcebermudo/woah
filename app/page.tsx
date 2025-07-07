@@ -384,7 +384,13 @@ const App: React.FC = () => {
         />
       </div>
       <div className="absolute top-0 right-0 w-[250px] h-screen bg-white border-l border-[#E3E3E3] z-10">
-        <PropertiesPanel />
+        <PropertiesPanel
+          selectedId={selectedId}
+          shapes={shapes}
+          layers={layers}
+          handleShapeChange={handleShapeChange}
+          handleLayerChange={handleLayerChange}
+        />
       </div>
       <InfiniteCanvas 
         dimensions={dimensions}

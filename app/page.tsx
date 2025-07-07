@@ -373,7 +373,7 @@ const App: React.FC = () => {
         stageScale={stageScale}
       />
       {/* Sidebar */}
-      <div className="absolute top-0 left-0 w-[250px] h-screen bg-white border-r border-[#E3E3E3] z-10">
+      <div className="absolute top-0 left-0 w-[250px] h-screen bg-[#232323] border-r border-[#474747] z-10">
         <LayerPanel
           layers={layers}
           shapes={shapes}

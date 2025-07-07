@@ -364,7 +364,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#F2F1F3] h-screen overflow-hidden">
+    <div className="bg-[#323232] h-screen overflow-hidden">
       {/* Toolbar */}
       <Toolbar
         addNewLayer={addNewLayer}
@@ -392,7 +392,7 @@ const App: React.FC = () => {
           handleLayerChange={handleLayerChange}
         />
       </div>
-      <InfiniteCanvas 
+      <InfiniteCanvas
         dimensions={dimensions}
         handleStageMouseDown={handleStageMouseDown}
         handleStageMouseMove={handleStageMouseMove}

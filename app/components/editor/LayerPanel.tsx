@@ -100,7 +100,7 @@ export default function LayerPanel({
           <div key={layer.id} className="">
             {/* Layer header */}
             <div
-              className={`flex items-center justify-start gap-[10px] p-[10px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 group ${
+              className={`flex items-center justify-start gap-[10px] p-[8px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 group ${
                 selectedId === layer.id ? "bg-[#383838]" : ""
               }`}
               onClick={() => onSelectLayer(layer.id)}
@@ -138,7 +138,7 @@ export default function LayerPanel({
 
             {/* Layer children */}
             {isExpanded && layerShapes.length > 0 && (
-              <div className="ml-[25px] flex flex-col">
+              <div className="ml-[27px] flex flex-col">
                 <DndContext sensors={sensors}>
                   <SortableContext items={layerShapes.map((shape) => shape.id)}>
                     {layerShapes.map((shape) => (
@@ -149,13 +149,14 @@ export default function LayerPanel({
                       >
                         <div
                           key={shape.id}
-                          className={`flex flex-row items-center justify-between p-[10px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 ${
-                            selectedId === shape.id ? "bg-[#383838]" : ""
+                          className={`group flex flex-row items-center justify-between p-[8px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 ${
+                            selectedId === shape.id ? "bg-[#383838]" : "bg-transparent"
                           }`}
                           onClick={() => onSelectShape(shape.id)}
                         >
                           <div className="flex items-center gap-[10px]">
-                            <div className="w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200">
+                            <div className={`w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200
+                              ${selectedId === shape.id ? "text-white" : "text-[#808080]"}`}>
                               {getShapeIcon(shape)}
                             </div>
                             <span className="text-[14px] text-white flex-1 mt-[1px]">

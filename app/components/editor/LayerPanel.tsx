@@ -5,7 +5,7 @@ import {
   ChevronDown,
   ChevronRight,
   Circle,
-  Eye,
+  Frame,
   Layers,
   Square,
   StarIcon,
@@ -73,7 +73,7 @@ export default function LayerPanel({
   };
 
   return (
-    <div className="h-screen pt-[80px] px-[10px] overflow-y-auto">
+    <div className="select-none h-screen pt-[70px] px-[10px] overflow-y-auto">
       {/* Render layers */}
 
       {layers.map((layer) => {
@@ -89,18 +89,16 @@ export default function LayerPanel({
           });
 
         return (
-          <div key={layer.id} className="space-y-1">
+          <div key={layer.id} className="">
             {/* Layer header */}
             <div
-              className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
-                selectedId === layer.id
-                  ? "bg-blue-100 border-l-2 border-blue-500"
-                  : ""
+              className={`flex items-center justify-start gap-[10px] p-[10px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 group ${
+                selectedId === layer.id ? "bg-[#383838]" : ""
               }`}
               onClick={() => onSelectLayer(layer.id)}
             >
               <button
-                className="w-4 h-4 flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="cursor-pointer w-4 h-4 flex items-center justify-center text-white hover:text-gray-700"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleLayerExpansion(layer.id);
@@ -108,46 +106,50 @@ export default function LayerPanel({
               >
                 {layerShapes.length > 0 ? (
                   isExpanded ? (
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="hover:text-white duration-200 w-[16px] h-[16px] text-[#808080] stroke-[2px]" />
                   ) : (
-                    <ChevronRight className="w-3 h-3" />
+                    <ChevronRight className="hover:text-white duration-200 w-[16px] h-[16px] text-[#808080] stroke-[2px]" />
                   )
                 ) : (
-                  <div className="w-3 h-3" />
+                  <ChevronRight className="hover:text-white duration-200 w-[16px] h-[16px] text-[#808080] stroke-[2px]" />
                 )}
               </button>
-              <Layers className="w-4 h-4 text-gray-600" />
-              <span className="text-sm text-gray-700 flex-1">
+              <Frame
+                className={`w-[16px] h-[16px] stroke-[2px] duration-200 ${
+                  selectedId === layer.id ||
+                  // Add hover effect by using group-hover if possible
+                  ""
+                } ${
+                  selectedId === layer.id ? "text-white" : "text-[#808080]"
+                } group-hover:text-white`}
+              />
+              <span className="text-[14px] text-white flex-1">
                 Layer {layer.id.replace("layer", "")}
               </span>
-              <Eye className="w-3 h-3 text-gray-400" />
             </div>
 
             {/* Layer children */}
             {isExpanded && layerShapes.length > 0 && (
-              <div className="ml-6 flex flex-col">
+              <div className="ml-[25px] flex flex-col">
                 <DndContext>
                   <SortableContext items={layerShapes.map((shape) => shape.id)}>
                     {layerShapes.map((shape) => (
                       <SortableItem id={shape.id} key={shape.id}>
                         <div
                           key={shape.id}
-                          className={`flex flex-row items-center justify-between px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100 ${
-                            selectedId === shape.id
-                              ? "bg-blue-100 border-l-2 border-blue-500"
-                              : ""
+                          className={`flex flex-row items-center justify-between p-[10px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 ${
+                            selectedId === shape.id ? "bg-[#383838]" : ""
                           }`}
                           onClick={() => onSelectShape(shape.id)}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 flex items-center justify-center text-gray-500">
+                          <div className="flex items-center gap-[10px]">
+                            <div className="w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200">
                               {getShapeIcon(shape)}
                             </div>
-                            <span className="text-sm text-gray-700 flex-1">
+                            <span className="text-[14px] text-white flex-1">
                               {getShapeName(shape)}
                             </span>
                           </div>
-                          <Eye className="w-3 h-3 text-gray-400" />
                         </div>
                       </SortableItem>
                     ))}

@@ -19,6 +19,7 @@ import LayerComponent from "./components/canvas elements/layerComponent";
 import ShapeComponent from "./components/canvas elements/shapeComponent";
 import { CircleShape, LayerContainer, RectShape, Shape, StarShape } from "@/types/canvasElements";
 import InfiniteCanvas from "./components/editor/InfiniteCanvas";
+import PropertiesPanel from "./components/editor/PropertiesPanel";
 
 
 // Initial layers (renamed from initialGroups)
@@ -381,6 +382,9 @@ const App: React.FC = () => {
           onSelectShape={(id) => selectShape(id)}
           getShapeLayer={(id) => getShapeLayer(id)}
         />
+      </div>
+      <div className="absolute top-0 right-0 w-[250px] h-screen bg-white border-l border-[#E3E3E3] z-10">
+        <PropertiesPanel />
       </div>
       <InfiniteCanvas 
         dimensions={dimensions}

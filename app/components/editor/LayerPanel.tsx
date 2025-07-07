@@ -11,7 +11,7 @@ import {
   StarIcon,
 } from "lucide-react";
 import Draggable from "../dnd/SortableItem";
-import { DndContext } from "@dnd-kit/core";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 
 import { useState } from "react";
@@ -35,6 +35,14 @@ export default function LayerPanel({
   getShapeLayer,
 }: LayerPanelProps) {
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    })
+  )
 
   const toggleLayerExpansion = (layerId: string) => {
     const newExpanded = new Set(expandedLayers);
@@ -123,7 +131,7 @@ export default function LayerPanel({
                   selectedId === layer.id ? "text-white" : "text-[#808080]"
                 } group-hover:text-white`}
               />
-              <span className="text-[14px] text-white flex-1">
+              <span className="text-[14px] text-white flex-1 mt-[1px]">
                 Layer {layer.id.replace("layer", "")}
               </span>
             </div>
@@ -131,10 +139,14 @@ export default function LayerPanel({
             {/* Layer children */}
             {isExpanded && layerShapes.length > 0 && (
               <div className="ml-[25px] flex flex-col">
-                <DndContext>
+                <DndContext sensors={sensors}>
                   <SortableContext items={layerShapes.map((shape) => shape.id)}>
                     {layerShapes.map((shape) => (
-                      <SortableItem id={shape.id} key={shape.id}>
+                      <SortableItem
+                        id={shape.id}
+                        key={shape.id}
+                        
+                      >
                         <div
                           key={shape.id}
                           className={`flex flex-row items-center justify-between p-[10px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 ${
@@ -146,7 +158,7 @@ export default function LayerPanel({
                             <div className="w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200">
                               {getShapeIcon(shape)}
                             </div>
-                            <span className="text-[14px] text-white flex-1">
+                            <span className="text-[14px] text-white flex-1 mt-[1px]">
                               {getShapeName(shape)}
                             </span>
                           </div>

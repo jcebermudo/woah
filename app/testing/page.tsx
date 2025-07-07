@@ -49,7 +49,7 @@ export default function Testing() {
 
       return handles;
     },
-    []
+    [],
   );
 
   const draw = useCallback(() => {
@@ -97,7 +97,7 @@ export default function Testing() {
         rectangle.x - 1,
         rectangle.y - 1,
         rectangle.width + 2,
-        rectangle.height + 2
+        rectangle.height + 2,
       );
       ctx.setLineDash([]);
 
@@ -141,7 +141,7 @@ export default function Testing() {
       }
       return null;
     },
-    [rectangle, getTransformHandles]
+    [rectangle, getTransformHandles],
   );
 
   const hitTestRectangle = useCallback(
@@ -153,7 +153,7 @@ export default function Testing() {
         mousePos.y <= rectangle.y + rectangle.height
       );
     },
-    [rectangle]
+    [rectangle],
   );
 
   const handleMouseDown = useCallback(
@@ -175,7 +175,7 @@ export default function Testing() {
         setRectangle((prev) => ({ ...prev, selected: false }));
       }
     },
-    [rectangle, getMousePos, hitTestHandle, hitTestRectangle]
+    [rectangle, getMousePos, hitTestHandle, hitTestRectangle],
   );
 
   const handleMouseMove = useCallback(
@@ -270,7 +270,7 @@ export default function Testing() {
       getMousePos,
       hitTestHandle,
       hitTestRectangle,
-    ]
+    ],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -286,7 +286,7 @@ export default function Testing() {
         setRectangle((prev) => ({ ...prev, selected: true }));
       }
     },
-    [getMousePos, hitTestRectangle]
+    [getMousePos, hitTestRectangle],
   );
 
   useEffect(() => {

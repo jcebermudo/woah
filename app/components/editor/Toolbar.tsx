@@ -43,9 +43,7 @@ export default function Toolbar({
         </div>
         <div className="flex flex-row">
           <button
-            className={`flex items-center justify-center w-[40px] h-[40px] rounded-[10px] hover:bg-[#383838] duration-200 ${
-              isLayerSelected() ? "cursor-pointer" : "cursor-not-allowed"
-            }`}
+            className="cursor-pointer flex items-center justify-center w-[40px] h-[40px] rounded-[10px] hover:bg-[#383838] duration-200"
             onClick={addNewLayer}
           >
             <Frame className="text-white w-[18px] h-[18px] stroke-[2px]" />

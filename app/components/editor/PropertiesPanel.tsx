@@ -28,9 +28,9 @@ export default function PropertiesPanel({
   }
 
   return (
-    <div className="h-screen pt-[70px] overflow-y-auto">
-      <div className="select-none flex flex-row justify-start items-center border-y border-[#E0E0E0] py-[15px] px-[15px]">
-        <span className="text-black">{capitalizedType}</span>
+    <div className="h-screen pt-[60px] overflow-y-auto">
+      <div className="select-none flex flex-row justify-start items-center border-y border-[#474747] py-[15px] px-[15px]">
+        <span className="text-white font-medium">{capitalizedType}</span>
       </div>
       {selectedLayer && (
         <div className="select-none flex flex-row gap-4 border-b border-[#E0E0E0] py-[15px] px-[15px]">

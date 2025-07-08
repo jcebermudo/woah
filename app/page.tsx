@@ -15,8 +15,6 @@ import Konva from "konva";
 
 import LayerPanel from "@/app/components/editor/LayerPanel";
 import Toolbar from "@/app/components/editor/Toolbar";
-import LayerComponent from "./components/canvas elements/layerComponent";
-import ShapeComponent from "./components/canvas elements/shapeComponent";
 import { CircleShape, LayerContainer, RectShape, Shape, StarShape } from "@/types/canvasElements";
 import InfiniteCanvas from "./components/editor/InfiniteCanvas";
 import PropertiesPanel from "./components/editor/PropertiesPanel";
@@ -41,7 +39,7 @@ const initialLayers: LayerContainer[] = [
 const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
-  const [selectedId, selectShape] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({
@@ -166,7 +164,7 @@ const App: React.FC = () => {
     // Deselect when clicked on empty area
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
-      selectShape(null);
+      setSelectedIds([]);
     }
   };
 
@@ -238,9 +236,9 @@ const App: React.FC = () => {
 
   // Helper function to check if a layer is currently selected
   const isLayerSelected = (): boolean => {
-    if (!selectedId) return false;
-    console.log(selectedId);
-    return layers.some((layer) => layer.id === selectedId);
+    if (!selectedIds) return false;
+    console.log(selectedIds);
+    return layers.some((layer) => selectedIds.includes(layer.id));
   };
 
   // Function to add a shape to a layer
@@ -262,10 +260,10 @@ const App: React.FC = () => {
   };
 
   const addShapeToSelectedLayer = (shapeType: "rect" | "circle" | "star") => {
-    if (!selectedId) return;
+    if (!selectedIds) return;
 
     // Check if selected item is a layer
-    const selectedLayer = layers.find((layer) => layer.id === selectedId);
+    const selectedLayer = layers.find((layer) => selectedIds.includes(layer.id));
     if (!selectedLayer) return;
 
     // Create new shape ID
@@ -325,7 +323,7 @@ const App: React.FC = () => {
     addShapeToLayer(newShapeId, selectedLayer.id);
 
     // Select the newly created shape
-    selectShape(newShapeId);
+    setSelectedIds([newShapeId]);
   };
 
   const addNewLayer = () => {
@@ -360,7 +358,7 @@ const App: React.FC = () => {
     setLayers([...layers, newLayer]);
 
     // Select the newly created layer
-    selectShape(newLayerId);
+    setSelectedIds([newLayerId]);
   };
 
   return (
@@ -377,15 +375,15 @@ const App: React.FC = () => {
         <LayerPanel
           layers={layers}
           shapes={shapes}
-          selectedId={selectedId}
-          onSelectLayer={(id) => selectShape(id)}
-          onSelectShape={(id) => selectShape(id)}
+          selectedIds={selectedIds}
+          onSelectLayer={(id) => setSelectedIds([id])}
+          onSelectShape={(id) => setSelectedIds([id])}
           getShapeLayer={(id) => getShapeLayer(id)}
         />
       </div>
       <div className="absolute top-0 right-0 w-[250px] h-screen bg-white border-l border-[#E3E3E3] z-10">
         <PropertiesPanel
-          selectedId={selectedId}
+          selectedIds={selectedIds}
           shapes={shapes}
           layers={layers}
           handleShapeChange={handleShapeChange}
@@ -403,10 +401,16 @@ const App: React.FC = () => {
         stageY={stageY}
         layers={layers}
         shapes={shapes}
-        selectedId={selectedId}
+        selectedIds={selectedIds}
         hoveredId={hoveredId}
         draggingId={draggingId}
-        selectShape={selectShape}
+        selectShape={(id: string | null) => {
+          if (id) {
+            setSelectedIds([id]);
+          } else {
+            setSelectedIds([]);
+          }
+        }}
         handleLayerChange={handleLayerChange}
         handleShapeChange={handleShapeChange}
         handleShapeHover={handleShapeHover}

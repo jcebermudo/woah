@@ -1,7 +1,7 @@
 import { LayerContainer, Shape } from "@/types/canvasElements";
 
 interface PropertiesPanelProps {
-  selectedId: string | null;
+  selectedIds: string[];
   shapes: Shape[];
   layers: LayerContainer[];
   handleShapeChange: (index: number, newAttrs: Shape) => void;
@@ -9,14 +9,14 @@ interface PropertiesPanelProps {
 }
 
 export default function PropertiesPanel({
-  selectedId,
+  selectedIds,
   shapes,
   layers,
   handleShapeChange,
   handleLayerChange,
 }: PropertiesPanelProps) {
-  const selectedShape = shapes.find((shape) => shape.id === selectedId);
-  const selectedLayer = layers.find((layer) => layer.id === selectedId);
+  const selectedShape = shapes.find((shape) => selectedIds.includes(shape.id));
+  const selectedLayer = layers.find((layer) => selectedIds.includes(layer.id));
 
   const selectedType = selectedShape?.type || selectedLayer?.type || "None";
   const displayType = selectedType === "layer" ? "Scene" : selectedType;

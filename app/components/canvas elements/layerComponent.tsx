@@ -1,6 +1,6 @@
 import { LayerContainer } from "@/types/canvasElements";
-import React, { useEffect, useRef } from "react";
-import { Group, Layer, Rect, Transformer } from "react-konva";
+import React, { useEffect, useRef, useState } from "react";
+import { Group, Label, Layer, Rect, Text, Transformer } from "react-konva";
 import Konva from "konva";
 import { SideAnchor } from "./transformers/anchors";
 
@@ -33,6 +33,7 @@ export default function LayerComponent({
 }: LayerComponentProps) {
   const rectRef = useRef<Konva.Rect>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  const groupRef = useRef<Konva.Group>(null);
 
   useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && rectRef.current) {
@@ -167,15 +168,35 @@ export default function LayerComponent({
     });
   };
 
-  const handleRotation = (absoluteRotation: number) => {
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     onChange({
       ...layerProps,
-      rotation: absoluteRotation,
+      x: e.target.x(),
+      y: e.target.y(),
     });
   };
 
   return (
-    <Layer draggable={true} width={layerProps.width} height={layerProps.height}>
+    <Group
+      ref={groupRef}
+      width={layerProps.width}
+      height={layerProps.height}
+      draggable={isSelected}
+    >
+      {/* Layer Label */}
+      <Text
+        x={layerProps.x - layerProps.width / 2}
+        y={layerProps.y - layerProps.height / 2 - 25}
+        text={layerProps.id}
+        fontSize={14}
+        fill={isSelected ? "#29A9FF" : isHovered ? "#29A9FF" : "#696969"}
+        listening={true}
+        onClick={onSelect}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        draggable={false}
+      />
+
       {/* Background rectangle to make layer visible */}
       <Rect
         ref={rectRef}
@@ -188,31 +209,13 @@ export default function LayerComponent({
         rotation={layerProps.rotation || 0}
         fill="white"
         strokeScaleEnabled={false}
-        stroke={
-          isSelected || isHovered
-            ? "#29A9FF"
-            : layerProps.showBorder
-            ? "#29A9FF"
-            : "transparent"
-        }
-        strokeWidth={
-          isSelected || isHovered ? 2 : layerProps.showBorder ? 0 : 0
-        }
+        stroke={isSelected ? "#29A9FF" : "transparent"}
+        strokeWidth={isSelected ? 2 : 0}
         draggable={false}
+        listening={isSelected}
+        onClick={onSelect}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragStart={onDragStart}
-        onDragEnd={(e) => {
-          onChange({
-            ...layerProps,
-            x: e.target.x(),
-            y: e.target.y(),
-          });
-          onSelect();
-          onDragEnd();
-        }}
         onTransformEnd={handleTransformEnd}
       />
 
@@ -384,6 +387,6 @@ export default function LayerComponent({
           ]}
         />
       )}
-    </Layer>
+    </Group>
   );
 }

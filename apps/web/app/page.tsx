@@ -116,7 +116,7 @@ const App: React.FC = () => {
 
   const isSelecting = useRef(false);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const rectRefs = useRef(new Map<string, Konva.Rect>());
+  const elementRefs = useRef(new Map());
 
   const stageRef = useRef<Konva.Stage>(null);
 
@@ -196,7 +196,7 @@ const App: React.FC = () => {
     if (selectedIds.length && transformerRef.current) {
       // Get the nodes from the refs Map
       const nodes = selectedIds
-        .map((id) => rectRefs.current.get(id))
+        .map((id) => elementRefs.current.get(id))
         .filter((node) => node);
 
       transformerRef.current.nodes(nodes as Konva.Node[]);
@@ -369,6 +369,20 @@ const App: React.FC = () => {
       x2: posX || 0,
       y2: posY || 0,
     });
+
+    const selBox = {
+      x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
+      y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
+      width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
+      height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
+    };
+
+    const selected = shapes.filter((shape) => {
+      // Check if rectangle intersects with selection box
+      return Konva.Util.haveIntersection(selBox, getClientRect(shape));
+    });
+
+    setSelectedIds(selected.map((shape) => shape.id));
   };
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -394,20 +408,6 @@ const App: React.FC = () => {
         visible: false,
       });
     });
-
-    const selBox = {
-      x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
-      y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
-      width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
-      height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
-    };
-
-    const selected = shapes.filter((shape) => {
-      // Check if rectangle intersects with selection box
-      return Konva.Util.haveIntersection(selBox, getClientRect(shape));
-    });
-
-    setSelectedIds(selected.map((shape) => shape.id));
   };
 
   const handleShapeChange = (index: number, newAttrs: Shape) => {
@@ -601,7 +601,7 @@ const App: React.FC = () => {
           getShapeLayer={(id) => getShapeLayer(id)}
         />
       </div>
-      <div className="absolute top-0 right-0 w-[250px] h-screen bg-white border-l border-[#E3E3E3] z-10">
+      <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-10">
         <PropertiesPanel
           selectedIds={selectedIds}
           shapes={shapes}
@@ -640,6 +640,8 @@ const App: React.FC = () => {
         selectionRectangle={selectionRectangle}
         transformerRef={transformerRef}
         handleStageClick={handleStageClick}
+        elementRefs={elementRefs}
+        handleTransformEnd={handleTransformEnd}
       />
     </div>
   );

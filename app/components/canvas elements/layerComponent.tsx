@@ -83,7 +83,7 @@ export default function LayerComponent({
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
     deltaY: number,
-    stageScale: number
+    stageScale: number,
   ) => {
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;

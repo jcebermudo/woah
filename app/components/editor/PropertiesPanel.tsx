@@ -44,7 +44,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newWidth = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, { ...selectedLayer, width: newWidth });
               }}
@@ -60,7 +60,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newHeight = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, {
                   ...selectedLayer,

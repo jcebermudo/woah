@@ -79,7 +79,7 @@ export default function InfiniteCanvas({
       onMouseMove={(e) => {
         handleMouseMove?.(e);
       }}
-      onMouseUp={(e) => { 
+      onMouseUp={(e) => {
         handleMouseUp?.(e);
       }}
       ref={stageRef}
@@ -113,7 +113,7 @@ export default function InfiniteCanvas({
               })
               .map((shape, shapeIndex) => {
                 const originalIndex = shapes.findIndex(
-                  (s) => s.id === shape.id
+                  (s) => s.id === shape.id,
                 );
                 return (
                   <ShapeComponent

@@ -20,7 +20,13 @@ export default function SortableItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={onClick}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

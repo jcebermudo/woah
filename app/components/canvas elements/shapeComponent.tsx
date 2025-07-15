@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { CircleShape, RectShape, Shape, StarShape } from "@/types/canvasElements";
+import {
+  CircleShape,
+  RectShape,
+  Shape,
+  StarShape,
+} from "@/types/canvasElements";
 import { Rect, Ellipse, Star, Group, Transformer } from "react-konva";
 import Konva from "konva";
 import { SideAnchor, RotationAnchor } from "./transformers/anchors";
@@ -142,7 +147,7 @@ export default function ShapeComponent({
   const handleSideAnchorDrag = (
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number
+    deltaY: number,
   ) => {
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;

@@ -11,7 +11,12 @@ import {
   StarIcon,
 } from "lucide-react";
 import Draggable from "../dnd/SortableItem";
-import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 
 import { useState } from "react";
@@ -41,8 +46,8 @@ export default function LayerPanel({
       activationConstraint: {
         distance: 8, // Require 8px movement before drag starts
       },
-    })
-  )
+    }),
+  );
 
   const toggleLayerExpansion = (layerId: string) => {
     const newExpanded = new Set(expandedLayers);
@@ -128,7 +133,9 @@ export default function LayerPanel({
                   // Add hover effect by using group-hover if possible
                   ""
                 } ${
-                  selectedIds.includes(layer.id) ? "text-white" : "text-[#808080]"
+                  selectedIds.includes(layer.id)
+                    ? "text-white"
+                    : "text-[#808080]"
                 } group-hover:text-white`}
               />
               <span className="text-[14px] text-white flex-1 mt-[1px]">
@@ -142,21 +149,21 @@ export default function LayerPanel({
                 <DndContext sensors={sensors}>
                   <SortableContext items={layerShapes.map((shape) => shape.id)}>
                     {layerShapes.map((shape) => (
-                      <SortableItem
-                        id={shape.id}
-                        key={shape.id}
-                        
-                      >
+                      <SortableItem id={shape.id} key={shape.id}>
                         <div
                           key={shape.id}
                           className={`group flex flex-row items-center justify-between p-[8px] rounded-[10px] cursor-pointer hover:bg-[#383838] duration-200 ${
-                            selectedIds.includes(shape.id) ? "bg-[#383838]" : "bg-transparent"
+                            selectedIds.includes(shape.id)
+                              ? "bg-[#383838]"
+                              : "bg-transparent"
                           }`}
                           onClick={() => onSelectShape(shape.id)}
                         >
                           <div className="flex items-center gap-[10px]">
-                            <div className={`w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200
-                              ${selectedIds.includes(shape.id) ? "text-white" : "text-[#808080]"}`}>
+                            <div
+                              className={`w-4 h-4 flex items-center justify-center text-[#808080] group-hover:text-white duration-200
+                              ${selectedIds.includes(shape.id) ? "text-white" : "text-[#808080]"}`}
+                            >
                               {getShapeIcon(shape)}
                             </div>
                             <span className="text-[14px] text-white flex-1 mt-[1px]">

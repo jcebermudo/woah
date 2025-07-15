@@ -186,10 +186,10 @@ export default function LayerComponent({
       {/* Layer Label */}
       <Text
         x={layerProps.x - layerProps.width / 2}
-        y={layerProps.y - layerProps.height / 2 - 25}
+        y={layerProps.y - layerProps.height / 2 - 18 / stageScale}
         text={layerProps.id}
-        fontSize={14}
-        fill={isSelected ? "#29A9FF" : isHovered ? "#29A9FF" : "#696969"}
+        fontSize={14 / stageScale}
+        fill={isSelected ? "#29A9FF" : isHovered ? "#29A9FF" : "#A4A4A4"}
         listening={true}
         onClick={onSelect}
         onMouseEnter={handleMouseEnter}

@@ -24,6 +24,8 @@ interface ShapeComponentProps {
   stageScale: number;
   worldX: number;
   worldY: number;
+  elementRefs: React.RefObject<Map<string, Konva.Node>>;
+  handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
 export default function ShapeComponent({
@@ -39,6 +41,8 @@ export default function ShapeComponent({
   stageScale,
   worldX,
   worldY,
+  elementRefs,
+  handleMultipleTransformEnd,
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -345,6 +349,12 @@ export default function ShapeComponent({
             offsetY={rectShape.height / 2}
             cornerRadius={0}
             strokeScaleEnabled={false}
+            ref={(node) => {
+              if (node && elementRefs.current) {
+                elementRefs.current.set(shapeProps.id, node);
+              }
+            }}
+            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 
@@ -358,6 +368,12 @@ export default function ShapeComponent({
             offsetX={0}
             offsetY={0}
             strokeScaleEnabled={false}
+            ref={(node) => {
+              if (node && elementRefs.current) {
+                elementRefs.current.set(shapeProps.id, node);
+              }
+            }}
+            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 
@@ -379,6 +395,12 @@ export default function ShapeComponent({
             offsetX={0}
             offsetY={0}
             strokeScaleEnabled={false}
+            ref={(node) => {
+              if (node && elementRefs.current) {
+                elementRefs.current.set(shapeProps.id, node);
+              }
+            }}
+            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 

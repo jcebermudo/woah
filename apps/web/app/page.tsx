@@ -89,7 +89,11 @@ const App: React.FC = () => {
   };
 
   const getClientRect = (element: Shape) => {
-    const { x, y, width, height, rotation = 0 } = element;
+    const x = element.x - element.width / 2;
+    const y = element.y - element.height / 2;
+    const width = element.width;
+    const height = element.height;
+    const rotation = element.rotation || 0;
     const rad = degToRad(rotation);
 
     const p1 = getCorner(x, y, 0, 0, rad);

@@ -649,6 +649,7 @@ export default function ShapeComponent({
             "top-right",
             "bottom-right",
             "bottom-left",
+            "middle-top",
           ]}
         />
       )}

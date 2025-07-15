@@ -1,0 +1,1 @@
+Woah is an open source motion graphics editor on the web. This is built out of frustration with Adobe After Effects and the restrictions it imposes on democratizing animation for everyone. I'm making it easier for creatives who have no background in motion design to start creating engaging and beautiful animations without having to go through a steep learning curve.

@@ -37,10 +37,12 @@ interface InfiniteCanvasProps {
     y2: number;
   };
   transformerRef: React.RefObject<Konva.Transformer | null>;
+  elementRefs: React.RefObject<Map<string, Konva.Node>>;
   handleStageClick: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  handleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
 export default function InfiniteCanvas({
@@ -67,6 +69,8 @@ export default function InfiniteCanvas({
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
+  elementRefs,
+  handleTransformEnd,
 }: InfiniteCanvasProps) {
   return (
     <Stage
@@ -145,6 +149,8 @@ export default function InfiniteCanvas({
                     onHover={(hovered) => handleShapeHover(shape.id, hovered)}
                     onDragStart={() => handleDragStart(shape.id)}
                     onDragEnd={() => handleDragEnd(shape.id)}
+                    elementRefs={elementRefs}
+                    handleMultipleTransformEnd={handleTransformEnd}
                   />
                 );
               })}

@@ -10,6 +10,10 @@ import {
 import { Rect, Ellipse, Star, Group, Transformer } from "react-konva";
 import Konva from "konva";
 import { SideAnchor, RotationAnchor } from "./transformers/anchors";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
+gsap.registerPlugin(useGSAP);
 
 interface ShapeComponentProps {
   shapeProps: Shape;
@@ -27,6 +31,8 @@ interface ShapeComponentProps {
   elementRefs: React.RefObject<Map<string, Konva.Node>>;
   handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
+
+
 
 export default function ShapeComponent({
   shapeProps,
@@ -54,6 +60,8 @@ export default function ShapeComponent({
       trRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected, isDragging]);
+
+  const gsapTest = new Konva.Tween({
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
     onDragStart();
@@ -342,6 +350,7 @@ export default function ShapeComponent({
         const rectShape = shapeProps as RectShape;
         return (
           <Rect
+            className="gsap-test"
             {...commonProps}
             width={rectShape.width}
             height={rectShape.height}

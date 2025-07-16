@@ -1,4 +1,6 @@
 import { useRef, useEffect, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { Stage, Layer, Rect, Text, Transformer } from "react-konva";
 import Konva from "konva";
 import {
@@ -10,6 +12,7 @@ import {
 } from "@/types/canvasElements";
 import LayerComponent from "../canvas elements/layerComponent";
 import ShapeComponent from "../canvas elements/shapeComponent";
+
 
 interface InfiniteCanvasProps {
   dimensions: { width: number; height: number };

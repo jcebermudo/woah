@@ -3,6 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Group, Label, Layer, Rect, Text, Transformer } from "react-konva";
 import Konva from "konva";
 import { SideAnchor } from "./transformers/anchors";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
 
 interface LayerComponentProps {
   layerProps: LayerContainer;

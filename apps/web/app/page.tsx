@@ -24,6 +24,8 @@ import {
 } from "@/types/canvasElements";
 import InfiniteCanvas from "./components/editor/InfiniteCanvas";
 import PropertiesPanel from "./components/editor/PropertiesPanel";
+import { useStore } from "@/app/zustland/store";
+import Timeline from "./components/editor/Timeline";
 
 // Initial layers (renamed from initialGroups)
 const initialLayers: LayerContainer[] = [
@@ -42,6 +44,7 @@ const initialLayers: LayerContainer[] = [
 ];
 
 const App: React.FC = () => {
+  const { mode } = useStore();
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -601,6 +604,7 @@ const App: React.FC = () => {
           getShapeLayer={(id) => getShapeLayer(id)}
         />
       </div>
+      {/* Properties Panel */}
       <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-10">
         <PropertiesPanel
           selectedIds={selectedIds}
@@ -610,6 +614,13 @@ const App: React.FC = () => {
           handleLayerChange={handleLayerChange}
         />
       </div>
+      {/* Timeline */}
+      {mode === "animate" && (
+        <div className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]">
+          <Timeline />
+        </div>
+      )}
+      {/* Infinite Canvas */}
       <InfiniteCanvas
         dimensions={dimensions}
         handleMouseDown={handleMouseDown}

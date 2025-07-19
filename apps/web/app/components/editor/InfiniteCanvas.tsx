@@ -75,6 +75,7 @@ export default function InfiniteCanvas({
   elementRefs,
   handleTransformEnd,
 }: InfiniteCanvasProps) {
+
   return (
     <Stage
       width={dimensions.width - 250}

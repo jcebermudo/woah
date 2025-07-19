@@ -58,6 +58,7 @@ export interface LayerContainer extends BaseShape {
   fill: string;
   children: string[]; // Array of shape IDs contained in this layer
   showBorder: boolean;
+  duration: number;
 }
 
 export type Container = LayerContainer;

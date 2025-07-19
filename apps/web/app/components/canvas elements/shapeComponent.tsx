@@ -32,8 +32,6 @@ interface ShapeComponentProps {
   handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
-
-
 export default function ShapeComponent({
   shapeProps,
   isSelected,
@@ -52,6 +50,50 @@ export default function ShapeComponent({
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  const gsapTimelineRef = useRef<gsap.core.Timeline | null>(null);
+
+  // GSAP infinite rotation effect
+  useGSAP(() => {
+    if (shapeRef.current) {
+      // Kill any existing animation
+      if (gsapTimelineRef.current) {
+        gsapTimelineRef.current.kill();
+      }
+
+      // Create new infinite rotation animation
+      gsapTimelineRef.current = gsap.timeline({ repeat: -1 });
+
+      gsapTimelineRef.current.to(shapeRef.current, {
+        rotation: 360,
+        duration: 3,
+        ease: "none",
+        transformOrigin: "center center",
+      });
+
+      // Pause animation initially
+      gsapTimelineRef.current.pause();
+    }
+
+    // Cleanup function
+    return () => {
+      if (gsapTimelineRef.current) {
+        gsapTimelineRef.current.kill();
+      }
+    };
+  }, [shapeProps.id, shapeProps.type]);
+
+  // Control animation based on selection
+  useEffect(() => {
+    if (gsapTimelineRef.current) {
+      if (isSelected) {
+        gsapTimelineRef.current.play();
+      } else {
+        gsapTimelineRef.current.pause();
+        // Reset to original rotation from props
+        gsap.set(shapeRef.current, { rotation: shapeProps.rotation || 0 });
+      }
+    }
+  }, [isSelected, shapeProps.rotation]);
 
   useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && shapeRef.current) {
@@ -61,9 +103,11 @@ export default function ShapeComponent({
     }
   }, [isSelected, isDragging]);
 
-  const gsapTest = new Konva.Tween({
-
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // Pause GSAP animation during drag
+    if (gsapTimelineRef.current) {
+      gsapTimelineRef.current.pause();
+    }
     onDragStart();
   };
 
@@ -74,6 +118,11 @@ export default function ShapeComponent({
       y: e.target.y(),
     });
 
+    // Resume GSAP animation after drag if selected
+    if (gsapTimelineRef.current && isSelected) {
+      gsapTimelineRef.current.play();
+    }
+
     // Auto-select the shape after dragging (Figma-like behavior)
     onSelect();
     onDragEnd();
@@ -82,6 +131,11 @@ export default function ShapeComponent({
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
     const node = shapeRef.current;
     if (!node) return;
+
+    // Pause GSAP animation during transform
+    if (gsapTimelineRef.current) {
+      gsapTimelineRef.current.pause();
+    }
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
@@ -127,6 +181,11 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
+
+    // Resume GSAP animation after transform if selected
+    if (gsapTimelineRef.current && isSelected) {
+      gsapTimelineRef.current.play();
+    }
   };
 
   const handleMouseEnter = () => {
@@ -159,8 +218,13 @@ export default function ShapeComponent({
   const handleSideAnchorDrag = (
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number,
+    deltaY: number
   ) => {
+    // Pause GSAP animation during side anchor drag
+    if (gsapTimelineRef.current) {
+      gsapTimelineRef.current.pause();
+    }
+
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;
     const adjustedDeltaY = deltaY / stageScale;
@@ -297,9 +361,19 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
+
+    // Resume GSAP animation after side anchor drag if selected
+    if (gsapTimelineRef.current && isSelected) {
+      gsapTimelineRef.current.play();
+    }
   };
 
   const handleRotation = (absoluteRotation: number) => {
+    // Pause GSAP animation during manual rotation
+    if (gsapTimelineRef.current) {
+      gsapTimelineRef.current.pause();
+    }
+
     // Create updated shape based on type
     let updatedShape: Shape;
 
@@ -323,6 +397,11 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
+
+    // Resume GSAP animation after manual rotation if selected
+    if (gsapTimelineRef.current && isSelected) {
+      gsapTimelineRef.current.play();
+    }
   };
 
   const renderShape = () => {
@@ -350,7 +429,7 @@ export default function ShapeComponent({
         const rectShape = shapeProps as RectShape;
         return (
           <Rect
-            className="gsap-test"
+            className="gsap-animated-rect"
             {...commonProps}
             width={rectShape.width}
             height={rectShape.height}
@@ -362,6 +441,8 @@ export default function ShapeComponent({
               if (node && elementRefs.current) {
                 elementRefs.current.set(shapeProps.id, node);
               }
+              // Also set the shapeRef for GSAP
+              shapeRef.current = node;
             }}
             onTransformEnd={handleMultipleTransformEnd}
           />
@@ -381,6 +462,7 @@ export default function ShapeComponent({
               if (node && elementRefs.current) {
                 elementRefs.current.set(shapeProps.id, node);
               }
+              shapeRef.current = node;
             }}
             onTransformEnd={handleMultipleTransformEnd}
           />
@@ -408,6 +490,7 @@ export default function ShapeComponent({
               if (node && elementRefs.current) {
                 elementRefs.current.set(shapeProps.id, node);
               }
+              shapeRef.current = node;
             }}
             onTransformEnd={handleMultipleTransformEnd}
           />

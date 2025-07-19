@@ -40,6 +40,7 @@ const initialLayers: LayerContainer[] = [
     draggable: true,
     children: [], // No initial children
     showBorder: true,
+    duration: 1000,
   },
 ];
 
@@ -120,6 +121,7 @@ const App: React.FC = () => {
   const isSelecting = useRef(false);
   const transformerRef = useRef<Konva.Transformer>(null);
   const elementRefs = useRef(new Map());
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   const stageRef = useRef<Konva.Stage>(null);
 
@@ -244,6 +246,10 @@ const App: React.FC = () => {
 
     // Handle zoom with wheel
     function handleWheel(e: WheelEvent) {
+      const isOverTimeline = timelineRef.current?.contains(e.target as Node);
+      if (isOverTimeline) {
+        return;
+      }
       // Check if Cmd (Mac) or Ctrl (Windows/Linux) is pressed for zoom
       if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
@@ -575,6 +581,7 @@ const App: React.FC = () => {
       draggable: true,
       children: [],
       showBorder: true,
+      duration: 1000,
     };
 
     // Add the new layer to the layers array
@@ -616,7 +623,7 @@ const App: React.FC = () => {
       </div>
       {/* Timeline */}
       {mode === "animate" && (
-        <div className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]">
+        <div ref={timelineRef} className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]">
           <Timeline />
         </div>
       )}

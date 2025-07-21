@@ -391,7 +391,7 @@ export default function Timeline() {
             {isPlaying ? (
               <Pause className="w-4 h-4 text-white fill-white" />
             ) : (
-              <Play className="w-4 h-4 text-white" />
+              <Play className="w-4 h-4 text-white fill-white" />
             )}
           </button>
           <button>
@@ -409,13 +409,13 @@ export default function Timeline() {
           )}
         </div>
       </div>
-      <div className="flex flex-row h-full w-full">
+      <div className="flex flex-row h-full w-full overflow-x-auto">
         <div className="bg-[#232323] border-r border-[#474747] h-full min-w-[250px] z-[50]">
           <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-center"></div>
         </div>
         {/* SPECIFIED SECTION */}
-        <div className="bg-[#232323] w-full overflow-x-auto overflow-y-hidden">
-          <div className="w-full h-[50px] ">
+        <div className="bg-[#232323] overflow-x-auto overflow-y-hidden h-[298px] w-full">
+          <div className="h-[50px]">
             <div
               ref={timelineRef}
               className="flex flex-row h-[50px] ml-[20px] relative cursor-pointer"

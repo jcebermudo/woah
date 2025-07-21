@@ -87,17 +87,25 @@ export default function PropertiesPanel({
       )}
       {mode === "animate" && (
         <div className="select-none flex flex-row gap-4 border-b border-[#E0E0E0] py-[15px] px-[15px]">
+          {selectedLayer && (
+            
+          <div>
           <span className="text-xs text-gray-600">Duration</span>
           <input
             type="number"
             className="border rounded px-2 py-1 w-24"
-            value={duration}
+            value={selectedLayer.duration}
             min={1}
             onChange={(e) => {
               const newDuration = Number(e.target.value);
-              setDuration(newDuration);
-            }}
-          />
+              const index = layers.findIndex(
+                (l) => l.id === selectedLayer.id
+              );
+              handleLayerChange(index, { ...selectedLayer, duration: newDuration });
+              }}
+            />
+          </div>
+          )}
         </div>
       )}
     </div>

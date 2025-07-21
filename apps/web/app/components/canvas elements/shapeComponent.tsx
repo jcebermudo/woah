@@ -53,7 +53,7 @@ export default function ShapeComponent({
   const gsapTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   // GSAP infinite rotation effect
-  useGSAP(() => {
+  /* useGSAP(() => {
     if (shapeRef.current) {
       // Kill any existing animation
       if (gsapTimelineRef.current) {
@@ -72,7 +72,7 @@ export default function ShapeComponent({
 
       // Pause animation initially
       gsapTimelineRef.current.pause();
-    }
+    } 
 
     // Cleanup function
     return () => {
@@ -80,7 +80,7 @@ export default function ShapeComponent({
         gsapTimelineRef.current.kill();
       }
     };
-  }, [shapeProps.id, shapeProps.type]);
+  }, [shapeProps.id, shapeProps.type]);*/
 
   // Control animation based on selection
   useEffect(() => {

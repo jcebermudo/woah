@@ -1,8 +1,15 @@
+import { LayerContainer } from "@/types/canvasElements";  
 import { useStore } from "@/app/zustland/store";
 import { Pause, Play, Repeat2 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 
-export default function Timeline() {
+interface TimelineProps {
+  layers: LayerContainer[];
+  selectedLayer: LayerContainer | null;
+  layerDuration: number;
+}
+
+export default function Timeline({ layers, selectedLayer, layerDuration }: TimelineProps) {
   const { mode, duration } = useStore();
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -32,7 +39,7 @@ export default function Timeline() {
     playIntervalRef.current = setInterval(() => {
       // Use ref value (always current)
       const elapsed = (Date.now() - playStartTimeRef.current) / 1000;
-      const totalDuration = duration || 10;
+      const totalDuration = layerDuration || 10;
 
       if (elapsed >= totalDuration) {
         pausePlayback();
@@ -79,7 +86,7 @@ export default function Timeline() {
   }
 
   const getBaseTimelineWidth = () => {
-    const totalDuration = duration || 10;
+    const totalDuration = layerDuration || 10;
     return Math.max(800, totalDuration * 80);
   };
 
@@ -231,7 +238,7 @@ export default function Timeline() {
   const getCurrentTime = () => {
     if (!timelineRef.current) return 0;
 
-    const totalDuration = duration || 10;
+    const totalDuration = layerDuration || 10;
     const timelineWidth = getBaseTimelineWidth();
 
     // The playheadPosition is already in timeline coordinate space
@@ -274,7 +281,7 @@ export default function Timeline() {
     if (!timelineRef.current) return { markers: [], dots: [] };
 
     const timelineWidth = getBaseTimelineWidth();
-    const totalDuration = duration || 10;
+    const totalDuration = layerDuration || 10;
     const viewportWidth =
       timelineRef.current.getBoundingClientRect().width || 800;
 
@@ -466,7 +473,7 @@ export default function Timeline() {
                 <div className="w-[1px] h-screen bg-[#29A9FF] z-10"></div>
               </div>
             </div>
-            <hr className="w-full top-[99px] border-[0.5px] border-[#474747] absolute" />
+            <hr className="w-full top-[98.9px] border-[0.5px] border-[#474747] absolute" />
           </div>
         </div>
       </div>

@@ -510,7 +510,7 @@ const App: React.FC = () => {
           y: selectedLayer.y,
           width: 100,
           height: 80,
-          fill: "#4F46E5",
+          fill: "#696969",
           draggable: true,
         } as RectShape;
         break;
@@ -523,7 +523,7 @@ const App: React.FC = () => {
           y: selectedLayer.y,
           width: 100,
           height: 100,
-          fill: "#EF4444",
+          fill: "#696969",
           draggable: true,
         } as CircleShape;
         break;
@@ -539,7 +539,7 @@ const App: React.FC = () => {
           numPoints: 5,
           innerRadius: 17,
           outerRadius: 40,
-          fill: "#F59E0B",
+          fill: "#696969",
           draggable: true,
         } as StarShape;
         break;
@@ -624,7 +624,7 @@ const App: React.FC = () => {
       {/* Timeline */}
       {mode === "animate" && (
         <div ref={timelineRef} className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]">
-          <Timeline />
+          <Timeline layers={layers} selectedLayer={layers.find((layer) => selectedIds.includes(layer.id)) || null} layerDuration={layers.find((layer) => selectedIds.includes(layer.id))?.duration || 1000} />
         </div>
       )}
       {/* Infinite Canvas */}

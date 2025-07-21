@@ -124,3 +124,29 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* height */
+::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #383838;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #696969;
+  border-radius: 100px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #777777;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}

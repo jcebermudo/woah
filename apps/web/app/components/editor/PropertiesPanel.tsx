@@ -1,6 +1,7 @@
 import { LayerContainer, Shape } from "@/types/canvasElements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/app/zustland/store";
+import { useState } from "react";
 
 interface PropertiesPanelProps {
   selectedIds: string[];
@@ -17,6 +18,7 @@ export default function PropertiesPanel({
   handleShapeChange,
   handleLayerChange,
 }: PropertiesPanelProps) {
+  const [isAddingAnimation, setIsAddingAnimation] = useState(false);
   const { mode, setMode, duration, setDuration } = useStore();
   const selectedShape = shapes.find((shape) => selectedIds.includes(shape.id));
   const selectedLayer = layers.find((layer) => selectedIds.includes(layer.id));
@@ -30,16 +32,26 @@ export default function PropertiesPanel({
     <div className="h-screen pt-[60px] overflow-y-auto">
       <Tabs defaultValue="design" className="p-[15px] cursor-pointer">
         <TabsList className="w-full rounded-[10px]">
-          <TabsTrigger value="design" className="rounded-[7px] cursor-pointer" onClick={() => setMode("design")}>
+          <TabsTrigger
+            value="design"
+            className="rounded-[7px] cursor-pointer"
+            onClick={() => setMode("design")}
+          >
             Design
           </TabsTrigger>
-          <TabsTrigger value="animate" className="rounded-[7px] cursor-pointer" onClick={() => setMode("animate")}>
+          <TabsTrigger
+            value="animate"
+            className="rounded-[7px] cursor-pointer"
+            onClick={() => setMode("animate")}
+          >
             Animate
           </TabsTrigger>
         </TabsList>
       </Tabs>
       <div className="select-none flex flex-row justify-start items-center border-y border-[#474747] py-[15px] px-[15px]">
-        <span className="text-white font-medium">{capitalizedType}</span>
+        <span className="text-white text-[14px] font-medium">
+          {capitalizedType}
+        </span>
       </div>
       {mode === "design" && selectedLayer && (
         <div className="select-none flex flex-row gap-4 border-b border-[#E0E0E0] py-[15px] px-[15px]">
@@ -80,33 +92,51 @@ export default function PropertiesPanel({
           </label>
         </div>
       )}
-      {mode === "animate" && (
-        <div className="select-none flex flex-row gap-4 border-b border-[#E0E0E0] py-[15px] px-[15px]">
-          <span className="text-xs text-gray-600">Animation</span>
-        </div>
-      )}
-      {mode === "animate" && (
-        <div className="select-none flex flex-row gap-4 border-b border-[#E0E0E0] py-[15px] px-[15px]">
-          {selectedLayer && (
-            
-          <div>
-          <span className="text-xs text-gray-600">Duration</span>
-          <input
-            type="number"
-            className="border rounded px-2 py-1 w-24"
-            value={selectedLayer.duration}
-            min={1}
-            onChange={(e) => {
-              const newDuration = Number(e.target.value);
-              const index = layers.findIndex(
-                (l) => l.id === selectedLayer.id
-              );
-              handleLayerChange(index, { ...selectedLayer, duration: newDuration });
+      {mode === "animate" && selectedLayer && (
+        <div className="select-none flex flex-row gap-4 border-b border-[#474747] py-[15px] px-[15px]">
+          <div className="flex flex-col gap-[10px]">
+            <span className="text-[14px] font-medium text-white">Duration</span>
+            <input
+              type="number"
+              className="rounded-[10px] px-[10px] py-[8px] w-24 bg-[#383838] font-medium text-white text-[14px] focus:outline-none"
+              value={selectedLayer.duration}
+              min={1}
+              onChange={(e) => {
+                const newDuration = Number(e.target.value);
+                const index = layers.findIndex(
+                  (l) => l.id === selectedLayer.id
+                );
+                handleLayerChange(index, {
+                  ...selectedLayer,
+                  duration: newDuration,
+                });
               }}
             />
           </div>
-          )}
         </div>
+      )}
+
+      {mode === "animate" && selectedShape && (
+        <div className="select-none flex flex-row gap-4 border-b border-[#474747] py-[15px] px-[15px]">
+        {!isAddingAnimation && (
+          <button
+            onClick={() => setIsAddingAnimation(true)}
+            className="cursor-pointer rounded-[10px] w-full px-[10px] py-[8px] bg-[#29A9FF] font-medium text-white text-[14px] focus:outline-none"
+          >
+            Add animation
+          </button>
+        )}
+        {isAddingAnimation && (
+          <div className="flex flex-col gap-[10px]">
+            <span className="text-[14px] font-medium text-white">
+              Add animation
+            </span>
+            <button className="cursor-pointer rounded-[10px] px-[10px] py-[8px] bg-[#232323] border border-[#474747] font-medium text-white text-[14px] focus:outline-none">
+              Spin
+            </button>
+          </div>
+        )}
+      </div>
       )}
     </div>
   );

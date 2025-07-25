@@ -32,7 +32,7 @@ const initialLayers: LayerContainer[] = [
   {
     id: "Scene 1",
     type: "layer",
-    x: 400,
+    x: 700,
     y: 300,
     width: 600,
     height: 400,
@@ -83,7 +83,7 @@ const App: React.FC = () => {
     pivotY: number,
     diffX: number,
     diffY: number,
-    angle: number,
+    angle: number
   ) => {
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     angle += Math.atan2(diffY, diffX);
@@ -491,7 +491,7 @@ const App: React.FC = () => {
 
     // Check if selected item is a layer
     const selectedLayer = layers.find((layer) =>
-      selectedIds.includes(layer.id),
+      selectedIds.includes(layer.id)
     );
     if (!selectedLayer) return;
 
@@ -560,7 +560,7 @@ const App: React.FC = () => {
     let rightmostX = 0;
     if (layers.length > 0) {
       rightmostX = Math.max(
-        ...layers.map((layer) => layer.x + layer.width / 2),
+        ...layers.map((layer) => layer.x + layer.width / 2)
       );
     }
 
@@ -589,6 +589,18 @@ const App: React.FC = () => {
 
     // Select the newly created layer
     setSelectedIds([newLayerId]);
+  };
+
+  const getSelectedItemDuration = (selectedId: string): number => {
+    // First check if it's a layer
+    const selectedLayer = layers.find((layer) => layer.id === selectedId);
+    if (selectedLayer) {
+      return selectedLayer.duration;
+    }
+
+    // If not a layer, check if it's a shape and get its parent layer
+    const parentLayer = getShapeLayer(selectedId);
+    return parentLayer?.duration || 1000; // fallback to 1000
   };
 
   return (
@@ -623,8 +635,17 @@ const App: React.FC = () => {
       </div>
       {/* Timeline */}
       {mode === "animate" && (
-        <div ref={timelineRef} className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]">
-          <Timeline layers={layers} selectedLayer={layers.find((layer) => selectedIds.includes(layer.id)) || null} layerDuration={layers.find((layer) => selectedIds.includes(layer.id))?.duration || 1000} />
+        <div
+          ref={timelineRef}
+          className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]"
+        >
+          <Timeline
+            layers={layers}
+            selectedLayer={
+              layers.find((layer) => selectedIds.includes(layer.id)) || null
+            }
+            layerDuration={getSelectedItemDuration(selectedIds[0])}
+          />
         </div>
       )}
       {/* Infinite Canvas */}

@@ -1,5 +1,5 @@
 import { LayerContainer, Shape } from "@/types/canvasElements";
-import { useStore } from "@/app/zustland/store";
+import { useStore, usePlaybackStore } from "@/app/zustland/store";
 import { Pause, Play, Repeat2, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -17,6 +17,7 @@ export default function Timeline({
   selectedShape,
 }: TimelineProps) {
   const { mode, duration } = useStore();
+  const { timelinePlayhead, isTimelinePlaying, timelineDuration, setTimelinePlayhead, setIsTimelinePlaying, setTimelineDuration } = usePlaybackStore();
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(0.7);
@@ -24,8 +25,10 @@ export default function Timeline({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playStartTime, setPlayStartTime] = useState(0);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const playStartTimeRef = useRef(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   const selected = selectedShape || selectedLayer;
 
@@ -39,6 +42,7 @@ export default function Timeline({
 
   const startPlayback = () => {
     setIsPlaying(true);
+    setIsTimelinePlaying(true);
     const currentTime = getCurrentTime();
 
     // Store in ref instead of state
@@ -57,11 +61,14 @@ export default function Timeline({
       const timelineWidth = getBaseTimelineWidth();
       const newPosition = (elapsed / totalDuration) * timelineWidth;
       setPlayheadPosition(newPosition);
+
+      setTimelinePlayhead(elapsed);
     }, 16);
   };
 
   const pausePlayback = () => {
     setIsPlaying(false);
+    setIsTimelinePlaying(false);
     if (playIntervalRef.current) {
       clearInterval(playIntervalRef.current);
       playIntervalRef.current = null;
@@ -175,7 +182,7 @@ export default function Timeline({
 
   // Add wheel event listener with proper dependencies
   useEffect(() => {
-    const timeline = timelineRef.current;
+    const timeline = timelineContainerRef.current;
     if (timeline) {
       // Add event listener to the timeline element
       timeline.addEventListener("wheel", handleWheel, { passive: false });
@@ -195,10 +202,11 @@ export default function Timeline({
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isPlaying) {
+    if (isTimelinePlaying) {
       pausePlayback();
     }
     setIsDragging(true);
+    setIsScrubbing(true);
     e.preventDefault();
     e.stopPropagation();
 
@@ -212,32 +220,42 @@ export default function Timeline({
     const maxPosition = getBaseTimelineWidth();
 
     setPlayheadPosition(Math.max(0, Math.min(timelinePosition, maxPosition)));
+    
+    // Critical idk or smthn
+    const currentTime = getCurrentTime();
+    setTimelinePlayhead(currentTime);
 
     // Update playback origin if currently playing
     updatePlaybackOrigin();
   };
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !timelineRef.current) return;
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !timelineRef.current) return;
 
-      const rect = timelineRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left - 20;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - 20;
+    const timelinePosition = (mouseX + panOffset) / zoomLevel;
+    const maxPosition = getBaseTimelineWidth();
 
-      // Convert screen position to timeline position considering zoom and pan
-      const timelinePosition = (mouseX + panOffset) / zoomLevel;
-      const maxPosition = getBaseTimelineWidth();
+    const newPosition = Math.max(0, Math.min(timelinePosition, maxPosition));
+    setPlayheadPosition(newPosition);
 
-      setPlayheadPosition(Math.max(0, Math.min(timelinePosition, maxPosition)));
+    // Calculate current time directly
+    const totalDuration = layerDuration || 10;
+    const timelineWidth = getBaseTimelineWidth();
+    const progress = newPosition / timelineWidth;
+    const currentTime = Math.max(
+      0,
+      Math.min(progress * totalDuration, totalDuration)
+    );
 
-      // KEY FIX: Update playback origin if currently playing
-      updatePlaybackOrigin();
-    },
-    [isDragging, panOffset, zoomLevel, isPlaying] // Add isPlaying as dependency
-  );
+    setTimelinePlayhead(currentTime);
+    updatePlaybackOrigin();
+  };
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setIsScrubbing(false);
   }, []);
 
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -251,6 +269,10 @@ export default function Timeline({
     const maxPosition = getBaseTimelineWidth();
 
     setPlayheadPosition(Math.max(0, Math.min(timelinePosition, maxPosition)));
+
+    // Critical idk or smthn
+    const currentTime = getCurrentTime();
+    setTimelinePlayhead(currentTime);
 
     // Update playback origin if currently playing
     updatePlaybackOrigin();
@@ -442,7 +464,7 @@ export default function Timeline({
       <div className="w-full h-[50px] bg-[#232323] border-b border-[#474747] flex flex-row justify-center items-center">
         <div className="flex flex-row gap-[10px]">
           <button onClick={togglePlay}>
-            {isPlaying ? (
+            {isTimelinePlaying ? (
               <Pause className="w-4 h-4 text-white fill-white" />
             ) : (
               <Play className="w-4 h-4 text-white fill-white" />
@@ -510,6 +532,7 @@ export default function Timeline({
 
         {/* Timeline Area */}
         <div
+          ref={timelineContainerRef}
           className="bg-[#232323] overflow-x-auto overflow-y-hidden w-full"
           style={{ height: `${getTimelineHeight()}px` }}
         >
@@ -617,7 +640,7 @@ export default function Timeline({
                       <div
                         className="absolute ml-[10px] h-[36px] rounded-md flex items-center px-2 border border-opacity-50"
                         style={{
-                          left: `${screenStartPosition + 20}px`,
+                          left: `${screenStartPosition + 30}px`,
                           width: `${Math.max(10, screenWidth)}px`,
                           backgroundColor: getAnimationColor(animation.type),
                           borderColor: getAnimationColor(animation.type),

@@ -82,6 +82,65 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
 export class AnimationManager {
   private timelines: Map<string, gsap.core.Timeline> = new Map();
 
+  seekAnimationToTime(id: string, time: number, totalDuration: number) {
+    const timeline = this.timelines.get(id);
+    if (!timeline) return;
+
+    const animationDuration = timeline.duration()
+
+    if (animationDuration === 0) return;
+
+    let progress = 0;
+
+    if (timeline.repeat() === -1) {
+    // For infinite animations, loop the progress
+    progress = (time % animationDuration) / animationDuration;
+  } else {
+    // Handle finite animations
+    const repeatCount = timeline.repeat() + 1;
+    const totalAnimationTime = animationDuration * repeatCount;
+    
+    if (time <= totalAnimationTime) {
+      // Animation is active, calculate looped progress
+      progress = (time % animationDuration) / animationDuration;
+    } else {
+      // Animation has completed, show final state
+      progress = 1;
+    }
+  }
+
+    // Pause the timeline and seek to the calculated progress
+    timeline.pause().progress(progress);
+  }
+
+  setTimelinePlayback(id: string, isPlaying: boolean) {
+    const timeline = this.timelines.get(id);
+    if (!timeline) return;
+
+    if (isPlaying) {
+      timeline.play();
+    } else {
+      timeline.pause();
+    }
+  }
+
+  refreshAnimationState(id: string, currentTime: number, totalDuration: number) {
+  const timeline = this.timelines.get(id);
+  if (!timeline) return;
+  
+  // Force the timeline to update its visual state
+  this.seekAnimationToTime(id, currentTime, totalDuration);
+  
+  // Trigger a render update
+  if (timeline.getChildren) {
+    timeline.getChildren().forEach((tween: any) => {
+      if (tween.target && tween.target.getLayer) {
+        tween.target.getLayer()?.batchDraw();
+      }
+    });
+  }
+}
+
   createAnimationTimeline(
     target: any,
     animation: ShapeAnimation,

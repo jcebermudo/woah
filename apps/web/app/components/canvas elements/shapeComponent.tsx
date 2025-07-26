@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
+import { usePlaybackStore } from "@/app/zustland/store";
 import {
   CircleShape,
   RectShape,
@@ -52,6 +53,7 @@ export default function ShapeComponent({
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const animationManagerRef = useRef<AnimationManager>(new AnimationManager());
+  const { timelinePlayhead, isTimelinePlaying, timelineDuration } = usePlaybackStore();
 
   // Dynamic animation system
   useGSAP(() => {
@@ -78,11 +80,6 @@ export default function ShapeComponent({
           );
 
           manager.addTimeline(animation.id, timeline);
-
-          // Auto-play animations that should play on select, or non-select animations
-          if (animation.enabled) {
-            timeline.play();
-          }
         }
       });
     }
@@ -94,6 +91,54 @@ export default function ShapeComponent({
   }, [shapeProps.animations, shapeProps.id, shapeProps.type]);
 
   useEffect(() => {
+    if (!shapeProps.animations?.length || !shapeRef.current) return;
+
+    const manager = animationManagerRef.current;
+
+    // This effect runs on every playhead change for immediate visual updates
+    shapeProps.animations.forEach((animation) => {
+      if (animation.enabled) {
+        manager.refreshAnimationState(
+          animation.id,
+          timelinePlayhead,
+          timelineDuration
+        );
+      }
+    });
+  }, [timelinePlayhead]); 
+
+  useEffect(() => {
+   if (!shapeProps.animations?.length || !shapeRef.current) return;
+
+    const manager = animationManagerRef.current;
+
+    shapeProps.animations.forEach((animation) => {
+      if (animation.enabled) {
+        // CRITICAL: Always seek to current time for real-time preview
+        manager.seekAnimationToTime(
+          animation.id,
+          timelinePlayhead,
+          timelineDuration
+        );
+
+        // Only control play/pause, don't interfere with seeking
+        if (isTimelinePlaying) {
+          manager.setTimelinePlayback(animation.id, true);
+        } else {
+          manager.setTimelinePlayback(animation.id, false);
+        }
+      }
+    });
+
+
+    if (shapeRef.current &&  shapeRef.current.getLayer) {
+      shapeRef.current.getLayer()?.batchDraw();
+    }
+
+
+  }, [timelinePlayhead, timelineDuration, isTimelinePlaying, shapeProps.animations]);
+
+  useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && shapeRef.current) {
       // Attach transformer manually
       trRef.current.nodes([shapeRef.current]);
@@ -102,12 +147,6 @@ export default function ShapeComponent({
   }, [isSelected, isDragging]);
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Pause GSAP animations during drag
-    shapeProps.animations?.forEach((animation) => {
-      if (animation.enabled) {
-        animationManagerRef.current.pauseAnimation(animation.id);
-      }
-    });
     onDragStart();
   };
 
@@ -118,15 +157,6 @@ export default function ShapeComponent({
       y: e.target.y(),
     });
 
-    // Resume GSAP animations after drag if selected
-    if (isSelected) {
-      shapeProps.animations?.forEach((animation) => {
-        if (animation.enabled && animation.playOnSelect) {
-          animationManagerRef.current.playAnimation(animation.id);
-        }
-      });
-    }
-
     // Auto-select the shape after dragging (Figma-like behavior)
     onSelect();
     onDragEnd();
@@ -135,13 +165,6 @@ export default function ShapeComponent({
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
     const node = shapeRef.current;
     if (!node) return;
-
-    // Pause GSAP animations during transform
-    shapeProps.animations?.forEach((animation) => {
-      if (animation.enabled) {
-        animationManagerRef.current.pauseAnimation(animation.id);
-      }
-    });
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
@@ -187,15 +210,6 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
-
-    // Resume GSAP animations after transform if selected
-    if (isSelected) {
-      shapeProps.animations?.forEach((animation) => {
-        if (animation.enabled && animation.playOnSelect) {
-          animationManagerRef.current.playAnimation(animation.id);
-        }
-      });
-    }
   };
 
   const handleMouseEnter = () => {
@@ -230,12 +244,7 @@ export default function ShapeComponent({
     deltaX: number,
     deltaY: number
   ) => {
-    // Pause GSAP animations during side anchor drag
-    shapeProps.animations?.forEach((animation) => {
-      if (animation.enabled) {
-        animationManagerRef.current.pauseAnimation(animation.id);
-      }
-    });
+
 
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;
@@ -374,23 +383,11 @@ export default function ShapeComponent({
 
     onChange(updatedShape);
 
-    // Resume GSAP animations after side anchor drag if selected
-    if (isSelected) {
-      shapeProps.animations?.forEach((animation) => {
-        if (animation.enabled && animation.playOnSelect) {
-          animationManagerRef.current.playAnimation(animation.id);
-        }
-      });
-    }
+
   };
 
   const handleRotation = (absoluteRotation: number) => {
-    // Pause GSAP animations during manual rotation
-    shapeProps.animations?.forEach((animation) => {
-      if (animation.enabled) {
-        animationManagerRef.current.pauseAnimation(animation.id);
-      }
-    });
+
 
     // Create updated shape based on type
     let updatedShape: Shape;
@@ -416,14 +413,7 @@ export default function ShapeComponent({
 
     onChange(updatedShape);
 
-    // Resume GSAP animations after manual rotation if selected
-    if (isSelected) {
-      shapeProps.animations?.forEach((animation) => {
-        if (animation.enabled && animation.playOnSelect) {
-          animationManagerRef.current.playAnimation(animation.id);
-        }
-      });
-    }
+
   };
 
   const renderShape = () => {

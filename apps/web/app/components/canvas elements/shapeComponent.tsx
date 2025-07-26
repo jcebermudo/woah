@@ -12,6 +12,7 @@ import Konva from "konva";
 import { SideAnchor, RotationAnchor } from "./transformers/anchors";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { AnimationManager } from "@/utils/animations";
 
 gsap.registerPlugin(useGSAP);
 
@@ -50,50 +51,47 @@ export default function ShapeComponent({
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
-  const gsapTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const animationManagerRef = useRef<AnimationManager>(new AnimationManager());
 
-  // GSAP infinite rotation effect
-  /* useGSAP(() => {
-    if (shapeRef.current) {
-      // Kill any existing animation
-      if (gsapTimelineRef.current) {
-        gsapTimelineRef.current.kill();
-      }
+  // Dynamic animation system
+  useGSAP(() => {
+    if (shapeProps.animations?.length) {
+      const manager = animationManagerRef.current;
 
-      // Create new infinite rotation animation
-      gsapTimelineRef.current = gsap.timeline({ repeat: -1 });
+      // Clear existing animations
+      manager.killAllAnimations();
 
-      gsapTimelineRef.current.to(shapeRef.current, {
-        rotation: 360,
-        duration: 3,
-        ease: "none",
-        transformOrigin: "center center",
+      // Create new animations based on shape's animation config
+      shapeProps.animations.forEach((animation) => {
+        if (animation.enabled) {
+          const originalProps = {
+            rotation: shapeProps.rotation || 0,
+            x: shapeProps.x,
+            y: shapeProps.y,
+            opacity: 1,
+          };
+
+          const timeline = manager.createAnimationTimeline(
+            shapeRef.current,
+            animation,
+            originalProps
+          );
+
+          manager.addTimeline(animation.id, timeline);
+
+          // Auto-play animations that should play on select, or non-select animations
+          if (animation.enabled) {
+            timeline.play();
+          }
+        }
       });
-
-      // Pause animation initially
-      gsapTimelineRef.current.pause();
-    } 
+    }
 
     // Cleanup function
     return () => {
-      if (gsapTimelineRef.current) {
-        gsapTimelineRef.current.kill();
-      }
+      animationManagerRef.current.killAllAnimations();
     };
-  }, [shapeProps.id, shapeProps.type]);*/
-
-  // Control animation based on selection
-  useEffect(() => {
-    if (gsapTimelineRef.current) {
-      if (isSelected) {
-        gsapTimelineRef.current.play();
-      } else {
-        gsapTimelineRef.current.pause();
-        // Reset to original rotation from props
-        gsap.set(shapeRef.current, { rotation: shapeProps.rotation || 0 });
-      }
-    }
-  }, [isSelected, shapeProps.rotation]);
+  }, [shapeProps.animations, shapeProps.id, shapeProps.type]);
 
   useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && shapeRef.current) {
@@ -104,10 +102,12 @@ export default function ShapeComponent({
   }, [isSelected, isDragging]);
 
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Pause GSAP animation during drag
-    if (gsapTimelineRef.current) {
-      gsapTimelineRef.current.pause();
-    }
+    // Pause GSAP animations during drag
+    shapeProps.animations?.forEach((animation) => {
+      if (animation.enabled) {
+        animationManagerRef.current.pauseAnimation(animation.id);
+      }
+    });
     onDragStart();
   };
 
@@ -118,9 +118,13 @@ export default function ShapeComponent({
       y: e.target.y(),
     });
 
-    // Resume GSAP animation after drag if selected
-    if (gsapTimelineRef.current && isSelected) {
-      gsapTimelineRef.current.play();
+    // Resume GSAP animations after drag if selected
+    if (isSelected) {
+      shapeProps.animations?.forEach((animation) => {
+        if (animation.enabled && animation.playOnSelect) {
+          animationManagerRef.current.playAnimation(animation.id);
+        }
+      });
     }
 
     // Auto-select the shape after dragging (Figma-like behavior)
@@ -132,10 +136,12 @@ export default function ShapeComponent({
     const node = shapeRef.current;
     if (!node) return;
 
-    // Pause GSAP animation during transform
-    if (gsapTimelineRef.current) {
-      gsapTimelineRef.current.pause();
-    }
+    // Pause GSAP animations during transform
+    shapeProps.animations?.forEach((animation) => {
+      if (animation.enabled) {
+        animationManagerRef.current.pauseAnimation(animation.id);
+      }
+    });
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
@@ -182,9 +188,13 @@ export default function ShapeComponent({
 
     onChange(updatedShape);
 
-    // Resume GSAP animation after transform if selected
-    if (gsapTimelineRef.current && isSelected) {
-      gsapTimelineRef.current.play();
+    // Resume GSAP animations after transform if selected
+    if (isSelected) {
+      shapeProps.animations?.forEach((animation) => {
+        if (animation.enabled && animation.playOnSelect) {
+          animationManagerRef.current.playAnimation(animation.id);
+        }
+      });
     }
   };
 
@@ -220,10 +230,12 @@ export default function ShapeComponent({
     deltaX: number,
     deltaY: number
   ) => {
-    // Pause GSAP animation during side anchor drag
-    if (gsapTimelineRef.current) {
-      gsapTimelineRef.current.pause();
-    }
+    // Pause GSAP animations during side anchor drag
+    shapeProps.animations?.forEach((animation) => {
+      if (animation.enabled) {
+        animationManagerRef.current.pauseAnimation(animation.id);
+      }
+    });
 
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;
@@ -362,17 +374,23 @@ export default function ShapeComponent({
 
     onChange(updatedShape);
 
-    // Resume GSAP animation after side anchor drag if selected
-    if (gsapTimelineRef.current && isSelected) {
-      gsapTimelineRef.current.play();
+    // Resume GSAP animations after side anchor drag if selected
+    if (isSelected) {
+      shapeProps.animations?.forEach((animation) => {
+        if (animation.enabled && animation.playOnSelect) {
+          animationManagerRef.current.playAnimation(animation.id);
+        }
+      });
     }
   };
 
   const handleRotation = (absoluteRotation: number) => {
-    // Pause GSAP animation during manual rotation
-    if (gsapTimelineRef.current) {
-      gsapTimelineRef.current.pause();
-    }
+    // Pause GSAP animations during manual rotation
+    shapeProps.animations?.forEach((animation) => {
+      if (animation.enabled) {
+        animationManagerRef.current.pauseAnimation(animation.id);
+      }
+    });
 
     // Create updated shape based on type
     let updatedShape: Shape;
@@ -398,9 +416,13 @@ export default function ShapeComponent({
 
     onChange(updatedShape);
 
-    // Resume GSAP animation after manual rotation if selected
-    if (gsapTimelineRef.current && isSelected) {
-      gsapTimelineRef.current.play();
+    // Resume GSAP animations after manual rotation if selected
+    if (isSelected) {
+      shapeProps.animations?.forEach((animation) => {
+        if (animation.enabled && animation.playOnSelect) {
+          animationManagerRef.current.playAnimation(animation.id);
+        }
+      });
     }
   };
 

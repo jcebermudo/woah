@@ -1,4 +1,4 @@
-import { LayerContainer } from "@/types/canvasElements";  
+import { LayerContainer, Shape } from "@/types/canvasElements";  
 import { useStore } from "@/app/zustland/store";
 import { Pause, Play, Repeat2 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -7,9 +7,10 @@ interface TimelineProps {
   layers: LayerContainer[];
   selectedLayer: LayerContainer | null;
   layerDuration: number;
+  selectedShape: Shape | null;
 }
 
-export default function Timeline({ layers, selectedLayer, layerDuration }: TimelineProps) {
+export default function Timeline({ layers, selectedLayer, layerDuration, selectedShape }: TimelineProps) {
   const { mode, duration } = useStore();
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -20,6 +21,8 @@ export default function Timeline({ layers, selectedLayer, layerDuration }: Timel
   const timelineRef = useRef<HTMLDivElement>(null);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const playStartTimeRef = useRef(0);
+
+  const selected = selectedShape || selectedLayer;
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -389,6 +392,15 @@ export default function Timeline({ layers, selectedLayer, layerDuration }: Timel
       }
     };
   }, []);
+
+  if (!selected) {
+    return (
+       <div className="h-screen w-full">
+        <h2 className="text-white">select something pls
+        </h2>
+       </div>
+    )
+  }
 
   return (
     <div className="h-screen w-full">

@@ -1,7 +1,8 @@
-import { LayerContainer, Shape } from "@/types/canvasElements";
+import { LayerContainer, Shape, ShapeAnimation } from "@/types/canvasElements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/app/zustland/store";
 import { useState } from "react";
+import { ANIMATION_TEMPLATES, AnimationManager } from "@/utils/animations";
 
 interface PropertiesPanelProps {
   selectedIds: string[];
@@ -19,7 +20,7 @@ export default function PropertiesPanel({
   handleLayerChange,
 }: PropertiesPanelProps) {
   const [isAddingAnimation, setIsAddingAnimation] = useState(false);
-  const { mode, setMode, duration, setDuration } = useStore();
+  const { mode, setMode } = useStore();
   const selectedShape = shapes.find((shape) => selectedIds.includes(shape.id));
   const selectedLayer = layers.find((layer) => selectedIds.includes(layer.id));
 
@@ -117,26 +118,155 @@ export default function PropertiesPanel({
       )}
 
       {mode === "animate" && selectedShape && (
-        <div className="select-none flex flex-row gap-4 border-b border-[#474747] py-[15px] px-[15px]">
-        {!isAddingAnimation && (
-          <button
-            onClick={() => setIsAddingAnimation(true)}
-            className="cursor-pointer rounded-[10px] w-full px-[10px] py-[8px] bg-[#29A9FF] font-medium text-white text-[14px] focus:outline-none"
-          >
-            Add animation
-          </button>
-        )}
-        {isAddingAnimation && (
-          <div className="flex flex-col gap-[10px]">
-            <span className="text-[14px] font-medium text-white">
+        <div className="select-none border-b border-[#474747] py-[15px] px-[15px]">
+          {/* Current animations list */}
+          {selectedShape.animations && selectedShape.animations.length > 0 && (
+            <div className="mb-4">
+              <span className="text-[14px] font-medium text-white mb-2 block">
+                Current Animations
+              </span>
+              <div className="space-y-2">
+                {selectedShape.animations.map((animation) => (
+                  <div
+                    key={animation.id}
+                    className="flex items-center justify-between bg-[#232323] rounded-[10px] px-[10px] py-[8px]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-white text-[12px] font-medium">
+                        {animation.type}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={animation.enabled}
+                          onChange={(e) => {
+                            const index = shapes.findIndex(
+                              (s) => s.id === selectedShape.id
+                            );
+                            const updatedAnimations =
+                              selectedShape.animations?.map((a) =>
+                                a.id === animation.id
+                                  ? { ...a, enabled: e.target.checked }
+                                  : a
+                              ) || [];
+                            handleShapeChange(index, {
+                              ...selectedShape,
+                              animations: updatedAnimations,
+                            });
+                          }}
+                          className="w-3 h-3"
+                        />
+                        <span className="text-gray-400 text-[10px]">
+                          enabled
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={animation.duration}
+                        onChange={(e) => {
+                          const index = shapes.findIndex(
+                            (s) => s.id === selectedShape.id
+                          );
+                          const updatedAnimations =
+                            selectedShape.animations?.map((a) =>
+                              a.id === animation.id
+                                ? { ...a, duration: Number(e.target.value) }
+                                : a
+                            ) || [];
+                          handleShapeChange(index, {
+                            ...selectedShape,
+                            animations: updatedAnimations,
+                          });
+                        }}
+                        className="w-16 px-2 py-1 bg-[#383838] text-white text-[12px] rounded"
+                        min="0.1"
+                        step="0.1"
+                      />
+                      <button
+                        onClick={() => {
+                          const index = shapes.findIndex(
+                            (s) => s.id === selectedShape.id
+                          );
+                          const updatedAnimations =
+                            selectedShape.animations?.filter(
+                              (a) => a.id !== animation.id
+                            ) || [];
+                          handleShapeChange(index, {
+                            ...selectedShape,
+                            animations: updatedAnimations,
+                          });
+                        }}
+                        className="text-red-400 hover:text-red-300 text-[12px]"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add animation section */}
+          {!isAddingAnimation && (
+            <button
+              onClick={() => setIsAddingAnimation(true)}
+              className="cursor-pointer rounded-[10px] w-full px-[10px] py-[8px] bg-[#29A9FF] font-medium text-white text-[14px] focus:outline-none"
+            >
               Add animation
-            </span>
-            <button className="cursor-pointer rounded-[10px] px-[10px] py-[8px] bg-[#232323] border border-[#474747] font-medium text-white text-[14px] focus:outline-none">
-              Spin
             </button>
-          </div>
-        )}
-      </div>
+          )}
+
+          {isAddingAnimation && (
+            <div className="flex flex-col gap-[10px]">
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] font-medium text-white">
+                  Add animation
+                </span>
+                <button
+                  onClick={() => setIsAddingAnimation(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {ANIMATION_TEMPLATES.map((template) => (
+                  <button
+                    key={template.type}
+                    onClick={() => {
+                      const animationManager = new AnimationManager();
+                      const newAnimation: ShapeAnimation = {
+                        ...template.defaultValues,
+                        id: animationManager.generateAnimationId(),
+                      } as ShapeAnimation;
+
+                      const index = shapes.findIndex(
+                        (s) => s.id === selectedShape.id
+                      );
+                      const currentAnimations = selectedShape.animations || [];
+                      const updatedAnimations = [
+                        ...currentAnimations,
+                        newAnimation,
+                      ];
+
+                      handleShapeChange(index, {
+                        ...selectedShape,
+                        animations: updatedAnimations,
+                      });
+                      setIsAddingAnimation(false);
+                    }}
+                    className="cursor-pointer rounded-[10px] px-[10px] py-[8px] bg-[#232323] border border-[#474747] font-medium text-white text-[12px] hover:bg-[#383838] focus:outline-none"
+                  >
+                    {template.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

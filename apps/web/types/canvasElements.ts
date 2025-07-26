@@ -8,6 +8,7 @@ export interface BaseShape {
   fill: string;
   draggable: boolean;
   rotation?: number;
+  animations?: ShapeAnimation[];
 }
 
 export interface RectShape extends BaseShape {
@@ -31,7 +32,57 @@ export interface StarShape extends BaseShape {
   outerRadius: number;
 }
 
+// Enhanced animation types
+export interface BaseAnimation {
+  id: string;
+  type: string;
+  duration: number;
+  enabled: boolean;
+  playOnSelect?: boolean;
+  repeat?: number; // -1 for infinite
+  ease?: string;
+}
+
+export interface SpinAnimation extends BaseAnimation {
+  type: "spin";
+  direction: "clockwise" | "counterclockwise";
+  degrees?: number; // Default 360
+}
+
+export interface PulseAnimation extends BaseAnimation {
+  type: "pulse";
+  scaleFrom: number;
+  scaleTo: number;
+}
+
+export interface BounceAnimation extends BaseAnimation {
+  type: "bounce";
+  height: number;
+  bounces?: number;
+}
+
+export interface FadeAnimation extends BaseAnimation {
+  type: "fade";
+  opacityFrom: number;
+  opacityTo: number;
+}
+
+export interface ShakeAnimation extends BaseAnimation {
+  type: "shake";
+  intensity: number;
+  axis: "x" | "y" | "both";
+}
+
+export type ShapeAnimation = SpinAnimation | PulseAnimation | BounceAnimation | FadeAnimation | ShakeAnimation;
+
 export type Shape = RectShape | CircleShape | StarShape;
+
+// Animation helper types
+export interface AnimationTemplate {
+  type: string;
+  name: string;
+  defaultValues: Partial<ShapeAnimation>;
+}
 
 export interface ShapeComponentProps {
   shapeProps: Shape;

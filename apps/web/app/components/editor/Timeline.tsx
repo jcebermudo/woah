@@ -1,6 +1,6 @@
-import { LayerContainer, Shape } from "@/types/canvasElements";  
+import { LayerContainer, Shape } from "@/types/canvasElements";
 import { useStore } from "@/app/zustland/store";
-import { Pause, Play, Repeat2 } from "lucide-react";
+import { Pause, Play, Repeat2, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 interface TimelineProps {
@@ -10,7 +10,12 @@ interface TimelineProps {
   selectedShape: Shape | null;
 }
 
-export default function Timeline({ layers, selectedLayer, layerDuration, selectedShape }: TimelineProps) {
+export default function Timeline({
+  layers,
+  selectedLayer,
+  layerDuration,
+  selectedShape,
+}: TimelineProps) {
   const { mode, duration } = useStore();
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -202,7 +207,7 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
       if (!isDragging || !timelineRef.current) return;
 
       const rect = timelineRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
+      const mouseX = e.clientX - rect.left - 20;
 
       // Convert screen position to timeline position considering zoom and pan
       const timelinePosition = (mouseX + panOffset) / zoomLevel;
@@ -224,7 +229,7 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
     if (!timelineRef.current) return;
 
     const rect = timelineRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
+    const mouseX = e.clientX - rect.left - 20;
 
     // Convert screen position to timeline position considering zoom and pan
     const timelinePosition = (mouseX + panOffset) / zoomLevel;
@@ -235,7 +240,6 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
     // Update playback origin if currently playing
     updatePlaybackOrigin();
   };
-
 
   // Calculate current time based on playhead position
   const getCurrentTime = () => {
@@ -318,7 +322,7 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
       if (time >= 0 && time <= totalDuration) {
         // Apply zoom and pan transformation
         const basePosition = (time / totalDuration) * timelineWidth;
-        const position = basePosition * zoomLevel - panOffset;
+        const position = basePosition * zoomLevel - panOffset + 11.5;
 
         const minutes = Math.floor(time / 60);
         const seconds = time % 60;
@@ -358,7 +362,7 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
             time >= 0
           ) {
             const basePosition = (time / totalDuration) * timelineWidth;
-            const position = basePosition * zoomLevel - panOffset;
+            const position = basePosition * zoomLevel - panOffset + 20;
             dots.push({ position, time });
           }
         }
@@ -382,7 +386,7 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
   // Calculate playhead screen position with zoom and pan
   const getPlayheadScreenPosition = () => {
     if (!timelineRef.current) return 0;
-    return playheadPosition * zoomLevel - panOffset;
+    return playheadPosition * zoomLevel - panOffset + 20;
   };
 
   useEffect(() => {
@@ -393,13 +397,29 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
     };
   }, []);
 
+  // Get animation tracks for the selected shape
+  const getAnimationTracks = () => {
+    if (!selectedShape?.animations) return [];
+    return selectedShape.animations.filter((animation) => animation.enabled);
+  };
+
+  const animationTracks = getAnimationTracks();
+  const TRACK_HEIGHT = 250; // Height of each animation track
+  const TRACK_HEADER_WIDTH = 250; // Width of the track name section
+
+  // Calculate timeline height based on number of tracks
+  const getTimelineHeight = () => {
+    const baseHeight = 50; // Header height
+    const tracksHeight = Math.max(animationTracks.length, 1) * TRACK_HEIGHT;
+    return baseHeight + tracksHeight;
+  };
+
   if (!selected) {
     return (
-       <div className="h-screen w-full">
-        <h2 className="text-white">select something pls
-        </h2>
-       </div>
-    )
+      <div className="h-screen w-full">
+        <h2 className="text-white">select something pls</h2>
+      </div>
+    );
   }
 
   return (
@@ -428,13 +448,58 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
           )}
         </div>
       </div>
-      <div className="flex flex-row h-full w-full overflow-x-auto">
+      <div className="flex flex-row h-[520px] w-full overflow-x-auto">
+        {/* Track Headers - Left Sidebar */}
         <div className="bg-[#232323] border-r border-[#474747] h-full min-w-[250px] z-[50]">
-          <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-center"></div>
+          {/* Timeline header */}
+          <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-center">
+            <span className="text-gray-400 text-sm">Animations</span>
+          </div>
+
+          {/* Animation tracks headers */}
+          {animationTracks.length > 0 ? (
+            <div className="overflow-y-auto">
+              {animationTracks.map((animation, index) => (
+                <div
+                  key={animation.id}
+                  className="h-[40px] border-b border-[#474747] flex items-center px-4 bg-[#232323] hover:bg-[#2a2a2a]"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <button className="text-gray-400 hover:text-white">
+                      <Eye className="w-3 h-3" />
+                    </button>
+                    <div className="flex-1">
+                      <div className="text-white text-sm font-medium">
+                        {animation.type.charAt(0).toUpperCase() +
+                          animation.type.slice(1)}
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        {animation.duration}s{animation.repeat === -1 && " ∞"}
+                      </div>
+                    </div>
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        animation.enabled ? "bg-green-400" : "bg-gray-600"
+                      }`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[40px] text-gray-400 text-sm">
+              No animations
+            </div>
+          )}
         </div>
-        {/* SPECIFIED SECTION */}
-        <div className="bg-[#232323] overflow-x-auto overflow-y-hidden h-[298px] w-full">
-          <div className="h-[50px]">
+
+        {/* Timeline Area */}
+        <div
+          className="bg-[#232323] overflow-x-auto overflow-y-hidden w-full"
+          style={{ height: `${getTimelineHeight()}px` }}
+        >
+          {/* Timeline header with time markers */}
+          <div className="h-[50px] border-b border-[#474747]">
             <div
               ref={timelineRef}
               className="flex flex-row h-[50px] ml-[20px] relative cursor-pointer"
@@ -472,21 +537,96 @@ export default function Timeline({ layers, selectedLayer, layerDuration, selecte
               {/* Playhead */}
               <div
                 onMouseDown={handleMouseDown}
-                className="text-white text-[14px] bg-[#29A9FF] w-[45px] h-[25px] flex items-center justify-center rounded-md absolute top-[10px] z-40"
-                style={{ left: `${getPlayheadScreenPosition() - 12}px` }}
+                className="text-white text-[14px] bg-[#29A9FF] w-[45px] h-[25px] cursor-grab active:cursor-grabbing flex items-center justify-center rounded-md absolute top-[10px] z-40"
+                style={{ left: `${getPlayheadScreenPosition() - 22}px` }}
               >
                 {formatPlayheadTime(getCurrentTime())}
               </div>
               <div
                 className="top-[10px] z-20 cursor-grab absolute active:cursor-grabbing"
-                style={{ left: `${getPlayheadScreenPosition() + 10}px` }}
+                style={{ left: `${getPlayheadScreenPosition()}px` }}
                 onMouseDown={handleMouseDown}
               >
-                <div className="w-[1px] h-screen bg-[#29A9FF] z-10"></div>
+                <div
+                  className="w-[1px] bg-[#29A9FF] z-10"
+                  style={{ height: `${getTimelineHeight()}px` }}
+                ></div>
               </div>
             </div>
-            <hr className="w-full top-[98.9px] border-[0.5px] border-[#474747] absolute" />
           </div>
+
+          {/* Animation Track Bars */}
+          {animationTracks.length > 0 && (
+            <div className="relative">
+              {animationTracks.map((animation, index) => {
+                const timelineWidth = getBaseTimelineWidth();
+                const totalDuration = layerDuration || 10;
+
+                // Calculate animation bar position and width
+                const animationStartPosition = 0; // Animations start at 0s
+                const animationWidth =
+                  (animation.duration / totalDuration) * timelineWidth;
+                const screenStartPosition =
+                  animationStartPosition * zoomLevel - panOffset;
+                const screenWidth = animationWidth * zoomLevel;
+
+                // Animation type colors
+                const getAnimationColor = (type: string) => {
+                  switch (type) {
+                    case "spin":
+                      return "#FF6B6B";
+                    case "pulse":
+                      return "#4ECDC4";
+                    case "bounce":
+                      return "#45B7D1";
+                    case "fade":
+                      return "#96CEB4";
+                    case "shake":
+                      return "#FFEAA7";
+                    default:
+                      return "#DDA0DD";
+                  }
+                };
+
+                return (
+                  <div
+                    key={animation.id}
+                    className="absolute"
+                    style={{ height: `${TRACK_HEIGHT}px` }}
+                  >
+                    {/* Track background */}
+                    <div className="absolute inset-0 border-b border-[#474747] bg-[#232323] hover:bg-[#2a2a2a]" />
+
+                    {/* Animation bar */}
+                    {screenWidth > 0 && (
+                      <div
+                        className="absolute ml-[10px] h-[36px] rounded-md flex items-center px-2 border border-opacity-50"
+                        style={{
+                          left: `${screenStartPosition + 20}px`,
+                          width: `${Math.max(10, screenWidth)}px`,
+                          backgroundColor: getAnimationColor(animation.type),
+                          borderColor: getAnimationColor(animation.type),
+                          opacity: animation.enabled ? 0.8 : 0.4,
+                        }}
+                      >
+                        <div className="text-white text-xs font-medium truncate">
+                          {animation.type}
+                          {animation.repeat === -1 && " ∞"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Empty state when no animations */}
+          {animationTracks.length === 0 && (
+            <div className="flex items-center justify-center h-[40px] text-gray-400 text-sm">
+              Add animations to see tracks
+            </div>
+          )}
         </div>
       </div>
     </div>

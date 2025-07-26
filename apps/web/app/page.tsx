@@ -645,6 +645,9 @@ const App: React.FC = () => {
               layers.find((layer) => selectedIds.includes(layer.id)) || null
             }
             layerDuration={getSelectedItemDuration(selectedIds[0])}
+            selectedShape={
+              shapes.find((shape) => selectedIds.includes(shape.id)) || null
+            }
           />
         </div>
       )}

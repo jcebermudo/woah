@@ -200,6 +200,21 @@ export default function Timeline({
     }
     setIsDragging(true);
     e.preventDefault();
+    e.stopPropagation();
+
+    if (!timelineRef.current) return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - 20;
+
+    // Convert screen position to timeline position considering zoom and pan
+    const timelinePosition = (mouseX + panOffset) / zoomLevel;
+    const maxPosition = getBaseTimelineWidth();
+
+    setPlayheadPosition(Math.max(0, Math.min(timelinePosition, maxPosition)));
+
+    // Update playback origin if currently playing
+    updatePlaybackOrigin();
   };
 
   const handleMouseMove = useCallback(
@@ -506,7 +521,7 @@ export default function Timeline({
               style={{
                 width: `${Math.max(800, (lastMarkerPosition || 0) + 100)}px`,
               }}
-              onClick={handleTimelineClick}
+              onMouseDown={handleMouseDown}
             >
               {/* Subdivision dots */}
               {zoomLevel > 0.7 &&

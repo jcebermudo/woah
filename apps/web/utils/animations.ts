@@ -111,9 +111,8 @@ export class AnimationManager {
     const animationStartTime = animation.startTime;
     const animationEndTime = animation.startTime + animation.duration;
 
-    timeline.pause().progress(0);
-
     if (time < animationStartTime) {
+      timeline.pause().progress(0);
       // Get the target from the timeline's tweens
       const animationData = (timeline as any)._animationData;
       if (animationData && timeline.getChildren) {

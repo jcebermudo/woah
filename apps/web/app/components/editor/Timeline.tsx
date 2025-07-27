@@ -594,7 +594,7 @@ export default function Timeline({
               {/* Playhead */}
               <div
                 onMouseDown={handleMouseDown}
-                className="text-white text-[14px] bg-[#29A9FF] w-[45px] h-[25px] cursor-grab active:cursor-grabbing flex items-center justify-center rounded-md absolute top-[10px] z-40"
+                className="text-white text-[14px] font-semibold bg-[#FF29A9] w-[45px] h-[25px] cursor-grab active:cursor-grabbing flex items-center justify-center rounded-md absolute top-[10px] z-40"
                 style={{ left: `${getPlayheadScreenPosition() - 22}px` }}
               >
                 {formatPlayheadTime(getCurrentTime())}
@@ -605,7 +605,7 @@ export default function Timeline({
                 onMouseDown={handleMouseDown}
               >
                 <div
-                  className="w-[1px] bg-[#29A9FF] z-10"
+                  className="w-[1px] bg-[#FF29A9] z-10"
                   style={{ height: `${getTimelineHeight()}px` }}
                 ></div>
               </div>
@@ -641,7 +641,7 @@ export default function Timeline({
                         selectedShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim,
+                            : anim
                         ) || [];
 
                       const updatedShape = {

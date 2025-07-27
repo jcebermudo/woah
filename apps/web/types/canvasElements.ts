@@ -37,6 +37,7 @@ export interface BaseAnimation {
   id: string;
   type: string;
   duration: number;
+  startTime: number;
   enabled: boolean;
   playOnSelect?: boolean;
   repeat?: number; // -1 for infinite
@@ -45,30 +46,35 @@ export interface BaseAnimation {
 
 export interface SpinAnimation extends BaseAnimation {
   type: "spin";
+  startTime: number;
   direction: "clockwise" | "counterclockwise";
   degrees?: number; // Default 360
 }
 
 export interface PulseAnimation extends BaseAnimation {
   type: "pulse";
+  startTime: number;
   scaleFrom: number;
   scaleTo: number;
 }
 
 export interface BounceAnimation extends BaseAnimation {
   type: "bounce";
+  startTime: number;
   height: number;
   bounces?: number;
 }
 
 export interface FadeAnimation extends BaseAnimation {
   type: "fade";
+  startTime: number;
   opacityFrom: number;
   opacityTo: number;
 }
 
 export interface ShakeAnimation extends BaseAnimation {
   type: "shake";
+  startTime: number;
   intensity: number;
   axis: "x" | "y" | "both";
 }

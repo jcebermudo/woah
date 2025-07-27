@@ -1,5 +1,13 @@
 import gsap from "gsap";
-import { ShapeAnimation, AnimationTemplate, SpinAnimation, PulseAnimation, BounceAnimation, FadeAnimation, ShakeAnimation } from "@/types/canvasElements";
+import {
+  ShapeAnimation,
+  AnimationTemplate,
+  SpinAnimation,
+  PulseAnimation,
+  BounceAnimation,
+  FadeAnimation,
+  ShakeAnimation,
+} from "@/types/canvasElements";
 
 export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
   {
@@ -15,8 +23,8 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: -1,
       direction: "clockwise",
       degrees: 360,
-      ease: "none"
-    }
+      ease: "none",
+    },
   },
   {
     type: "pulse",
@@ -31,8 +39,8 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: -1,
       scaleFrom: 1,
       scaleTo: 1.2,
-      ease: "power2.inOut"
-    }
+      ease: "power2.inOut",
+    },
   },
   {
     type: "bounce",
@@ -47,8 +55,8 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: -1,
       height: 50,
       bounces: 3,
-      ease: "bounce.out"
-    }
+      ease: "bounce.out",
+    },
   },
   {
     type: "fade",
@@ -63,8 +71,8 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: -1,
       opacityFrom: 1,
       opacityTo: 0.3,
-      ease: "power2.inOut"
-    }
+      ease: "power2.inOut",
+    },
   },
   {
     type: "shake",
@@ -79,9 +87,9 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: 0,
       intensity: 10,
       axis: "both",
-      ease: "power2.inOut"
-    }
-  }
+      ease: "power2.inOut",
+    },
+  },
 ];
 
 export class AnimationManager {
@@ -91,28 +99,28 @@ export class AnimationManager {
     const timeline = this.timelines.get(id);
     if (!timeline) return;
 
-    const animationDuration = timeline.duration()
+    const animationDuration = timeline.duration();
 
     if (animationDuration === 0) return;
 
     let progress = 0;
 
     if (timeline.repeat() === -1) {
-    // For infinite animations, loop the progress
-    progress = (time % animationDuration) / animationDuration;
-  } else {
-    // Handle finite animations
-    const repeatCount = timeline.repeat() + 1;
-    const totalAnimationTime = animationDuration * repeatCount;
-    
-    if (time <= totalAnimationTime) {
-      // Animation is active, calculate looped progress
+      // For infinite animations, loop the progress
       progress = (time % animationDuration) / animationDuration;
     } else {
-      // Animation has completed, show final state
-      progress = 1;
+      // Handle finite animations
+      const repeatCount = timeline.repeat() + 1;
+      const totalAnimationTime = animationDuration * repeatCount;
+
+      if (time <= totalAnimationTime) {
+        // Animation is active, calculate looped progress
+        progress = (time % animationDuration) / animationDuration;
+      } else {
+        // Animation has completed, show final state
+        progress = 1;
+      }
     }
-  }
 
     // Pause the timeline and seek to the calculated progress
     timeline.pause().progress(progress);
@@ -129,27 +137,36 @@ export class AnimationManager {
     }
   }
 
-  refreshAnimationState(id: string, currentTime: number, totalDuration: number) {
-  const timeline = this.timelines.get(id);
-  if (!timeline) return;
-  
-  // Force the timeline to update its visual state
-  this.seekAnimationToTime(id, currentTime, totalDuration);
-  
-  // Trigger a render update
-  if (timeline.getChildren) {
-    timeline.getChildren().forEach((tween: any) => {
-      if (tween.target && tween.target.getLayer) {
-        tween.target.getLayer()?.batchDraw();
-      }
-    });
+  refreshAnimationState(
+    id: string,
+    currentTime: number,
+    totalDuration: number,
+  ) {
+    const timeline = this.timelines.get(id);
+    if (!timeline) return;
+
+    // Force the timeline to update its visual state
+    this.seekAnimationToTime(id, currentTime, totalDuration);
+
+    // Trigger a render update
+    if (timeline.getChildren) {
+      timeline.getChildren().forEach((tween: any) => {
+        if (tween.target && tween.target.getLayer) {
+          tween.target.getLayer()?.batchDraw();
+        }
+      });
+    }
   }
-}
 
   createAnimationTimeline(
     target: any,
     animation: ShapeAnimation,
-    originalProps?: { rotation?: number; x?: number; y?: number; opacity?: number }
+    originalProps?: {
+      rotation?: number;
+      x?: number;
+      y?: number;
+      opacity?: number;
+    },
   ): gsap.core.Timeline {
     const timeline = gsap.timeline({
       repeat: animation.repeat ?? 0,
@@ -159,24 +176,48 @@ export class AnimationManager {
         if (animation.repeat !== -1 && originalProps) {
           this.resetToOriginal(target, originalProps);
         }
-      }
+      },
     });
 
     switch (animation.type) {
       case "spin":
-        this.createSpinAnimation(timeline, target, animation as SpinAnimation, originalProps);
+        this.createSpinAnimation(
+          timeline,
+          target,
+          animation as SpinAnimation,
+          originalProps,
+        );
         break;
       case "pulse":
-        this.createPulseAnimation(timeline, target, animation as PulseAnimation);
+        this.createPulseAnimation(
+          timeline,
+          target,
+          animation as PulseAnimation,
+        );
         break;
       case "bounce":
-        this.createBounceAnimation(timeline, target, animation as BounceAnimation, originalProps);
+        this.createBounceAnimation(
+          timeline,
+          target,
+          animation as BounceAnimation,
+          originalProps,
+        );
         break;
       case "fade":
-        this.createFadeAnimation(timeline, target, animation as FadeAnimation, originalProps);
+        this.createFadeAnimation(
+          timeline,
+          target,
+          animation as FadeAnimation,
+          originalProps,
+        );
         break;
       case "shake":
-        this.createShakeAnimation(timeline, target, animation as ShakeAnimation, originalProps);
+        this.createShakeAnimation(
+          timeline,
+          target,
+          animation as ShakeAnimation,
+          originalProps,
+        );
         break;
       default:
         console.warn(`Unknown animation type: ${(animation as any).type}`);
@@ -189,26 +230,27 @@ export class AnimationManager {
     timeline: gsap.core.Timeline,
     target: any,
     animation: SpinAnimation,
-    originalProps?: { rotation?: number }
+    originalProps?: { rotation?: number },
   ) {
     const startRotation = originalProps?.rotation || 0;
     const degrees = animation.degrees || 360;
-    const endRotation = animation.direction === "clockwise" 
-      ? startRotation + degrees 
-      : startRotation - degrees;
+    const endRotation =
+      animation.direction === "clockwise"
+        ? startRotation + degrees
+        : startRotation - degrees;
 
     timeline.to(target, {
       rotation: endRotation,
       duration: animation.duration,
       ease: animation.ease || "none",
-      transformOrigin: "center center"
+      transformOrigin: "center center",
     });
   }
 
   private createPulseAnimation(
     timeline: gsap.core.Timeline,
     target: any,
-    animation: PulseAnimation
+    animation: PulseAnimation,
   ) {
     timeline
       .to(target, {
@@ -216,14 +258,14 @@ export class AnimationManager {
         scaleY: animation.scaleTo,
         duration: animation.duration / 2,
         ease: animation.ease || "power2.inOut",
-        transformOrigin: "center center"
+        transformOrigin: "center center",
       })
       .to(target, {
         scaleX: animation.scaleFrom,
         scaleY: animation.scaleFrom,
         duration: animation.duration / 2,
         ease: animation.ease || "power2.inOut",
-        transformOrigin: "center center"
+        transformOrigin: "center center",
       });
   }
 
@@ -231,20 +273,20 @@ export class AnimationManager {
     timeline: gsap.core.Timeline,
     target: any,
     animation: BounceAnimation,
-    originalProps?: { y?: number }
+    originalProps?: { y?: number },
   ) {
     const startY = originalProps?.y || 0;
-    
+
     timeline
       .to(target, {
         y: startY - animation.height,
         duration: animation.duration / 2,
-        ease: "power2.out"
+        ease: "power2.out",
       })
       .to(target, {
         y: startY,
         duration: animation.duration / 2,
-        ease: animation.ease || "bounce.out"
+        ease: animation.ease || "bounce.out",
       });
   }
 
@@ -252,18 +294,18 @@ export class AnimationManager {
     timeline: gsap.core.Timeline,
     target: any,
     animation: FadeAnimation,
-    originalProps?: { opacity?: number }
+    originalProps?: { opacity?: number },
   ) {
     timeline
       .to(target, {
         opacity: animation.opacityTo,
         duration: animation.duration / 2,
-        ease: animation.ease || "power2.inOut"
+        ease: animation.ease || "power2.inOut",
       })
       .to(target, {
         opacity: animation.opacityFrom,
         duration: animation.duration / 2,
-        ease: animation.ease || "power2.inOut"
+        ease: animation.ease || "power2.inOut",
       });
   }
 
@@ -271,14 +313,14 @@ export class AnimationManager {
     timeline: gsap.core.Timeline,
     target: any,
     animation: ShakeAnimation,
-    originalProps?: { x?: number; y?: number }
+    originalProps?: { x?: number; y?: number },
   ) {
     const startX = originalProps?.x || 0;
     const startY = originalProps?.y || 0;
     const intensity = animation.intensity;
 
     const shakeProps: any = {};
-    
+
     if (animation.axis === "x" || animation.axis === "both") {
       shakeProps.x = `+=${intensity}`;
     }
@@ -290,18 +332,26 @@ export class AnimationManager {
       .to(target, {
         ...shakeProps,
         duration: animation.duration / 8,
-        ease: animation.ease || "power2.inOut"
+        ease: animation.ease || "power2.inOut",
       })
       .to(target, {
         x: startX,
         y: startY,
         duration: animation.duration / 8,
-        ease: animation.ease || "power2.inOut"
+        ease: animation.ease || "power2.inOut",
       })
       .repeat(7); // Total 8 shakes
   }
 
-  private resetToOriginal(target: any, originalProps: { rotation?: number; x?: number; y?: number; opacity?: number }) {
+  private resetToOriginal(
+    target: any,
+    originalProps: {
+      rotation?: number;
+      x?: number;
+      y?: number;
+      opacity?: number;
+    },
+  ) {
     gsap.set(target, originalProps);
   }
 
@@ -352,11 +402,11 @@ export class AnimationManager {
   }
 
   killAllAnimations() {
-    this.timelines.forEach(timeline => timeline.kill());
+    this.timelines.forEach((timeline) => timeline.kill());
     this.timelines.clear();
   }
 
   generateAnimationId(): string {
     return `anim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
-} 
+}

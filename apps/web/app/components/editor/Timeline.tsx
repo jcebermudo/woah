@@ -17,7 +17,14 @@ export default function Timeline({
   selectedShape,
 }: TimelineProps) {
   const { mode, duration } = useStore();
-  const { timelinePlayhead, isTimelinePlaying, timelineDuration, setTimelinePlayhead, setIsTimelinePlaying, setTimelineDuration } = usePlaybackStore();
+  const {
+    timelinePlayhead,
+    isTimelinePlaying,
+    timelineDuration,
+    setTimelinePlayhead,
+    setIsTimelinePlaying,
+    setTimelineDuration,
+  } = usePlaybackStore();
   const [playheadPosition, setPlayheadPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(0.7);
@@ -152,7 +159,7 @@ export default function Timeline({
         setZoomLevel((currentZoom) => {
           const newZoomLevel = Math.max(
             MIN_ZOOM,
-            Math.min(MAX_ZOOM, currentZoom * zoomFactor)
+            Math.min(MAX_ZOOM, currentZoom * zoomFactor),
           );
 
           // Calculate new pan offset
@@ -177,7 +184,7 @@ export default function Timeline({
         });
       }
     },
-    [panOffset, getMaxPanOffset, getMinPanOffset]
+    [panOffset, getMaxPanOffset, getMinPanOffset],
   );
 
   // Add wheel event listener with proper dependencies
@@ -220,7 +227,7 @@ export default function Timeline({
     const maxPosition = getBaseTimelineWidth();
 
     setPlayheadPosition(Math.max(0, Math.min(timelinePosition, maxPosition)));
-    
+
     // Critical idk or smthn
     const currentTime = getCurrentTime();
     setTimelinePlayhead(currentTime);
@@ -246,7 +253,7 @@ export default function Timeline({
     const progress = newPosition / timelineWidth;
     const currentTime = Math.max(
       0,
-      Math.min(progress * totalDuration, totalDuration)
+      Math.min(progress * totalDuration, totalDuration),
     );
 
     setTimelinePlayhead(currentTime);
@@ -332,12 +339,12 @@ export default function Timeline({
     // Calculate the visible time range based on current zoom and pan
     const visibleStartTime = Math.max(
       0,
-      (panOffset / (zoomLevel * timelineWidth)) * totalDuration
+      (panOffset / (zoomLevel * timelineWidth)) * totalDuration,
     );
     const visibleEndTime = Math.min(
       totalDuration,
       ((panOffset + viewportWidth) / (zoomLevel * timelineWidth)) *
-        totalDuration
+        totalDuration,
     );
 
     // Add some padding to render markers slightly outside viewport

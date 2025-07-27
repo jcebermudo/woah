@@ -66,7 +66,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newWidth = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, { ...selectedLayer, width: newWidth });
               }}
@@ -82,7 +82,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newHeight = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, {
                   ...selectedLayer,
@@ -105,7 +105,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newDuration = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, {
                   ...selectedLayer,
@@ -141,13 +141,13 @@ export default function PropertiesPanel({
                           checked={animation.enabled}
                           onChange={(e) => {
                             const index = shapes.findIndex(
-                              (s) => s.id === selectedShape.id
+                              (s) => s.id === selectedShape.id,
                             );
                             const updatedAnimations =
                               selectedShape.animations?.map((a) =>
                                 a.id === animation.id
                                   ? { ...a, enabled: e.target.checked }
-                                  : a
+                                  : a,
                               ) || [];
                             handleShapeChange(index, {
                               ...selectedShape,
@@ -167,13 +167,13 @@ export default function PropertiesPanel({
                         value={animation.duration}
                         onChange={(e) => {
                           const index = shapes.findIndex(
-                            (s) => s.id === selectedShape.id
+                            (s) => s.id === selectedShape.id,
                           );
                           const updatedAnimations =
                             selectedShape.animations?.map((a) =>
                               a.id === animation.id
                                 ? { ...a, duration: Number(e.target.value) }
-                                : a
+                                : a,
                             ) || [];
                           handleShapeChange(index, {
                             ...selectedShape,
@@ -187,11 +187,11 @@ export default function PropertiesPanel({
                       <button
                         onClick={() => {
                           const index = shapes.findIndex(
-                            (s) => s.id === selectedShape.id
+                            (s) => s.id === selectedShape.id,
                           );
                           const updatedAnimations =
                             selectedShape.animations?.filter(
-                              (a) => a.id !== animation.id
+                              (a) => a.id !== animation.id,
                             ) || [];
                           handleShapeChange(index, {
                             ...selectedShape,
@@ -244,7 +244,7 @@ export default function PropertiesPanel({
                       } as ShapeAnimation;
 
                       const index = shapes.findIndex(
-                        (s) => s.id === selectedShape.id
+                        (s) => s.id === selectedShape.id,
                       );
                       const currentAnimations = selectedShape.animations || [];
                       const updatedAnimations = [

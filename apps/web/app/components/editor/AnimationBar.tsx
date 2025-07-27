@@ -68,7 +68,7 @@ export default function AnimationBar({
   const handleMouseDown = useCallback(
     (
       e: React.MouseEvent,
-      dragType: "move" | "resize-left" | "resize-right"
+      dragType: "move" | "resize-left" | "resize-right",
     ) => {
       e.stopPropagation();
 
@@ -82,7 +82,7 @@ export default function AnimationBar({
         startDuration: animation.duration,
       });
     },
-    [animation.startTime, animation.duration, onSelect]
+    [animation.startTime, animation.duration, onSelect],
   );
 
   const handleMouseMove = useCallback(
@@ -101,8 +101,8 @@ export default function AnimationBar({
             0,
             Math.min(
               totalDuration - animation.duration,
-              dragState.startTime + timeDelta
-            )
+              dragState.startTime + timeDelta,
+            ),
           );
           break;
 
@@ -111,8 +111,8 @@ export default function AnimationBar({
             0,
             Math.min(
               dragState.startTime + dragState.startDuration - 0.1,
-              dragState.startTime + timeDelta
-            )
+              dragState.startTime + timeDelta,
+            ),
           );
           newDuration =
             dragState.startDuration + (dragState.startTime - newStart);
@@ -124,8 +124,8 @@ export default function AnimationBar({
             0.1,
             Math.min(
               totalDuration - dragState.startTime,
-              dragState.startDuration + timeDelta
-            )
+              dragState.startDuration + timeDelta,
+            ),
           );
           break;
       }
@@ -144,7 +144,7 @@ export default function AnimationBar({
       zoomLevel,
       panOffset,
       onAnimationChange,
-    ]
+    ],
   );
 
   const handleMouseUp = useCallback(() => {

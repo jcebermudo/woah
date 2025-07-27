@@ -79,7 +79,12 @@ export interface ShakeAnimation extends BaseAnimation {
   axis: "x" | "y" | "both";
 }
 
-export type ShapeAnimation = SpinAnimation | PulseAnimation | BounceAnimation | FadeAnimation | ShakeAnimation;
+export type ShapeAnimation =
+  | SpinAnimation
+  | PulseAnimation
+  | BounceAnimation
+  | FadeAnimation
+  | ShakeAnimation;
 
 export type Shape = RectShape | CircleShape | StarShape;
 

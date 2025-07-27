@@ -53,7 +53,8 @@ export default function ShapeComponent({
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const animationManagerRef = useRef<AnimationManager>(new AnimationManager());
-  const { timelinePlayhead, isTimelinePlaying, timelineDuration } = usePlaybackStore();
+  const { timelinePlayhead, isTimelinePlaying, timelineDuration } =
+    usePlaybackStore();
 
   // Dynamic animation system
   useGSAP(() => {
@@ -76,7 +77,7 @@ export default function ShapeComponent({
           const timeline = manager.createAnimationTimeline(
             shapeRef.current,
             animation,
-            originalProps
+            originalProps,
           );
 
           manager.addTimeline(animation.id, timeline);
@@ -101,14 +102,14 @@ export default function ShapeComponent({
         manager.refreshAnimationState(
           animation.id,
           timelinePlayhead,
-          timelineDuration
+          timelineDuration,
         );
       }
     });
-  }, [timelinePlayhead]); 
+  }, [timelinePlayhead]);
 
   useEffect(() => {
-   if (!shapeProps.animations?.length || !shapeRef.current) return;
+    if (!shapeProps.animations?.length || !shapeRef.current) return;
 
     const manager = animationManagerRef.current;
 
@@ -118,7 +119,7 @@ export default function ShapeComponent({
         manager.seekAnimationToTime(
           animation.id,
           timelinePlayhead,
-          timelineDuration
+          timelineDuration,
         );
 
         // Only control play/pause, don't interfere with seeking
@@ -130,13 +131,15 @@ export default function ShapeComponent({
       }
     });
 
-
-    if (shapeRef.current &&  shapeRef.current.getLayer) {
+    if (shapeRef.current && shapeRef.current.getLayer) {
       shapeRef.current.getLayer()?.batchDraw();
     }
-
-
-  }, [timelinePlayhead, timelineDuration, isTimelinePlaying, shapeProps.animations]);
+  }, [
+    timelinePlayhead,
+    timelineDuration,
+    isTimelinePlaying,
+    shapeProps.animations,
+  ]);
 
   useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && shapeRef.current) {
@@ -242,10 +245,8 @@ export default function ShapeComponent({
   const handleSideAnchorDrag = (
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number
+    deltaY: number,
   ) => {
-
-
     // Adjust deltas for stage scale to fix zoom sensitivity
     const adjustedDeltaX = deltaX / stageScale;
     const adjustedDeltaY = deltaY / stageScale;
@@ -382,13 +383,9 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
-
-
   };
 
   const handleRotation = (absoluteRotation: number) => {
-
-
     // Create updated shape based on type
     let updatedShape: Shape;
 
@@ -412,8 +409,6 @@ export default function ShapeComponent({
     }
 
     onChange(updatedShape);
-
-
   };
 
   const renderShape = () => {

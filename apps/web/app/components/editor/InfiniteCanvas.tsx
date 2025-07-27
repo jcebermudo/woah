@@ -13,7 +13,6 @@ import {
 import LayerComponent from "../canvas elements/layerComponent";
 import ShapeComponent from "../canvas elements/shapeComponent";
 
-
 interface InfiniteCanvasProps {
   dimensions: { width: number; height: number };
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -75,7 +74,6 @@ export default function InfiniteCanvas({
   elementRefs,
   handleTransformEnd,
 }: InfiniteCanvasProps) {
-
   return (
     <Stage
       width={dimensions.width - 250}

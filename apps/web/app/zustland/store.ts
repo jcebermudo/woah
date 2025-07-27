@@ -29,7 +29,10 @@ export const usePlaybackStore = create<PlaybackState>((set) => ({
   isTimelinePlaying: false,
   timelineDuration: 100,
 
-  setTimelinePlayhead: (position: number) => set({ timelinePlayhead: position }),
-  setIsTimelinePlaying: (playing: boolean) => set({ isTimelinePlaying: playing }),
-  setTimelineDuration: (duration: number) => set({ timelineDuration: duration }),
+  setTimelinePlayhead: (position: number) =>
+    set({ timelinePlayhead: position }),
+  setIsTimelinePlaying: (playing: boolean) =>
+    set({ isTimelinePlaying: playing }),
+  setTimelineDuration: (duration: number) =>
+    set({ timelineDuration: duration }),
 }));

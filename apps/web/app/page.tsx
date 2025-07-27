@@ -83,7 +83,7 @@ const App: React.FC = () => {
     pivotY: number,
     diffX: number,
     diffY: number,
-    angle: number
+    angle: number,
   ) => {
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     angle += Math.atan2(diffY, diffX);
@@ -491,7 +491,7 @@ const App: React.FC = () => {
 
     // Check if selected item is a layer
     const selectedLayer = layers.find((layer) =>
-      selectedIds.includes(layer.id)
+      selectedIds.includes(layer.id),
     );
     if (!selectedLayer) return;
 
@@ -560,7 +560,7 @@ const App: React.FC = () => {
     let rightmostX = 0;
     if (layers.length > 0) {
       rightmostX = Math.max(
-        ...layers.map((layer) => layer.x + layer.width / 2)
+        ...layers.map((layer) => layer.x + layer.width / 2),
       );
     }
 

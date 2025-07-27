@@ -6,7 +6,6 @@ import { SideAnchor } from "./transformers/anchors";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
-
 interface LayerComponentProps {
   layerProps: LayerContainer;
   isSelected: boolean;

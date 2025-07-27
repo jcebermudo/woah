@@ -99,12 +99,12 @@ export class AnimationManager {
     const timeline = this.timelines.get(id);
     if (!timeline) return;
 
-    const animationDuration = animation.duration;
+    const animationDuration = timeline.duration();
 
     if (animationDuration === 0) return;
 
-    const animationStartTime = animation.startTime;
-    const animationEndTime = animationStartTime + animationDuration;
+     const animationStartTime = animation.startTime;
+     const animationEndTime = animation.startTime + animation.duration;
 
     if (time < animationStartTime) {
       timeline.pause().progress(0);
@@ -184,11 +184,30 @@ export class AnimationManager {
     repeat: animation.repeat ?? 0,
     paused: true,
     onComplete: () => {
+      // Reset to original values when animation completes (for non-infinite animations)
       if (animation.repeat !== -1 && originalProps) {
-        this.resetToOriginal(target, originalProps);
+        // Use a gentle reset to avoid jitter
+        gsap.to(target, {
+          ...originalProps,
+          duration: 0.1,
+          ease: "power2.out",
+          onComplete: () => {
+            if (target.getLayer) {
+              target.getLayer()?.batchDraw();
+            }
+          }
+        });
       }
     }
   });
+
+  const safeOriginalProps = {
+    rotation: originalProps?.rotation || 0,
+    x: originalProps?.x || target.x?.() || 0,
+    y: originalProps?.y || target.y?.() || 0,
+    opacity: originalProps?.opacity || 1,
+    ...originalProps
+  };
 
   // Store animation reference with timeline for later use
   (timeline as any)._animationData = animation;
@@ -196,13 +215,28 @@ export class AnimationManager {
   // ... rest of the method remains the same
   switch (animation.type) {
     case "spin":
-      this.createSpinAnimation(timeline, target, animation as SpinAnimation, originalProps);
+      this.createSpinAnimation(timeline, target, animation as SpinAnimation, safeOriginalProps);
       break;
-    // ... other cases
+    case "pulse":
+      this.createPulseAnimation(timeline, target, animation as PulseAnimation);
+      break;
+    case "bounce":
+      this.createBounceAnimation(timeline, target, animation as BounceAnimation, safeOriginalProps);
+      break;
+    case "fade":
+      this.createFadeAnimation(timeline, target, animation as FadeAnimation, safeOriginalProps);
+      break;
+    case "shake":
+      this.createShakeAnimation(timeline, target, animation as ShakeAnimation, safeOriginalProps);
+      break;
+    default:
+      console.warn(`Unknown animation type: ${(animation as any).type}`);
   }
 
   return timeline;
 }
+
+  
 
   private createSpinAnimation(
     timeline: gsap.core.Timeline,
@@ -217,6 +251,10 @@ export class AnimationManager {
         ? startRotation + degrees
         : startRotation - degrees;
 
+     // Set initial state
+      gsap.set(target, { rotation: startRotation });
+
+    // Create the animation
     timeline.to(target, {
       rotation: endRotation,
       duration: animation.duration,
@@ -230,6 +268,11 @@ export class AnimationManager {
     target: any,
     animation: PulseAnimation,
   ) {
+
+    // Set initial state
+    gsap.set(target, { scaleX: animation.scaleFrom, scaleY: animation.scaleFrom });
+
+    // Create the animation
     timeline
       .to(target, {
         scaleX: animation.scaleTo,
@@ -248,78 +291,101 @@ export class AnimationManager {
   }
 
   private createBounceAnimation(
-    timeline: gsap.core.Timeline,
-    target: any,
-    animation: BounceAnimation,
-    originalProps?: { y?: number },
-  ) {
-    const startY = originalProps?.y || 0;
-
-    timeline
-      .to(target, {
-        y: startY - animation.height,
-        duration: animation.duration / 2,
-        ease: "power2.out",
-      })
-      .to(target, {
-        y: startY,
-        duration: animation.duration / 2,
-        ease: animation.ease || "bounce.out",
-      });
-  }
+  timeline: gsap.core.Timeline,
+  target: any,
+  animation: BounceAnimation,
+  originalProps?: { y?: number }
+) {
+  const startY = originalProps?.y || 0;
+  
+  // Set initial state
+  gsap.set(target, { y: startY });
+  
+  timeline
+    .to(target, {
+      y: startY - animation.height,
+      duration: animation.duration / 2,
+      ease: "power2.out"
+    })
+    .to(target, {
+      y: startY,
+      duration: animation.duration / 2,
+      ease: animation.ease || "bounce.out"
+    });
+}
 
   private createFadeAnimation(
-    timeline: gsap.core.Timeline,
-    target: any,
-    animation: FadeAnimation,
-    originalProps?: { opacity?: number },
-  ) {
-    timeline
-      .to(target, {
-        opacity: animation.opacityTo,
-        duration: animation.duration / 2,
-        ease: animation.ease || "power2.inOut",
-      })
-      .to(target, {
-        opacity: animation.opacityFrom,
-        duration: animation.duration / 2,
-        ease: animation.ease || "power2.inOut",
-      });
-  }
+  timeline: gsap.core.Timeline,
+  target: any,
+  animation: FadeAnimation,
+  originalProps?: { opacity?: number }
+) {
+  // Set initial state
+  gsap.set(target, { opacity: animation.opacityFrom });
+  
+  timeline
+    .to(target, {
+      opacity: animation.opacityTo,
+      duration: animation.duration / 2,
+      ease: animation.ease || "power2.inOut"
+    })
+    .to(target, {
+      opacity: animation.opacityFrom,
+      duration: animation.duration / 2,
+      ease: animation.ease || "power2.inOut"
+    });
+}
 
   private createShakeAnimation(
-    timeline: gsap.core.Timeline,
-    target: any,
-    animation: ShakeAnimation,
-    originalProps?: { x?: number; y?: number },
-  ) {
-    const startX = originalProps?.x || 0;
-    const startY = originalProps?.y || 0;
-    const intensity = animation.intensity;
+  timeline: gsap.core.Timeline,
+  target: any,
+  animation: ShakeAnimation,
+  originalProps?: { x?: number; y?: number }
+) {
+  const startX = originalProps?.x || 0;
+  const startY = originalProps?.y || 0;
+  const intensity = animation.intensity;
 
-    const shakeProps: any = {};
+  // Set initial state
+  gsap.set(target, { x: startX, y: startY });
 
+  const shakeProps: any = {};
+  
+  if (animation.axis === "x" || animation.axis === "both") {
+    shakeProps.x = startX + intensity;
+  }
+  if (animation.axis === "y" || animation.axis === "both") {
+    shakeProps.y = startY + intensity;
+  }
+
+  // Create a more controlled shake pattern
+  for (let i = 0; i < 8; i++) {
+    const direction = i % 2 === 0 ? 1 : -1;
+    const currentIntensity = intensity * direction * (1 - i / 8); // Diminishing intensity
+    
+    const shakeStep: any = {};
     if (animation.axis === "x" || animation.axis === "both") {
-      shakeProps.x = `+=${intensity}`;
+      shakeStep.x = startX + currentIntensity;
     }
     if (animation.axis === "y" || animation.axis === "both") {
-      shakeProps.y = `+=${intensity}`;
+      shakeStep.y = startY + currentIntensity;
     }
-
-    timeline
-      .to(target, {
-        ...shakeProps,
-        duration: animation.duration / 8,
-        ease: animation.ease || "power2.inOut",
-      })
-      .to(target, {
-        x: startX,
-        y: startY,
-        duration: animation.duration / 8,
-        ease: animation.ease || "power2.inOut",
-      })
-      .repeat(7); // Total 8 shakes
+    
+    timeline.to(target, {
+      ...shakeStep,
+      duration: animation.duration / 8,
+      ease: animation.ease || "power2.inOut"
+    });
   }
+  
+  // Return to original position
+  timeline.to(target, {
+    x: startX,
+    y: startY,
+    duration: animation.duration / 8,
+    ease: animation.ease || "power2.inOut"
+  });
+}
 
   private resetToOriginal(
     target: any,

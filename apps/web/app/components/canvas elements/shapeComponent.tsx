@@ -89,7 +89,7 @@ export default function ShapeComponent({
     return () => {
       animationManagerRef.current.killAllAnimations();
     };
-  }, [shapeProps.animations, shapeProps.id, shapeProps.type]);
+  }, [shapeProps.animations, shapeProps.id]);
 
   useEffect(() => {
     if (!shapeProps.animations?.length || !shapeRef.current) return;

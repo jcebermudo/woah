@@ -106,10 +106,34 @@ export class AnimationManager {
      const animationStartTime = animation.startTime;
      const animationEndTime = animation.startTime + animation.duration;
 
+    timeline.pause().progress(0);
+
     if (time < animationStartTime) {
-      timeline.pause().progress(0);
-      return;
-    }
+
+
+  
+  // Get the target from the timeline's tweens
+  const animationData = (timeline as any)._animationData;
+  if (animationData && timeline.getChildren) {
+    timeline.getChildren().forEach((tween: any) => {
+      if (tween.target && animationData.originalProps) {
+        // Reset to original rotation without triggering animation
+        gsap.set(tween.target, {
+          rotation: animationData.originalProps.rotation || 0,
+          x: animationData.originalProps.x || tween.target.x(),
+          y: animationData.originalProps.y || tween.target.y(),
+          opacity: animationData.originalProps.opacity || 1,
+        });
+        
+        // Force redraw
+        if (tween.target.getLayer) {
+          tween.target.getLayer()?.batchDraw();
+        }
+      }
+    });
+  }
+  return;
+}
 
     if (animation.repeat === 0 && time >= animationEndTime) {
       timeline.pause().progress(1);
@@ -210,7 +234,10 @@ export class AnimationManager {
   };
 
   // Store animation reference with timeline for later use
-  (timeline as any)._animationData = animation;
+  (timeline as any)._animationData = {
+    ...animation,
+    originalProps: safeOriginalProps
+  };
 
   // ... rest of the method remains the same
   switch (animation.type) {

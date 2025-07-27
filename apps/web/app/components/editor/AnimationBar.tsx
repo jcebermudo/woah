@@ -90,7 +90,7 @@ export default function AnimationBar({
       if (!dragState.isDragging || !dragState.dragType) return;
 
       const deltaX = e.clientX - dragState.startX;
-      const timeDelta = (deltaX + panOffset) / (zoomLevel * timelineWidth);
+      const timeDelta = (deltaX / (zoomLevel * timelineWidth)) * totalDuration;
 
       let newStartTime = dragState.startTime;
       let newDuration = dragState.startDuration;
@@ -181,7 +181,7 @@ export default function AnimationBar({
   return (
     <div
       ref={barRef}
-      className={`absolute h-[36px] rounded-md flex items-center border border-opacity-50 select-none ${
+      className={`absolute h-[36px] ml-[10px] rounded-md flex items-center border border-opacity-50 select-none ${
         isSelected ? "ring-2 ring-white ring-opacity-50" : ""
       }`}
       style={{

@@ -648,6 +648,16 @@ const App: React.FC = () => {
             selectedShape={
               shapes.find((shape) => selectedIds.includes(shape.id)) || null
             }
+            onShapeAnimationChange={(updatedShape) => {
+              const shapeIndex = shapes.findIndex(
+                (s) => s.id === updatedShape.id
+              );
+              if (shapeIndex !== -1) {
+                const newShapes = [...shapes];
+                newShapes[shapeIndex] = updatedShape;
+                setShapes(newShapes);
+              }
+            }}
           />
         </div>
       )}

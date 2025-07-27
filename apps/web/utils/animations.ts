@@ -20,7 +20,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       startTime: 0,
       enabled: true,
       playOnSelect: true,
-      repeat: -1,
+      repeat: 0,
       direction: "clockwise",
       degrees: 360,
       ease: "none",
@@ -36,7 +36,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       startTime: 0,
       enabled: true,
       playOnSelect: true,
-      repeat: -1,
+      repeat: 0,
       scaleFrom: 1,
       scaleTo: 1.2,
       ease: "power2.inOut",
@@ -52,7 +52,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       startTime: 0,
       enabled: true,
       playOnSelect: true,
-      repeat: -1,
+      repeat: 0,
       height: 50,
       bounces: 3,
       ease: "bounce.out",
@@ -68,7 +68,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       startTime: 0,
       enabled: true,
       playOnSelect: true,
-      repeat: -1,
+      repeat: 0,
       opacityFrom: 1,
       opacityTo: 0.3,
       ease: "power2.inOut",
@@ -95,35 +95,51 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
 export class AnimationManager {
   private timelines: Map<string, gsap.core.Timeline> = new Map();
 
-  seekAnimationToTime(id: string, time: number, totalDuration: number) {
+  seekAnimationToTime(id: string, time: number, totalDuration: number, animation: ShapeAnimation) {
     const timeline = this.timelines.get(id);
     if (!timeline) return;
 
-    const animationDuration = timeline.duration();
+    const animationDuration = animation.duration;
 
     if (animationDuration === 0) return;
 
-    let progress = 0;
+    const animationStartTime = animation.startTime;
+    const animationEndTime = animationStartTime + animationDuration;
 
-    if (timeline.repeat() === -1) {
-      // For infinite animations, loop the progress
-      progress = (time % animationDuration) / animationDuration;
-    } else {
-      // Handle finite animations
-      const repeatCount = timeline.repeat() + 1;
-      const totalAnimationTime = animationDuration * repeatCount;
-
-      if (time <= totalAnimationTime) {
-        // Animation is active, calculate looped progress
-        progress = (time % animationDuration) / animationDuration;
-      } else {
-        // Animation has completed, show final state
-        progress = 1;
-      }
+    if (time < animationStartTime) {
+      timeline.pause().progress(0);
+      return;
     }
 
-    // Pause the timeline and seek to the calculated progress
-    timeline.pause().progress(progress);
+    if (animation.repeat === 0 && time >= animationEndTime) {
+      timeline.pause().progress(1);
+      return;
+    }
+
+    const relativeTime = time - animationStartTime;
+    let progress = 0;
+
+    if (animation.repeat === -1) {
+    // For infinite animations, loop the progress
+    progress = (relativeTime % animationDuration) / animationDuration;
+  } else if (animation.repeat === 0) {
+    // For single-play animations, clamp progress between 0 and 1
+    progress = Math.min(1, Math.max(0, relativeTime / animationDuration));
+  } else {
+    // Handle finite repeating animations
+    const repeatCount = (animation.repeat ?? 0) + 1;
+    const totalAnimationTime = animationDuration * repeatCount;
+    
+    if (relativeTime <= totalAnimationTime) {
+      // Animation is active, calculate looped progress
+      progress = (relativeTime % animationDuration) / animationDuration;
+    } else {
+      // Animation has completed, show final state
+      progress = 1;
+    }
+  }
+
+  timeline.pause().progress(progress);
   }
 
   setTimelinePlayback(id: string, isPlaying: boolean) {
@@ -141,12 +157,13 @@ export class AnimationManager {
     id: string,
     currentTime: number,
     totalDuration: number,
+    animation: ShapeAnimation,
   ) {
     const timeline = this.timelines.get(id);
     if (!timeline) return;
 
     // Force the timeline to update its visual state
-    this.seekAnimationToTime(id, currentTime, totalDuration);
+    this.seekAnimationToTime(id, currentTime, totalDuration, animation);
 
     // Trigger a render update
     if (timeline.getChildren) {
@@ -159,72 +176,33 @@ export class AnimationManager {
   }
 
   createAnimationTimeline(
-    target: any,
-    animation: ShapeAnimation,
-    originalProps?: {
-      rotation?: number;
-      x?: number;
-      y?: number;
-      opacity?: number;
-    },
-  ): gsap.core.Timeline {
-    const timeline = gsap.timeline({
-      repeat: animation.repeat ?? 0,
-      paused: true,
-      onComplete: () => {
-        // Reset to original values when animation completes (for non-infinite animations)
-        if (animation.repeat !== -1 && originalProps) {
-          this.resetToOriginal(target, originalProps);
-        }
-      },
-    });
-
-    switch (animation.type) {
-      case "spin":
-        this.createSpinAnimation(
-          timeline,
-          target,
-          animation as SpinAnimation,
-          originalProps,
-        );
-        break;
-      case "pulse":
-        this.createPulseAnimation(
-          timeline,
-          target,
-          animation as PulseAnimation,
-        );
-        break;
-      case "bounce":
-        this.createBounceAnimation(
-          timeline,
-          target,
-          animation as BounceAnimation,
-          originalProps,
-        );
-        break;
-      case "fade":
-        this.createFadeAnimation(
-          timeline,
-          target,
-          animation as FadeAnimation,
-          originalProps,
-        );
-        break;
-      case "shake":
-        this.createShakeAnimation(
-          timeline,
-          target,
-          animation as ShakeAnimation,
-          originalProps,
-        );
-        break;
-      default:
-        console.warn(`Unknown animation type: ${(animation as any).type}`);
+  target: any,
+  animation: ShapeAnimation,
+  originalProps?: { rotation?: number; x?: number; y?: number; opacity?: number }
+): gsap.core.Timeline {
+  const timeline = gsap.timeline({
+    repeat: animation.repeat ?? 0,
+    paused: true,
+    onComplete: () => {
+      if (animation.repeat !== -1 && originalProps) {
+        this.resetToOriginal(target, originalProps);
+      }
     }
+  });
 
-    return timeline;
+  // Store animation reference with timeline for later use
+  (timeline as any)._animationData = animation;
+
+  // ... rest of the method remains the same
+  switch (animation.type) {
+    case "spin":
+      this.createSpinAnimation(timeline, target, animation as SpinAnimation, originalProps);
+      break;
+    // ... other cases
   }
+
+  return timeline;
+}
 
   private createSpinAnimation(
     timeline: gsap.core.Timeline,

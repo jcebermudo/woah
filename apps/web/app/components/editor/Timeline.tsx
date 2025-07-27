@@ -2,12 +2,14 @@ import { LayerContainer, Shape } from "@/types/canvasElements";
 import { useStore, usePlaybackStore } from "@/app/zustland/store";
 import { Pause, Play, Repeat2, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import AnimationBar from "./AnimationBar";
 
 interface TimelineProps {
   layers: LayerContainer[];
   selectedLayer: LayerContainer | null;
   layerDuration: number;
   selectedShape: Shape | null;
+  onShapeAnimationChange: (updatedShape: Shape) => void; // Add this
 }
 
 export default function Timeline({
@@ -15,6 +17,7 @@ export default function Timeline({
   selectedLayer,
   layerDuration,
   selectedShape,
+  onShapeAnimationChange,
 }: TimelineProps) {
   const { mode, duration } = useStore();
   const {
@@ -36,6 +39,9 @@ export default function Timeline({
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const playStartTimeRef = useRef(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(
+    null
+  );
 
   const selected = selectedShape || selectedLayer;
 
@@ -518,7 +524,11 @@ export default function Timeline({
                           animation.type.slice(1)}
                       </div>
                       <div className="text-gray-400 text-xs">
-                        {animation.duration}s{animation.repeat === -1 && " ∞"}
+                        {animation.duration}s
+                        {/* Only show infinity symbol for infinite repeats */}
+                        {animation.repeat === -1 && " ∞"}
+                        {/* Show repeat count for finite repeats > 0 */}
+                        {animation.repeat && animation.repeat > 0 && ` x${animation.repeat + 1}`}
                       </div>
                     </div>
                     <div
@@ -603,66 +613,48 @@ export default function Timeline({
           {/* Animation Track Bars */}
           {animationTracks.length > 0 && (
             <div className="relative">
-              {animationTracks.map((animation, index) => {
-                const timelineWidth = getBaseTimelineWidth();
-                const totalDuration = layerDuration || 10;
+              {animationTracks.map((animation, index) => (
+                <div
+                  key={animation.id}
+                  className="relative"
+                  style={{
+                    height: `${TRACK_HEIGHT}px`,
+                    top: `${index * TRACK_HEIGHT}px`,
+                  }}
+                >
+                  {/* Track background */}
+                  <div className="absolute inset-0 border-b border-[#474747] bg-[#232323] hover:bg-[#2a2a2a]" />
 
-                // Calculate animation bar position and width
-                const animationStartPosition = 0; // Animations start at 0s
-                const animationWidth =
-                  (animation.duration / totalDuration) * timelineWidth;
-                const screenStartPosition =
-                  animationStartPosition * zoomLevel - panOffset;
-                const screenWidth = animationWidth * zoomLevel;
+                  {/* Interactive Animation Bar */}
+                  <AnimationBar
+                    animation={animation}
+                    totalDuration={layerDuration}
+                    timelineWidth={getBaseTimelineWidth()}
+                    zoomLevel={zoomLevel}
+                    panOffset={panOffset}
+                    onAnimationChange={(updatedAnimation) => {
+                      if (!selectedShape) return;
 
-                // Animation type colors
-                const getAnimationColor = (type: string) => {
-                  switch (type) {
-                    case "spin":
-                      return "#FF6B6B";
-                    case "pulse":
-                      return "#4ECDC4";
-                    case "bounce":
-                      return "#45B7D1";
-                    case "fade":
-                      return "#96CEB4";
-                    case "shake":
-                      return "#FFEAA7";
-                    default:
-                      return "#DDA0DD";
-                  }
-                };
+                      const updatedAnimations =
+                        selectedShape.animations?.map((anim) =>
+                          anim.id === updatedAnimation.id
+                            ? updatedAnimation
+                            : anim
+                        ) || [];
 
-                return (
-                  <div
-                    key={animation.id}
-                    className="absolute"
-                    style={{ height: `${TRACK_HEIGHT}px` }}
-                  >
-                    {/* Track background */}
-                    <div className="absolute inset-0 border-b border-[#474747] bg-[#232323] hover:bg-[#2a2a2a]" />
+                      const updatedShape = {
+                        ...selectedShape,
+                        animations: updatedAnimations,
+                      };
 
-                    {/* Animation bar */}
-                    {screenWidth > 0 && (
-                      <div
-                        className="absolute ml-[10px] h-[36px] rounded-md flex items-center px-2 border border-opacity-50"
-                        style={{
-                          left: `${screenStartPosition + 30}px`,
-                          width: `${Math.max(10, screenWidth)}px`,
-                          backgroundColor: getAnimationColor(animation.type),
-                          borderColor: getAnimationColor(animation.type),
-                          opacity: animation.enabled ? 0.8 : 0.4,
-                        }}
-                      >
-                        <div className="text-white text-xs font-medium truncate">
-                          {animation.type}
-                          {animation.repeat === -1 && " ∞"}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      // You'll need to pass this function from parent component
+                      onShapeAnimationChange(updatedShape);
+                    }}
+                    onSelect={() => setSelectedAnimationId(animation.id)}
+                    isSelected={selectedAnimationId === animation.id}
+                  />
+                </div>
+              ))}
             </div>
           )}
 

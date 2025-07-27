@@ -103,6 +103,7 @@ export default function ShapeComponent({
           animation.id,
           timelinePlayhead,
           timelineDuration,
+          animation,
         );
       }
     });
@@ -120,6 +121,7 @@ export default function ShapeComponent({
           animation.id,
           timelinePlayhead,
           timelineDuration,
+          animation,
         );
 
         // Only control play/pause, don't interfere with seeking

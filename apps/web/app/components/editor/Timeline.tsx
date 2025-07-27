@@ -40,7 +40,7 @@ export default function Timeline({
   const playStartTimeRef = useRef(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [selectedAnimationId, setSelectedAnimationId] = useState<string | null>(
-    null
+    null,
   );
 
   const selected = selectedShape || selectedLayer;
@@ -528,7 +528,9 @@ export default function Timeline({
                         {/* Only show infinity symbol for infinite repeats */}
                         {animation.repeat === -1 && " ∞"}
                         {/* Show repeat count for finite repeats > 0 */}
-                        {animation.repeat && animation.repeat > 0 && ` x${animation.repeat + 1}`}
+                        {animation.repeat &&
+                          animation.repeat > 0 &&
+                          ` x${animation.repeat + 1}`}
                       </div>
                     </div>
                     <div
@@ -639,7 +641,7 @@ export default function Timeline({
                         selectedShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim
+                            : anim,
                         ) || [];
 
                       const updatedShape = {

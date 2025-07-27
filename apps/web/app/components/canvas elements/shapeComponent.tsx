@@ -99,12 +99,12 @@ export default function ShapeComponent({
     // This effect runs on every playhead change for immediate visual updates
     shapeProps.animations.forEach((animation) => {
       if (animation.enabled) {
-         manager.seekAnimationToTime(
-           animation.id,
-           timelinePlayhead,
-           timelineDuration,
-           animation
-         );
+        manager.seekAnimationToTime(
+          animation.id,
+          timelinePlayhead,
+          timelineDuration,
+          animation,
+        );
       }
     });
   }, [timelinePlayhead]);

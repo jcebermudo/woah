@@ -110,40 +110,6 @@ export default function ShapeComponent({
   }, [timelinePlayhead]);
 
   useEffect(() => {
-    if (!shapeProps.animations?.length || !shapeRef.current) return;
-
-    const manager = animationManagerRef.current;
-
-    shapeProps.animations.forEach((animation) => {
-      if (animation.enabled) {
-        // CRITICAL: Always seek to current time for real-time preview
-        manager.seekAnimationToTime(
-          animation.id,
-          timelinePlayhead,
-          timelineDuration,
-          animation,
-        );
-
-        // Only control play/pause, don't interfere with seeking
-        if (isTimelinePlaying) {
-          manager.setTimelinePlayback(animation.id, true);
-        } else {
-          manager.setTimelinePlayback(animation.id, false);
-        }
-      }
-    });
-
-    if (shapeRef.current && shapeRef.current.getLayer) {
-      shapeRef.current.getLayer()?.batchDraw();
-    }
-  }, [
-    timelinePlayhead,
-    timelineDuration,
-    isTimelinePlaying,
-    shapeProps.animations,
-  ]);
-
-  useEffect(() => {
     if ((isSelected || isDragging) && trRef.current && shapeRef.current) {
       // Attach transformer manually
       trRef.current.nodes([shapeRef.current]);

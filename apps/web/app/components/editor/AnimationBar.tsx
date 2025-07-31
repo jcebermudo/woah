@@ -181,34 +181,26 @@ export default function AnimationBar({
   return (
     <div
       ref={barRef}
-      className={`absolute h-[36px] ml-[10px] rounded-md flex items-center border border-opacity-50 select-none ${
-        isSelected ? "ring-2 ring-white ring-opacity-50" : ""
+      className={`absolute h-[30px] ml-[10px] rounded-[5px] flex items-center select-none bg-[#29A9FF]  ${
+        isSelected ? "" : ""
       }`}
       style={{
         left: `${screenStartPosition + 30}px`,
         width: `${Math.max(20, screenWidth)}px`,
-        backgroundColor: color,
         borderColor: color,
-        opacity: animation.enabled ? 0.8 : 0.4,
         cursor: dragState.isDragging ? "grabbing" : "grab",
       }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
     >
       {/* Left resize handle */}
       <div
-        className="absolute left-0 top-0 w-2 h-full bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-l-md"
+        className="absolute left-[5px] top-[5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
         onMouseDown={(e) => handleMouseDown(e, "resize-left")}
       />
 
-      {/* Content */}
-      <div className="flex-1 px-2 text-white text-xs font-medium truncate pointer-events-none">
-        {animation.type}
-        {animation.repeat === -1 && " ∞"}
-      </div>
-
       {/* Right resize handle */}
       <div
-        className="absolute right-0 top-0 w-2 h-full bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-r-md"
+        className="absolute right-[5px] top-[5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
         onMouseDown={(e) => handleMouseDown(e, "resize-right")}
       />
     </div>

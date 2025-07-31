@@ -512,7 +512,7 @@ export default function Timeline({
               {animationTracks.map((animation, index) => (
                 <div
                   key={animation.id}
-                  className="h-[40px] border-b border-[#474747] flex items-center px-4 bg-[#232323] hover:bg-[#2a2a2a]"
+                  className="h-[40px] border-b border-[#474747] flex items-center px-4 bg-[#232323]"
                 >
                   <div className="flex items-center gap-2 w-full">
                     <button className="text-gray-400 hover:text-white">
@@ -625,7 +625,7 @@ export default function Timeline({
                   }}
                 >
                   {/* Track background */}
-                  <div className="absolute inset-0 border-b border-[#474747] bg-[#232323] hover:bg-[#2a2a2a]" />
+                  <div className="absolute inset-0 border-b border-[#474747] bg-[#232323]" />
 
                   {/* Interactive Animation Bar */}
                   <AnimationBar
@@ -641,7 +641,7 @@ export default function Timeline({
                         selectedShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim
+                            : anim,
                         ) || [];
 
                       const updatedShape = {

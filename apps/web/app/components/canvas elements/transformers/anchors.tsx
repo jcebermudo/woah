@@ -24,6 +24,17 @@ interface RotationAnchorProps {
   currentRotation: number;
 }
 
+interface CornerAnchorProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  onDrag: (deltaX: number, deltaY: number) => void;
+  visible: boolean;
+  rotation?: number;
+}
+
 export function SideAnchor({
   x,
   y,
@@ -138,21 +149,44 @@ export function RotationAnchor({
   if (!visible) return null;
 
   const getOffset = (stageScale: number) => {
-    const baseOffset = 12;
-    const offset = baseOffset / stageScale;
+    const anchorRadius = Math.max(12, 20.5 / stageScale);
+    const offset = anchorRadius;
+
+    // Base offset positions
+    let offsetX = 0,
+      offsetY = 0;
 
     switch (corner) {
       case "top-left":
-        return { x: x - offset, y: y }; // Left of top-left corner
+        offsetX = -offset;
+        offsetY = -offset;
+        break;
       case "top-right":
-        return { x: x + offset, y: y }; // Right of top-right corner
+        offsetX = offset;
+        offsetY = -offset;
+        break;
       case "bottom-left":
-        return { x: x, y: y + offset }; // Below bottom-left corner
+        offsetX = -offset;
+        offsetY = offset;
+        break;
       case "bottom-right":
-        return { x: x, y: y + offset }; // Below bottom-right corner
-      default:
-        return { x, y };
+        offsetX = offset;
+        offsetY = offset;
+        break;
     }
+
+    // Apply rotation to the offset
+    const rotationRad = (currentRotation * Math.PI) / 180;
+    const cos = Math.cos(rotationRad);
+    const sin = Math.sin(rotationRad);
+
+    const rotatedOffsetX = offsetX * cos - offsetY * sin;
+    const rotatedOffsetY = offsetX * sin + offsetY * cos;
+
+    return {
+      x: x + rotatedOffsetX,
+      y: y + rotatedOffsetY,
+    };
   };
 
   const offsetPos = getOffset(stageScale);
@@ -186,7 +220,7 @@ export function RotationAnchor({
         if (pos) {
           startAngle.current = Math.atan2(
             pos.y - groupCenterY,
-            pos.x - groupCenterX,
+            pos.x - groupCenterX
           );
           initialRotation.current = currentRotation; // Use the current rotation from props
         }
@@ -198,7 +232,7 @@ export function RotationAnchor({
           // Calculate current angle
           const currentAngle = Math.atan2(
             pos.y - groupCenterY,
-            pos.x - groupCenterX,
+            pos.x - groupCenterX
           );
 
           // Calculate the difference from start angle

@@ -77,7 +77,7 @@ export default function ShapeComponent({
           const timeline = manager.createAnimationTimeline(
             shapeRef.current,
             animation,
-            originalProps,
+            originalProps
           );
 
           manager.addTimeline(animation.id, timeline);
@@ -103,7 +103,7 @@ export default function ShapeComponent({
           animation.id,
           timelinePlayhead,
           timelineDuration,
-          animation,
+          animation
         );
       }
     });
@@ -213,11 +213,10 @@ export default function ShapeComponent({
   const handleSideAnchorDrag = (
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number,
+    deltaY: number
   ) => {
-    // Adjust deltas for stage scale to fix zoom sensitivity
-    const adjustedDeltaX = deltaX / stageScale;
-    const adjustedDeltaY = deltaY / stageScale;
+    // Note: deltaX and deltaY are already in the correct coordinate system
+    // from layer.getRelativePointerPosition(), so no stage scale adjustment needed
 
     // Convert rotation to radians for calculations
     const rotation = ((shapeProps.rotation || 0) * Math.PI) / 180;
@@ -225,8 +224,8 @@ export default function ShapeComponent({
     const sin = Math.sin(rotation);
 
     // Transform the drag delta to the shape's local coordinate system
-    const localDeltaX = adjustedDeltaX * cos + adjustedDeltaY * sin;
-    const localDeltaY = -adjustedDeltaX * sin + adjustedDeltaY * cos;
+    const localDeltaX = deltaX * cos + deltaY * sin;
+    const localDeltaY = -deltaX * sin + deltaY * cos;
 
     // Get shape dimensions
     let width = 0;
@@ -476,272 +475,5 @@ export default function ShapeComponent({
     }
   };
 
-  // Get shape dimensions for side anchors
-  const getShapeDimensions = () => {
-    if (shapeProps.type === "rect") {
-      const rectShape = shapeProps as RectShape;
-      return { width: rectShape.width, height: rectShape.height };
-    } else if (shapeProps.type === "circle") {
-      const circleShape = shapeProps as CircleShape;
-      return { width: circleShape.width, height: circleShape.height };
-    } else if (shapeProps.type === "star") {
-      const starShape = shapeProps as StarShape;
-      return { width: starShape.width, height: starShape.height };
-    }
-    return { width: 0, height: 0 };
-  };
-
-  return (
-    <React.Fragment>
-      {renderShape()}
-
-      {/* Custom Side Anchors */}
-      {isSelected && (
-        <React.Fragment>
-          {(() => {
-            const { width, height } = getShapeDimensions();
-
-            // Calculate rotated side anchor positions
-            const rotation = ((shapeProps.rotation || 0) * Math.PI) / 180;
-            const cos = Math.cos(rotation);
-            const sin = Math.sin(rotation);
-            const halfWidth = width / 2;
-            const halfHeight = height / 2;
-
-            // Calculate anchor strip thickness - spans equally inside and outside the edge
-            const anchorThickness = 30 / stageScale;
-
-            // Calculate rotated positions for each side anchor
-            // Position anchors centered on the edge (half thickness inside, half outside)
-            // Top side anchor - centered on top edge
-            const topCenterX = shapeProps.x + (0 * cos - -halfHeight * sin);
-            const topCenterY = shapeProps.y + (0 * sin + -halfHeight * cos);
-
-            // Bottom side anchor - centered on bottom edge
-            const bottomCenterX = shapeProps.x + (0 * cos - halfHeight * sin);
-            const bottomCenterY = shapeProps.y + (0 * sin + halfHeight * cos);
-
-            // Left side anchor - centered on left edge
-            const leftCenterX = shapeProps.x + (-halfWidth * cos - 0 * sin);
-            const leftCenterY = shapeProps.y + (-halfWidth * sin + 0 * cos);
-
-            // Right side anchor - centered on right edge
-            const rightCenterX = shapeProps.x + (halfWidth * cos - 0 * sin);
-            const rightCenterY = shapeProps.y + (halfWidth * sin + 0 * cos);
-
-            return (
-              <>
-                {/* Top anchor - rotated strip along the top border */}
-                <Group
-                  x={topCenterX}
-                  y={topCenterY}
-                  rotation={shapeProps.rotation || 0}
-                  offsetX={width / 2}
-                  offsetY={anchorThickness / 2}
-                >
-                  <SideAnchor
-                    x={0}
-                    y={0}
-                    width={width}
-                    height={anchorThickness}
-                    side="top"
-                    rotation={shapeProps.rotation || 0}
-                    onDrag={(deltaX, deltaY) =>
-                      handleSideAnchorDrag("top", deltaX, deltaY)
-                    }
-                    visible={true}
-                  />
-                </Group>
-
-                {/* Bottom anchor - rotated strip along the bottom border */}
-                <Group
-                  x={bottomCenterX}
-                  y={bottomCenterY}
-                  rotation={shapeProps.rotation || 0}
-                  offsetX={width / 2}
-                  offsetY={anchorThickness / 2}
-                >
-                  <SideAnchor
-                    x={0}
-                    y={0}
-                    width={width}
-                    height={anchorThickness}
-                    side="bottom"
-                    rotation={shapeProps.rotation || 0}
-                    onDrag={(deltaX, deltaY) =>
-                      handleSideAnchorDrag("bottom", deltaX, deltaY)
-                    }
-                    visible={true}
-                  />
-                </Group>
-
-                {/* Left anchor - rotated strip along the left border */}
-                <Group
-                  x={leftCenterX}
-                  y={leftCenterY}
-                  rotation={shapeProps.rotation || 0}
-                  offsetX={anchorThickness / 2}
-                  offsetY={height / 2}
-                >
-                  <SideAnchor
-                    x={0}
-                    y={0}
-                    width={anchorThickness}
-                    height={height}
-                    side="left"
-                    rotation={shapeProps.rotation || 0}
-                    onDrag={(deltaX, deltaY) =>
-                      handleSideAnchorDrag("left", deltaX, deltaY)
-                    }
-                    visible={true}
-                  />
-                </Group>
-
-                {/* Right anchor - rotated strip along the right border */}
-                <Group
-                  x={rightCenterX}
-                  y={rightCenterY}
-                  rotation={shapeProps.rotation || 0}
-                  offsetX={anchorThickness / 2}
-                  offsetY={height / 2}
-                >
-                  <SideAnchor
-                    x={0}
-                    y={0}
-                    width={anchorThickness}
-                    height={height}
-                    side="right"
-                    rotation={shapeProps.rotation || 0}
-                    onDrag={(deltaX, deltaY) =>
-                      handleSideAnchorDrag("right", deltaX, deltaY)
-                    }
-                    visible={true}
-                  />
-                </Group>
-              </>
-            );
-          })()}
-        </React.Fragment>
-      )}
-
-      {/* Custom Rotation Anchors - positioned offset from corner anchors */}
-      {isSelected && (
-        <React.Fragment>
-          {(() => {
-            const { width, height } = getShapeDimensions();
-
-            // Center of shape in local coordinates (relative to parent group)
-            const centerX = shapeProps.x;
-            const centerY = shapeProps.y;
-
-            // Calculate rotated corner positions
-            const rotation = ((shapeProps.rotation || 0) * Math.PI) / 180;
-            const cos = Math.cos(rotation);
-            const sin = Math.sin(rotation);
-            const halfWidth = width / 2;
-            const halfHeight = height / 2;
-
-            // Calculate actual corner positions after rotation in world coordinates
-            const topLeftX = centerX + (-halfWidth * cos - -halfHeight * sin);
-            const topLeftY = centerY + (-halfWidth * sin + -halfHeight * cos);
-
-            const topRightX = centerX + (halfWidth * cos - -halfHeight * sin);
-            const topRightY = centerY + (halfWidth * sin + -halfHeight * cos);
-
-            const bottomLeftX = centerX + (-halfWidth * cos - halfHeight * sin);
-            const bottomLeftY = centerY + (-halfWidth * sin + halfHeight * cos);
-
-            const bottomRightX = centerX + (halfWidth * cos - halfHeight * sin);
-            const bottomRightY = centerY + (halfWidth * sin + halfHeight * cos);
-
-            return (
-              <>
-                <RotationAnchor
-                  x={topLeftX}
-                  y={topLeftY}
-                  corner="top-left"
-                  groupCenterX={worldX}
-                  groupCenterY={worldY}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                  currentRotation={shapeProps.rotation || 0}
-                />
-
-                <RotationAnchor
-                  x={topRightX}
-                  y={topRightY}
-                  corner="top-right"
-                  groupCenterX={worldX}
-                  groupCenterY={worldY}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                  currentRotation={shapeProps.rotation || 0}
-                />
-
-                <RotationAnchor
-                  x={bottomLeftX}
-                  y={bottomLeftY}
-                  corner="bottom-left"
-                  groupCenterX={worldX}
-                  groupCenterY={worldY}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                  currentRotation={shapeProps.rotation || 0}
-                />
-
-                <RotationAnchor
-                  x={bottomRightX}
-                  y={bottomRightY}
-                  corner="bottom-right"
-                  groupCenterX={worldX}
-                  groupCenterY={worldY}
-                  onRotate={handleRotation}
-                  visible={true}
-                  stageScale={stageScale}
-                  currentRotation={shapeProps.rotation || 0}
-                />
-              </>
-            );
-          })()}
-        </React.Fragment>
-      )}
-
-      {/* Keep corner anchors with transformer for corner resizing */}
-      {(isSelected || isDragging) && (
-        <Transformer
-          ref={trRef}
-          flipEnabled={false}
-          padding={0}
-          ignoreStroke={true}
-          rotateEnabled={false}
-          boundBoxFunc={(oldBox, newBox) => {
-            // Limit resize to minimum size
-            if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-          // Figma-like styling
-          borderStroke="#29A9FF"
-          borderStrokeWidth={2}
-          anchorStroke="#29A9FF"
-          anchorFill="white"
-          anchorStrokeWidth={2}
-          anchorSize={isDragging && !isSelected ? 6 : 8}
-          anchorCornerRadius={2}
-          rotateAnchorOffset={30}
-          enabledAnchors={[
-            "top-left",
-            "top-right",
-            "bottom-right",
-            "bottom-left",
-            "middle-top",
-          ]}
-        />
-      )}
-    </React.Fragment>
-  );
+  return <React.Fragment>{renderShape()}</React.Fragment>;
 }

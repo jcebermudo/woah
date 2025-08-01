@@ -12,6 +12,7 @@ import {
 } from "@/types/canvasElements";
 import LayerComponent from "../canvas elements/layerComponent";
 import ShapeComponent from "../canvas elements/shapeComponent";
+import TransformerComponent from "../canvas elements/TransformerComponent";
 
 interface InfiniteCanvasProps {
   dimensions: { width: number; height: number };
@@ -74,6 +75,32 @@ export default function InfiniteCanvas({
   elementRefs,
   handleTransformEnd,
 }: InfiniteCanvasProps) {
+  // Get selected shapes and their corresponding nodes
+  const getSelectedShapesAndNodes = () => {
+    const selectedShapes = shapes.filter((shape) =>
+      selectedIds.includes(shape.id),
+    );
+    const selectedNodes = selectedShapes
+      .map((shape) => elementRefs.current?.get(shape.id))
+      .filter((node) => node) as Konva.Node[];
+
+    return { selectedShapes, selectedNodes };
+  };
+
+  // Handle shape change from custom transformer
+  const handleCustomTransformerShapeChange = (
+    shapeId: string,
+    newAttrs: Partial<Shape>,
+  ) => {
+    const shapeIndex = shapes.findIndex((shape) => shape.id === shapeId);
+    if (shapeIndex !== -1) {
+      const updatedShape = { ...shapes[shapeIndex], ...newAttrs };
+      handleShapeChange(shapeIndex, updatedShape as Shape);
+    }
+  };
+
+  const { selectedShapes, selectedNodes } = getSelectedShapesAndNodes();
+
   return (
     <Stage
       width={dimensions.width - 250}
@@ -159,15 +186,15 @@ export default function InfiniteCanvas({
           </LayerComponent>
         ))}
         {/* Single transformer for all selected shapes */}
-        <Transformer
-          ref={transformerRef}
-          boundBoxFunc={(oldBox, newBox) => {
-            // Limit resize
-            if (newBox.width < 5 || newBox.height < 5) {
-              return oldBox;
-            }
-            return newBox;
-          }}
+        <TransformerComponent
+          layer={layers.find((layer) => layer.id === selectedIds[0])}
+          getShapeLayer={getShapeLayer}
+          selectedShapes={selectedShapes}
+          selectedNodes={selectedNodes}
+          stageScale={stageScale}
+          onTransformEnd={handleTransformEnd}
+          onShapeChange={handleCustomTransformerShapeChange}
+          visible={selectedShapes.length > 0}
         />
         {/* Selection rectangle */}
         {selectionRectangle.visible && (

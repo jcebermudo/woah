@@ -78,7 +78,7 @@ export default function InfiniteCanvas({
   // Get selected shapes and their corresponding nodes
   const getSelectedShapesAndNodes = () => {
     const selectedShapes = shapes.filter((shape) =>
-      selectedIds.includes(shape.id),
+      selectedIds.includes(shape.id)
     );
     const selectedNodes = selectedShapes
       .map((shape) => elementRefs.current?.get(shape.id))
@@ -90,7 +90,7 @@ export default function InfiniteCanvas({
   // Handle shape change from custom transformer
   const handleCustomTransformerShapeChange = (
     shapeId: string,
-    newAttrs: Partial<Shape>,
+    newAttrs: Partial<Shape>
   ) => {
     const shapeIndex = shapes.findIndex((shape) => shape.id === shapeId);
     if (shapeIndex !== -1) {
@@ -146,7 +146,7 @@ export default function InfiniteCanvas({
               })
               .map((shape, shapeIndex) => {
                 const originalIndex = shapes.findIndex(
-                  (s) => s.id === shape.id,
+                  (s) => s.id === shape.id
                 );
                 return (
                   <ShapeComponent
@@ -179,7 +179,7 @@ export default function InfiniteCanvas({
                     onDragStart={() => handleDragStart(shape.id)}
                     onDragEnd={() => handleDragEnd(shape.id)}
                     elementRefs={elementRefs}
-                    handleMultipleTransformEnd={handleTransformEnd}
+
                   />
                 );
               })}

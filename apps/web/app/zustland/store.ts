@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import Konva from "konva";
 
 type Store = {
   mode: "design" | "animate";

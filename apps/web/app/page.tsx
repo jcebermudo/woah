@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<Konva.Node[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({
@@ -83,7 +84,7 @@ const App: React.FC = () => {
     pivotY: number,
     diffX: number,
     diffY: number,
-    angle: number,
+    angle: number
   ) => {
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     angle += Math.atan2(diffY, diffX);
@@ -135,6 +136,7 @@ const App: React.FC = () => {
     // If click on empty area - remove all selections
     if (e.target === e.target.getStage()) {
       setSelectedIds([]);
+      setSelectedNodes([]);
       return;
     }
 
@@ -164,33 +166,41 @@ const App: React.FC = () => {
   };
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Find which rectangle(s) were transformed
-    const id = e.target.id();
-    const node = e.target;
+    // Get all nodes that were transformed (from the transformer)
+    const transformer = transformerRef.current;
+    if (!transformer) return;
+
+    const transformedNodes = transformer.nodes();
+
+    console.log("transformedNodes", transformedNodes);
+
     setShapes((prevShapes) => {
       const newShapes = [...prevShapes];
 
       // Update each transformed node
-      const index = newShapes.findIndex((r) => r.id === id);
+      transformedNodes.forEach((node) => {
+        const id = node.id();
+        const index = newShapes.findIndex((r) => r.id === id);
 
-      if (index !== -1) {
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
+        if (index !== -1) {
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
 
-        // Reset scale
-        node.scaleX(1);
-        node.scaleY(1);
+          // Reset scale
+          node.scaleX(1);
+          node.scaleY(1);
 
-        // Update the state with new values
-        newShapes[index] = {
-          ...newShapes[index],
-          x: node.x(),
-          y: node.y(),
-          width: Math.max(5, node.width() * scaleX),
-          height: Math.max(node.height() * scaleY),
-          rotation: node.rotation(),
-        };
-      }
+          // Update the state with new values
+          newShapes[index] = {
+            ...newShapes[index],
+            x: node.x(),
+            y: node.y(),
+            width: Math.max(5, node.width() * scaleX),
+            height: Math.max(node.height() * scaleY),
+            rotation: node.rotation(),
+          };
+        }
+      });
 
       return newShapes;
     });
@@ -491,7 +501,7 @@ const App: React.FC = () => {
 
     // Check if selected item is a layer
     const selectedLayer = layers.find((layer) =>
-      selectedIds.includes(layer.id),
+      selectedIds.includes(layer.id)
     );
     if (!selectedLayer) return;
 
@@ -560,7 +570,7 @@ const App: React.FC = () => {
     let rightmostX = 0;
     if (layers.length > 0) {
       rightmostX = Math.max(
-        ...layers.map((layer) => layer.x + layer.width / 2),
+        ...layers.map((layer) => layer.x + layer.width / 2)
       );
     }
 
@@ -650,7 +660,7 @@ const App: React.FC = () => {
             }
             onShapeAnimationChange={(updatedShape) => {
               const shapeIndex = shapes.findIndex(
-                (s) => s.id === updatedShape.id,
+                (s) => s.id === updatedShape.id
               );
               if (shapeIndex !== -1) {
                 const newShapes = [...shapes];
@@ -678,7 +688,11 @@ const App: React.FC = () => {
         draggingId={draggingId}
         selectShape={(id: string | null) => {
           if (id) {
-            setSelectedIds([id]);
+            // Only change selection if the shape is not already selected
+            // This preserves multi-selection during drag operations
+            if (!selectedIds.includes(id)) {
+              setSelectedIds([id]);
+            }
           } else {
             setSelectedIds([]);
           }

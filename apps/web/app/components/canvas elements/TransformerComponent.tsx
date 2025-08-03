@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Group, Transformer } from "react-konva";
 import Konva from "konva";
 import { SideAnchor, RotationAnchor } from "./transformers/anchors";
@@ -32,6 +32,13 @@ export default function TransformerComponent({
   visible,
 }: TransformerComponent) {
   const trRef = useRef<Konva.Transformer>(null);
+  const [currentBoundingBox, setCurrentBoundingBox] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+  } | null>(null);
 
   useEffect(() => {
     if (trRef.current) {
@@ -39,6 +46,8 @@ export default function TransformerComponent({
     }
   }, [selectedShapes, selectedNodes]);
 
+  {
+    /* Single Shape Transform End 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
     const node = selectedNodes[0];
     const transformer = trRef.current;
@@ -51,6 +60,9 @@ export default function TransformerComponent({
     // Reset scaling on the node so we can work with explicit width/height
     node.scaleX(1);
     node.scaleY(1);
+
+    console.log("scaleX", scaleX);
+    console.log("scaleY", scaleY);
 
     // New explicit dimensions
     const newWidth = Math.max(50, selectedShapes[0].width * Math.abs(scaleX));
@@ -73,6 +85,8 @@ export default function TransformerComponent({
       height: newHeight,
     });
   };
+  */
+  }
 
   const getCorner = (
     pivotX: number,
@@ -268,6 +282,9 @@ export default function TransformerComponent({
 
   // For multiple selection, only show corner anchors via Konva transformer
   if (selectedShapes.length > 1) {
+    {
+      /* */
+    }
     const getBoundingBox = () => {
       if (selectedShapes.length === 0)
         return { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
@@ -340,10 +357,24 @@ export default function TransformerComponent({
         }
       }
 
+      const layer = getShapeLayer(selectedShapes[0].id);
+
+      console.log("layer", layer);
+
+      // Convert newBox coordinates from layer space to world space
+      // newBox is in layer coordinates, but we need world coordinates for our state
+      // Update the current bounding box state with the new box in world coordinates
+      setCurrentBoundingBox({
+        x: 500,
+        y: 0,
+        width: newBox.width,
+        height: newBox.height,
+        rotation: newBox.rotation || 0,
+      });
       return newBox;
     };
 
-    const boundingBox = getBoundingBox();
+    const boundingBox = currentBoundingBox || getBoundingBox();
 
     const handleMultiSideAnchorDrag = (
       side: "top" | "bottom" | "left" | "right",
@@ -355,9 +386,6 @@ export default function TransformerComponent({
 
       // Calculate what the new bounding box would be
       let newBoundingBox = { ...boundingBox };
-
-      const scaleX = 1;
-      const scaleY = 1;
 
       switch (side) {
         case "top":
@@ -378,6 +406,10 @@ export default function TransformerComponent({
           break;
       }
 
+      // Calculate scale factors based on the bounding box change
+      const scaleX = newBoundingBox.width / boundingBox.width;
+      const scaleY = newBoundingBox.height / boundingBox.height;
+
       // Check boundaries using Konva's approach
       const clientRect = getClientRect(newBoundingBox);
       const isOut =
@@ -388,7 +420,7 @@ export default function TransformerComponent({
 
       if (isOut) return;
 
-      selectedShapes.forEach((shape) => {
+      selectedShapes.forEach((shape, index) => {
         const relativeX = (shape.x - boundingBox.x) / boundingBox.width;
         const relativeY = (shape.y - boundingBox.y) / boundingBox.height;
 
@@ -430,31 +462,114 @@ export default function TransformerComponent({
       });
     };
 
+    // Helper function to calculate anchor positions based on bounding box
+    const calculateAnchorPositions = (bbox: typeof boundingBox) => {
+      const rotation = ((bbox.rotation || 0) * Math.PI) / 180;
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+      const halfWidth = bbox.width / 2;
+      const halfHeight = bbox.height / 2;
+
+      return {
+        topCenter: {
+          x: bbox.x + (0 * cos - -halfHeight * sin),
+          y: bbox.y + (0 * sin + -halfHeight * cos),
+        },
+        bottomCenter: {
+          x: bbox.x + (0 * cos - halfHeight * sin),
+          y: bbox.y + (0 * sin + halfHeight * cos),
+        },
+        leftCenter: {
+          x: bbox.x + (-halfWidth * cos - 0 * sin),
+          y: bbox.y + (-halfWidth * sin + 0 * cos),
+        },
+        rightCenter: {
+          x: bbox.x + (halfWidth * cos - 0 * sin),
+          y: bbox.y + (halfWidth * sin + 0 * cos),
+        },
+        topLeft: {
+          x: bbox.x + (-halfWidth * cos - -halfHeight * sin),
+          y: bbox.y + (-halfWidth * sin + -halfHeight * cos),
+        },
+        topRight: {
+          x: bbox.x + (halfWidth * cos - -halfHeight * sin),
+          y: bbox.y + (halfWidth * sin + -halfHeight * cos),
+        },
+        bottomLeft: {
+          x: bbox.x + (-halfWidth * cos - halfHeight * sin),
+          y: bbox.y + (-halfWidth * sin + halfHeight * cos),
+        },
+        bottomRight: {
+          x: bbox.x + (halfWidth * cos - halfHeight * sin),
+          y: bbox.y + (halfWidth * sin + halfHeight * cos),
+        },
+      };
+    };
+
     // Calculate anchor positions for bounding box
-    const rotation = ((boundingBox.rotation || 0) * Math.PI) / 180;
-    const cos = Math.cos(rotation);
-    const sin = Math.sin(rotation);
-    const halfWidth = boundingBox.width / 2;
-    const halfHeight = boundingBox.height / 2;
+    const anchorPositions = calculateAnchorPositions(boundingBox);
     const anchorThickness = 30 / stageScale;
 
-    const topCenterX = boundingBox.x + (0 * cos - -halfHeight * sin);
-    const topCenterY = boundingBox.y + (0 * sin + -halfHeight * cos);
-    const bottomCenterX = boundingBox.x + (0 * cos - halfHeight * sin);
-    const bottomCenterY = boundingBox.y + (0 * sin + halfHeight * cos);
-    const leftCenterX = boundingBox.x + (-halfWidth * cos - 0 * sin);
-    const leftCenterY = boundingBox.y + (-halfWidth * sin + 0 * cos);
-    const rightCenterX = boundingBox.x + (halfWidth * cos - 0 * sin);
-    const rightCenterY = boundingBox.y + (halfWidth * sin + 0 * cos);
+    {
+      /* Multiple Shape Transform End 
 
-    const topLeftX = boundingBox.x + (-halfWidth * cos - -halfHeight * sin);
-    const topLeftY = boundingBox.y + (-halfWidth * sin + -halfHeight * cos);
-    const topRightX = boundingBox.x + (halfWidth * cos - -halfHeight * sin);
-    const topRightY = boundingBox.y + (halfWidth * sin + -halfHeight * cos);
-    const bottomLeftX = boundingBox.x + (-halfWidth * cos - halfHeight * sin);
-    const bottomLeftY = boundingBox.y + (-halfWidth * sin + halfHeight * cos);
-    const bottomRightX = boundingBox.x + (halfWidth * cos - halfHeight * sin);
-    const bottomRightY = boundingBox.y + (halfWidth * sin + halfHeight * cos);
+    const handleMultiTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+      const nodes = selectedNodes;
+      const transformer = trRef.current;
+      if (!nodes || !transformer) return;
+
+      console.log("nodes", nodes);
+      console.log("selectedShapes", selectedShapes);
+
+      // For multiple node transforms, Konva applies the same scale to all nodes
+      // Get the scale from the transformer's bounding box change
+      const scaleX = nodes[0].scaleX(); // All nodes should have the same scale
+      const scaleY = nodes[0].scaleY();
+
+      console.log("Unified scale - scaleX:", scaleX, "scaleY:", scaleY);
+
+      nodes.forEach((node, index) => {
+        console.log(`Processing Node ${index}`);
+
+        // Reset scaling on the node so we can work with explicit width/height
+        node.scaleX(1);
+        node.scaleY(1);
+
+        // New explicit dimensions - use the loop index to match with selectedShapes
+        const newWidth = Math.max(
+          50,
+          selectedShapes[index].width * Math.abs(scaleX)
+        );
+        const newHeight = Math.max(
+          50,
+          selectedShapes[index].height * Math.abs(scaleY)
+        );
+
+        // Get the layer for this shape to convert coordinates properly
+        const shapeLayer = getShapeLayer(selectedShapes[index].id);
+        if (!shapeLayer) return;
+
+        // node.x() and node.y() are relative to the layer, convert to world coordinates
+        const newX = node.x() + shapeLayer.x;
+        const newY = node.y() + shapeLayer.y;
+
+        console.log("newWidth", newWidth);
+        console.log("newHeight", newHeight);
+
+        console.log("selectedShapes[index]", selectedShapes[index]);
+
+        // Update the shape props
+        onShapeChange(selectedShapes[index].id, {
+          x: newX,
+          y: newY,
+          width: newWidth,
+          height: newHeight,
+        });
+      });
+    };
+
+    */
+    }
 
     return (
       <React.Fragment>
@@ -463,8 +578,12 @@ export default function TransformerComponent({
           flipEnabled={false}
           padding={0}
           ignoreStroke={true}
+          boundBoxFunc={(oldBox, newBox) => {
+            console.log("oldBox", oldBox);
+            console.log("newBox", newBox);
+            return boundBoxFunc(oldBox, newBox);
+          }}
           rotateEnabled={false}
-          boundBoxFunc={boundBoxFunc}
           borderStroke="#29A9FF"
           borderStrokeWidth={1}
           anchorStroke="#29A9FF"
@@ -482,8 +601,8 @@ export default function TransformerComponent({
 
         {/* Custom Side Anchors */}
         <Group
-          x={topCenterX}
-          y={topCenterY}
+          x={anchorPositions.topCenter.x}
+          y={anchorPositions.topCenter.y}
           rotation={boundingBox.rotation || 0}
           offsetX={boundingBox.width / 2}
           offsetY={anchorThickness / 2}
@@ -503,8 +622,8 @@ export default function TransformerComponent({
         </Group>
 
         <Group
-          x={bottomCenterX}
-          y={bottomCenterY}
+          x={anchorPositions.bottomCenter.x}
+          y={anchorPositions.bottomCenter.y}
           rotation={boundingBox.rotation || 0}
           offsetX={boundingBox.width / 2}
           offsetY={anchorThickness / 2}
@@ -524,8 +643,8 @@ export default function TransformerComponent({
         </Group>
 
         <Group
-          x={leftCenterX}
-          y={leftCenterY}
+          x={anchorPositions.leftCenter.x}
+          y={anchorPositions.leftCenter.y}
           rotation={boundingBox.rotation || 0}
           offsetX={anchorThickness / 2}
           offsetY={boundingBox.height / 2}
@@ -545,8 +664,8 @@ export default function TransformerComponent({
         </Group>
 
         <Group
-          x={rightCenterX}
-          y={rightCenterY}
+          x={anchorPositions.rightCenter.x}
+          y={anchorPositions.rightCenter.y}
           rotation={boundingBox.rotation || 0}
           offsetX={anchorThickness / 2}
           offsetY={boundingBox.height / 2}
@@ -567,8 +686,8 @@ export default function TransformerComponent({
 
         {/* Custom Rotation Anchors for Multiple Selection */}
         <RotationAnchor
-          x={topLeftX}
-          y={topLeftY}
+          x={anchorPositions.topLeft.x}
+          y={anchorPositions.topLeft.y}
           corner="top-left"
           groupCenterX={boundingBox.x}
           groupCenterY={boundingBox.y}
@@ -579,8 +698,8 @@ export default function TransformerComponent({
         />
 
         <RotationAnchor
-          x={topRightX}
-          y={topRightY}
+          x={anchorPositions.topRight.x}
+          y={anchorPositions.topRight.y}
           corner="top-right"
           groupCenterX={boundingBox.x}
           groupCenterY={boundingBox.y}
@@ -591,8 +710,8 @@ export default function TransformerComponent({
         />
 
         <RotationAnchor
-          x={bottomLeftX}
-          y={bottomLeftY}
+          x={anchorPositions.bottomLeft.x}
+          y={anchorPositions.bottomLeft.y}
           corner="bottom-left"
           groupCenterX={boundingBox.x}
           groupCenterY={boundingBox.y}
@@ -603,8 +722,8 @@ export default function TransformerComponent({
         />
 
         <RotationAnchor
-          x={bottomRightX}
-          y={bottomRightY}
+          x={anchorPositions.bottomRight.x}
+          y={anchorPositions.bottomRight.y}
           corner="bottom-right"
           groupCenterX={boundingBox.x}
           groupCenterY={boundingBox.y}
@@ -617,205 +736,206 @@ export default function TransformerComponent({
     );
   }
 
-  const shape = selectedShapes[0];
-  const { width, height } = getShapeDimensions(shape);
+  if (selectedShapes.length === 1) {
+    const shape = selectedShapes[0];
+    const { width, height } = getShapeDimensions(shape);
 
-  // Calc rotated anchor positions
-  const rotation = ((shape.rotation || 0) * Math.PI) / 180;
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
+    // Calc rotated anchor positions
+    const rotation = ((shape.rotation || 0) * Math.PI) / 180;
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
 
-  const anchorThickness = 20 / stageScale;
+    const anchorThickness = 20 / stageScale;
 
-  const topCenterX = shape.x + (0 * cos - -halfHeight * sin);
-  const topCenterY = shape.y + (0 * sin + -halfHeight * cos);
+    const topCenterX = shape.x + (0 * cos - -halfHeight * sin);
+    const topCenterY = shape.y + (0 * sin + -halfHeight * cos);
 
-  const bottomCenterX = shape.x + (0 * cos - halfHeight * sin);
-  const bottomCenterY = shape.y + (0 * sin + halfHeight * cos);
+    const bottomCenterX = shape.x + (0 * cos - halfHeight * sin);
+    const bottomCenterY = shape.y + (0 * sin + halfHeight * cos);
 
-  const leftCenterX = shape.x + (-halfWidth * cos - 0 * sin);
-  const leftCenterY = shape.y + (-halfWidth * sin + 0 * cos);
+    const leftCenterX = shape.x + (-halfWidth * cos - 0 * sin);
+    const leftCenterY = shape.y + (-halfWidth * sin + 0 * cos);
 
-  const rightCenterX = shape.x + (halfWidth * cos - 0 * sin);
-  const rightCenterY = shape.y + (halfWidth * sin + 0 * cos);
+    const rightCenterX = shape.x + (halfWidth * cos - 0 * sin);
+    const rightCenterY = shape.y + (halfWidth * sin + 0 * cos);
 
-  const topLeftX = shape.x + (-halfWidth * cos - -halfHeight * sin);
-  const topLeftY = shape.y + (-halfWidth * sin + -halfHeight * cos);
+    const topLeftX = shape.x + (-halfWidth * cos - -halfHeight * sin);
+    const topLeftY = shape.y + (-halfWidth * sin + -halfHeight * cos);
 
-  const topRightX = shape.x + (halfWidth * cos - -halfHeight * sin);
-  const topRightY = shape.y + (halfWidth * sin + -halfHeight * cos);
+    const topRightX = shape.x + (halfWidth * cos - -halfHeight * sin);
+    const topRightY = shape.y + (halfWidth * sin + -halfHeight * cos);
 
-  const bottomLeftX = shape.x + (-halfWidth * cos - halfHeight * sin);
-  const bottomLeftY = shape.y + (-halfWidth * sin + halfHeight * cos);
+    const bottomLeftX = shape.x + (-halfWidth * cos - halfHeight * sin);
+    const bottomLeftY = shape.y + (-halfWidth * sin + halfHeight * cos);
 
-  const bottomRightX = shape.x + (halfWidth * cos - halfHeight * sin);
-  const bottomRightY = shape.y + (halfWidth * sin + halfHeight * cos);
+    const bottomRightX = shape.x + (halfWidth * cos - halfHeight * sin);
+    const bottomRightY = shape.y + (halfWidth * sin + halfHeight * cos);
 
-  return (
-    <React.Fragment>
-      <Transformer
-        ref={trRef}
-        flipEnabled={false}
-        padding={0}
-        ignoreStroke={true}
-        rotateEnabled={false}
-        boundBoxFunc={(oldBox, newBox) => {
-          if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
-            return oldBox;
-          }
-          return newBox;
-        }}
-        borderStroke="#29A9FF"
-        borderStrokeWidth={1}
-        anchorStroke="#29A9FF"
-        anchorFill="white"
-        anchorStrokeWidth={1}
-        anchorSize={8}
-        anchorCornerRadius={2}
-        enabledAnchors={[
-          "top-left",
-          "top-right",
-          "bottom-right",
-          "bottom-left",
-        ]}
-        onTransformEnd={handleTransformEnd}
-      />
-
-      {/* Custom Side Anchors */}
-      <Group
-        x={topCenterX}
-        y={topCenterY}
-        rotation={shape.rotation || 0}
-        offsetX={width / 2}
-        offsetY={anchorThickness / 2}
-      >
-        <SideAnchor
-          x={7}
-          y={0}
-          width={width - 15}
-          height={anchorThickness}
-          side="top"
-          rotation={shape.rotation || 0}
-          onDrag={(deltaX, deltaY) =>
-            handleSideAnchorDrag(shape, "top", deltaX, deltaY)
-          }
-          visible={true}
+    return (
+      <React.Fragment>
+        <Transformer
+          ref={trRef}
+          flipEnabled={false}
+          padding={0}
+          ignoreStroke={true}
+          rotateEnabled={false}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+          borderStroke="#29A9FF"
+          borderStrokeWidth={1}
+          anchorStroke="#29A9FF"
+          anchorFill="white"
+          anchorStrokeWidth={1}
+          anchorSize={8}
+          anchorCornerRadius={2}
+          enabledAnchors={[
+            "top-left",
+            "top-right",
+            "bottom-right",
+            "bottom-left",
+          ]}
         />
-      </Group>
 
-      <Group
-        x={bottomCenterX}
-        y={bottomCenterY}
-        rotation={shape.rotation || 0}
-        offsetX={width / 2}
-        offsetY={anchorThickness / 2}
-      >
-        <SideAnchor
-          x={7}
-          y={0}
-          width={width - 15}
-          height={anchorThickness}
-          side="bottom"
+        {/* Custom Side Anchors */}
+        <Group
+          x={topCenterX}
+          y={topCenterY}
           rotation={shape.rotation || 0}
-          onDrag={(deltaX, deltaY) =>
-            handleSideAnchorDrag(shape, "bottom", deltaX, deltaY)
-          }
-          visible={true}
-        />
-      </Group>
+          offsetX={width / 2}
+          offsetY={anchorThickness / 2}
+        >
+          <SideAnchor
+            x={7}
+            y={0}
+            width={width - 15}
+            height={anchorThickness}
+            side="top"
+            rotation={shape.rotation || 0}
+            onDrag={(deltaX, deltaY) =>
+              handleSideAnchorDrag(shape, "top", deltaX, deltaY)
+            }
+            visible={true}
+          />
+        </Group>
 
-      <Group
-        x={leftCenterX}
-        y={leftCenterY}
-        rotation={shape.rotation || 0}
-        offsetX={anchorThickness / 2}
-        offsetY={height / 2}
-      >
-        <SideAnchor
-          x={0}
-          y={7}
-          width={anchorThickness}
-          height={height - 15}
-          side="left"
+        <Group
+          x={bottomCenterX}
+          y={bottomCenterY}
           rotation={shape.rotation || 0}
-          onDrag={(deltaX, deltaY) =>
-            handleSideAnchorDrag(shape, "left", deltaX, deltaY)
-          }
-          visible={true}
-        />
-      </Group>
+          offsetX={width / 2}
+          offsetY={anchorThickness / 2}
+        >
+          <SideAnchor
+            x={7}
+            y={0}
+            width={width - 15}
+            height={anchorThickness}
+            side="bottom"
+            rotation={shape.rotation || 0}
+            onDrag={(deltaX, deltaY) =>
+              handleSideAnchorDrag(shape, "bottom", deltaX, deltaY)
+            }
+            visible={true}
+          />
+        </Group>
 
-      <Group
-        x={rightCenterX}
-        y={rightCenterY}
-        rotation={shape.rotation || 0}
-        offsetX={anchorThickness / 2}
-        offsetY={height / 2}
-      >
-        <SideAnchor
-          x={0}
-          y={7}
-          width={anchorThickness}
-          height={height - 15}
-          side="right"
+        <Group
+          x={leftCenterX}
+          y={leftCenterY}
           rotation={shape.rotation || 0}
-          onDrag={(deltaX, deltaY) =>
-            handleSideAnchorDrag(shape, "right", deltaX, deltaY)
-          }
+          offsetX={anchorThickness / 2}
+          offsetY={height / 2}
+        >
+          <SideAnchor
+            x={0}
+            y={7}
+            width={anchorThickness}
+            height={height - 15}
+            side="left"
+            rotation={shape.rotation || 0}
+            onDrag={(deltaX, deltaY) =>
+              handleSideAnchorDrag(shape, "left", deltaX, deltaY)
+            }
+            visible={true}
+          />
+        </Group>
+
+        <Group
+          x={rightCenterX}
+          y={rightCenterY}
+          rotation={shape.rotation || 0}
+          offsetX={anchorThickness / 2}
+          offsetY={height / 2}
+        >
+          <SideAnchor
+            x={0}
+            y={7}
+            width={anchorThickness}
+            height={height - 15}
+            side="right"
+            rotation={shape.rotation || 0}
+            onDrag={(deltaX, deltaY) =>
+              handleSideAnchorDrag(shape, "right", deltaX, deltaY)
+            }
+            visible={true}
+          />
+        </Group>
+
+        {/* Custom Rotation Anchors */}
+        <RotationAnchor
+          x={topLeftX}
+          y={topLeftY}
+          corner="top-left"
+          groupCenterX={shape.x}
+          groupCenterY={shape.y}
+          onRotate={(angle) => handleRotation(shape, angle)}
           visible={true}
+          stageScale={stageScale}
+          currentRotation={shape.rotation || 0}
         />
-      </Group>
 
-      {/* Custom Rotation Anchors */}
-      <RotationAnchor
-        x={topLeftX}
-        y={topLeftY}
-        corner="top-left"
-        groupCenterX={shape.x}
-        groupCenterY={shape.y}
-        onRotate={(angle) => handleRotation(shape, angle)}
-        visible={true}
-        stageScale={stageScale}
-        currentRotation={shape.rotation || 0}
-      />
+        <RotationAnchor
+          x={topRightX}
+          y={topRightY}
+          corner="top-right"
+          groupCenterX={shape.x}
+          groupCenterY={shape.y}
+          onRotate={(angle) => handleRotation(shape, angle)}
+          visible={true}
+          stageScale={stageScale}
+          currentRotation={shape.rotation || 0}
+        />
 
-      <RotationAnchor
-        x={topRightX}
-        y={topRightY}
-        corner="top-right"
-        groupCenterX={shape.x}
-        groupCenterY={shape.y}
-        onRotate={(angle) => handleRotation(shape, angle)}
-        visible={true}
-        stageScale={stageScale}
-        currentRotation={shape.rotation || 0}
-      />
+        <RotationAnchor
+          x={bottomLeftX}
+          y={bottomLeftY}
+          corner="bottom-left"
+          groupCenterX={shape.x}
+          groupCenterY={shape.y}
+          onRotate={(angle) => handleRotation(shape, angle)}
+          visible={true}
+          stageScale={stageScale}
+          currentRotation={shape.rotation || 0}
+        />
 
-      <RotationAnchor
-        x={bottomLeftX}
-        y={bottomLeftY}
-        corner="bottom-left"
-        groupCenterX={shape.x}
-        groupCenterY={shape.y}
-        onRotate={(angle) => handleRotation(shape, angle)}
-        visible={true}
-        stageScale={stageScale}
-        currentRotation={shape.rotation || 0}
-      />
-
-      <RotationAnchor
-        x={bottomRightX}
-        y={bottomRightY}
-        corner="bottom-right"
-        groupCenterX={shape.x}
-        groupCenterY={shape.y}
-        onRotate={(angle) => handleRotation(shape, angle)}
-        visible={true}
-        stageScale={stageScale}
-        currentRotation={shape.rotation || 0}
-      />
-    </React.Fragment>
-  );
+        <RotationAnchor
+          x={bottomRightX}
+          y={bottomRightY}
+          corner="bottom-right"
+          groupCenterX={shape.x}
+          groupCenterY={shape.y}
+          onRotate={(angle) => handleRotation(shape, angle)}
+          visible={true}
+          stageScale={stageScale}
+          currentRotation={shape.rotation || 0}
+        />
+      </React.Fragment>
+    );
+  }
 }

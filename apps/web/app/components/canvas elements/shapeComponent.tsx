@@ -31,6 +31,7 @@ interface ShapeComponentProps {
   worldX: number;
   worldY: number;
   elementRefs: React.RefObject<Map<string, Konva.Node>>;
+  isMultipleSelected: boolean; // Add this new prop
 }
 
 export default function ShapeComponent({
@@ -47,7 +48,7 @@ export default function ShapeComponent({
   worldX,
   worldY,
   elementRefs,
-
+  isMultipleSelected,
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -133,6 +134,11 @@ export default function ShapeComponent({
   };
 
   const handleTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    // If multiple shapes are selected, let the main transformer handle updates
+    if (isMultipleSelected) {
+      return;
+    }
+
     const node = shapeRef.current;
     if (!node) return;
 
@@ -178,6 +184,8 @@ export default function ShapeComponent({
     } else {
       updatedShape = shapeProps;
     }
+
+    console.log("updatedShape", updatedShape);
 
     onChange(updatedShape);
   };
@@ -391,6 +399,7 @@ export default function ShapeComponent({
       onDragEnd: handleDragEnd,
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
+      onTransformEnd: handleTransformEnd,
       stroke: getStroke(),
       strokeWidth: getStrokeWidth(),
       dash: getDash(),
@@ -416,6 +425,7 @@ export default function ShapeComponent({
               // Also set the shapeRef for GSAP
               shapeRef.current = node;
             }}
+            onTransformEnd={handleTransformEnd}
           />
         );
 
@@ -435,6 +445,7 @@ export default function ShapeComponent({
               }
               shapeRef.current = node;
             }}
+            onTransformEnd={handleTransformEnd}
           />
         );
 
@@ -462,6 +473,7 @@ export default function ShapeComponent({
               }
               shapeRef.current = node;
             }}
+            onTransformEnd={handleTransformEnd}
           />
         );
 

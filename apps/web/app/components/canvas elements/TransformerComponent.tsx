@@ -15,9 +15,9 @@ interface TransformerComponent {
   selectedShapes: Shape[];
   selectedNodes: Konva.Node[];
   stageScale: number;
-  onTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   onShapeChange: (shapeId: string, newAttrs: Partial<Shape>) => void;
   getShapeLayer: (shapeId: string) => LayerContainer | null;
+  handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   visible: boolean;
 }
 
@@ -26,9 +26,9 @@ export default function TransformerComponent({
   selectedShapes,
   selectedNodes,
   stageScale,
-  onTransformEnd,
   onShapeChange,
   getShapeLayer,
+  handleMultipleTransformEnd,
   visible,
 }: TransformerComponent) {
   const trRef = useRef<Konva.Transformer>(null);
@@ -597,6 +597,7 @@ export default function TransformerComponent({
             "bottom-right",
             "bottom-left",
           ]}
+          onTransformEnd={handleMultipleTransformEnd}
         />
 
         {/* Custom Side Anchors */}

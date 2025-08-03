@@ -165,46 +165,72 @@ const App: React.FC = () => {
     }
   };
 
-  const handleTransformEnd = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Get all nodes that were transformed (from the transformer)
-    const transformer = transformerRef.current;
-    if (!transformer) return;
+  const handleMultipleTransformEnd = (
+    e: Konva.KonvaEventObject<MouseEvent>
+  ) => {
+    // Get current selected nodes
+    const nodes = selectedIds
+      .map((id) => elementRefs.current?.get(id))
+      .filter((node) => node) as Konva.Node[];
 
-    const transformedNodes = transformer.nodes();
+    if (nodes.length === 0) return;
 
-    console.log("transformedNodes", transformedNodes);
+    console.log("Transform end - nodes:", nodes);
 
+    // Get scale from the first node (all nodes should have same scale in multi-select)
+    const scaleX = nodes[0].scaleX();
+    const scaleY = nodes[0].scaleY();
+
+    console.log("Unified scale - scaleX:", scaleX, "scaleY:", scaleY);
+
+    // Use functional state update to avoid stale closure
     setShapes((prevShapes) => {
-      const newShapes = [...prevShapes];
+      const newShapes = [...prevShapes]; // Create new array
 
-      // Update each transformed node
-      transformedNodes.forEach((node) => {
-        const id = node.id();
-        const index = newShapes.findIndex((r) => r.id === id);
+      // Process each selected node
+      nodes.forEach((node, nodeIndex) => {
+        // Reset scaling on the node
+        node.scaleX(1);
+        node.scaleY(1);
 
-        if (index !== -1) {
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
+        // Find the shape in the current state (not stale closure)
+        const shapeIndex = newShapes.findIndex(
+          (shape) =>
+            selectedIds[nodeIndex] && shape.id === selectedIds[nodeIndex]
+        );
 
-          // Reset scale
-          node.scaleX(1);
-          node.scaleY(1);
+        if (shapeIndex === -1) return; // Shape not found
 
-          // Update the state with new values
-          newShapes[index] = {
-            ...newShapes[index],
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(5, node.width() * scaleX),
-            height: Math.max(node.height() * scaleY),
-            rotation: node.rotation(),
-          };
-        }
+        const currentShape = newShapes[shapeIndex];
+
+        // Calculate new dimensions
+        const newWidth = Math.max(50, currentShape.width * Math.abs(scaleX));
+        const newHeight = Math.max(50, currentShape.height * Math.abs(scaleY));
+
+        // Get the layer for coordinate conversion
+        const shapeLayer = getShapeLayer(currentShape.id);
+        if (!shapeLayer) return;
+
+        // Convert from layer-relative to world coordinates
+        const newX = node.x() + shapeLayer.x;
+        const newY = node.y() + shapeLayer.y;
+
+        // Update the shape (create new object, don't mutate)
+        newShapes[shapeIndex] = {
+          ...currentShape,
+          x: newX,
+          y: newY,
+          width: newWidth,
+          height: newHeight,
+          rotation: node.rotation(),
+        };
       });
 
-      return newShapes;
+      console.log("Updated shapes:", newShapes);
+      return newShapes; // Return new state
     });
   };
+
 
   // Update transformer when selection changes
   useEffect(() => {
@@ -707,7 +733,7 @@ const App: React.FC = () => {
         transformerRef={transformerRef}
         handleStageClick={handleStageClick}
         elementRefs={elementRefs}
-        handleTransformEnd={handleTransformEnd}
+        handleMultipleTransformEnd={handleMultipleTransformEnd}
       />
     </div>
   );

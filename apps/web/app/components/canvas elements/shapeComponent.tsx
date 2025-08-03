@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { usePlaybackStore } from "@/app/zustland/store";
 import {
   CircleShape,
@@ -31,7 +31,6 @@ interface ShapeComponentProps {
   worldX: number;
   worldY: number;
   elementRefs: React.RefObject<Map<string, Konva.Node>>;
-  handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
 export default function ShapeComponent({
@@ -48,7 +47,7 @@ export default function ShapeComponent({
   worldX,
   worldY,
   elementRefs,
-  handleMultipleTransformEnd,
+
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -390,7 +389,6 @@ export default function ShapeComponent({
       rotation: shapeProps.rotation || 0,
       onDragStart: handleDragStart,
       onDragEnd: handleDragEnd,
-      onTransformEnd: handleTransformEnd,
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
       stroke: getStroke(),
@@ -418,7 +416,6 @@ export default function ShapeComponent({
               // Also set the shapeRef for GSAP
               shapeRef.current = node;
             }}
-            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 
@@ -438,7 +435,6 @@ export default function ShapeComponent({
               }
               shapeRef.current = node;
             }}
-            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 
@@ -466,7 +462,6 @@ export default function ShapeComponent({
               }
               shapeRef.current = node;
             }}
-            onTransformEnd={handleMultipleTransformEnd}
           />
         );
 

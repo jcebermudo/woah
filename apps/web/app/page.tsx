@@ -1,742 +1,833 @@
-"use client";
+  "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import {
-  Stage,
-  Layer,
-  Rect,
-  Ellipse,
-  Star,
-  Transformer,
-  Text,
-  Group,
-} from "react-konva";
-import Konva from "konva";
+  import React, { useState, useRef, useEffect } from "react";
+  import {
+    Stage,
+    Layer,
+    Rect,
+    Ellipse,
+    Star,
+    Transformer,
+    Text,
+    Group,
+  } from "react-konva";
+  import Konva from "konva";
 
-import LayerPanel from "@/app/components/editor/LayerPanel";
-import Toolbar from "@/app/components/editor/Toolbar";
-import {
-  CircleShape,
-  LayerContainer,
-  RectShape,
-  Shape,
-  StarShape,
-} from "@/types/canvasElements";
-import InfiniteCanvas from "./components/editor/InfiniteCanvas";
-import PropertiesPanel from "./components/editor/PropertiesPanel";
-import { useStore } from "@/app/zustland/store";
-import Timeline from "./components/editor/Timeline";
+  import LayerPanel from "@/app/components/editor/LayerPanel";
+  import Toolbar from "@/app/components/editor/Toolbar";
+  import {
+    CircleShape,
+    LayerContainer,
+    RectShape,
+    Shape,
+    StarShape,
+  } from "@/types/canvasElements";
+  import InfiniteCanvas from "./components/editor/InfiniteCanvas";
+  import PropertiesPanel from "./components/editor/PropertiesPanel";
+  import { useStore } from "@/app/zustland/store";
+  import Timeline from "./components/editor/Timeline";
 
-// Initial layers (renamed from initialGroups)
-const initialLayers: LayerContainer[] = [
-  {
-    id: "Scene 1",
-    type: "layer",
-    x: 700,
-    y: 300,
-    width: 600,
-    height: 400,
-    fill: "#ffffff",
-    draggable: true,
-    children: [], // No initial children
-    showBorder: true,
-    duration: 1000,
-  },
-];
+  // Initial layers (renamed from initialGroups)
+  const initialLayers: LayerContainer[] = [
+    {
+      id: "Scene 1",
+      type: "layer",
+      x: 700,
+      y: 300,
+      width: 600,
+      height: 400,
+      fill: "#ffffff",
+      draggable: true,
+      children: [], // No initial children
+      showBorder: true,
+      duration: 1000,
+    },
+  ];
 
-const App: React.FC = () => {
-  const { mode } = useStore();
-  const [shapes, setShapes] = useState<Shape[]>([]);
-  const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedNodes, setSelectedNodes] = useState<Konva.Node[]>([]);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState({
-    width: 800, // Default width
-    height: 600, // Default height
-  });
+  const App: React.FC = () => {
+    const { mode } = useStore();
+    const [shapes, setShapes] = useState<Shape[]>([]);
+    const [layers, setLayers] = useState<LayerContainer[]>(initialLayers);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [selectedNodes, setSelectedNodes] = useState<Konva.Node[]>([]);
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [dimensions, setDimensions] = useState({
+      width: 800, // Default width
+      height: 600, // Default height
+    });
 
-  // Infinite canvas state
-  const [stageScale, setStageScale] = useState(1);
-  const [stageX, setStageX] = useState(0);
-  const [stageY, setStageY] = useState(0);
-  const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
-  const [lastPointerPosition, setLastPointerPosition] = useState({
-    x: 0,
-    y: 0,
-  });
+    // Infinite canvas state
+    const [stageScale, setStageScale] = useState(1);
+    const [stageX, setStageX] = useState(0);
+    const [stageY, setStageY] = useState(0);
+    const [isSpacePressed, setIsSpacePressed] = useState(false);
+    const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
+    const [lastPointerPosition, setLastPointerPosition] = useState({
+      x: 0,
+      y: 0,
+    });
 
-  const [selectionRectangle, setSelectionRectangle] = useState({
-    visible: false,
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-  });
+    const [selectionRectangle, setSelectionRectangle] = useState({
+      visible: false,
+      x1: 0,
+      y1: 0,
+      x2: 0,
+      y2: 0,
+    });
 
-  // bounding boxes
-  const degToRad = (angle: number) => (angle / 180) * Math.PI;
+    // bounding boxes
+    const degToRad = (angle: number) => (angle / 180) * Math.PI;
 
-  const getCorner = (
-    pivotX: number,
-    pivotY: number,
-    diffX: number,
-    diffY: number,
-    angle: number
-  ) => {
-    const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-    angle += Math.atan2(diffY, diffX);
-    const x = pivotX + distance * Math.cos(angle);
-    const y = pivotY + distance * Math.sin(angle);
-    return { x, y };
-  };
-
-  const getClientRect = (element: Shape) => {
-    const x = element.x - element.width / 2;
-    const y = element.y - element.height / 2;
-    const width = element.width;
-    const height = element.height;
-    const rotation = element.rotation || 0;
-    const rad = degToRad(rotation);
-
-    const p1 = getCorner(x, y, 0, 0, rad);
-    const p2 = getCorner(x, y, width, 0, rad);
-    const p3 = getCorner(x, y, width, height, rad);
-    const p4 = getCorner(x, y, 0, height, rad);
-
-    const minX = Math.min(p1.x, p2.x, p3.x, p4.x);
-    const minY = Math.min(p1.y, p2.y, p3.y, p4.y);
-    const maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
-    const maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
-
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
+    const getCorner = (
+      pivotX: number,
+      pivotY: number,
+      diffX: number,
+      diffY: number,
+      angle: number
+    ) => {
+      const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+      angle += Math.atan2(diffY, diffX);
+      const x = pivotX + distance * Math.cos(angle);
+      const y = pivotY + distance * Math.sin(angle);
+      return { x, y };
     };
-  };
 
-  const isSelecting = useRef(false);
-  const transformerRef = useRef<Konva.Transformer>(null);
-  const elementRefs = useRef(new Map());
-  const timelineRef = useRef<HTMLDivElement>(null);
+    const getClientRect = (element: Shape) => {
+      const x = element.x - element.width / 2;
+      const y = element.y - element.height / 2;
+      const width = element.width;
+      const height = element.height;
+      const rotation = element.rotation || 0;
+      const rad = degToRad(rotation);
 
-  const stageRef = useRef<Konva.Stage>(null);
+      const p1 = getCorner(x, y, 0, 0, rad);
+      const p2 = getCorner(x, y, width, 0, rad);
+      const p3 = getCorner(x, y, width, height, rad);
+      const p4 = getCorner(x, y, 0, height, rad);
 
-  // Click handler for stage
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // If we are selecting with rect, do nothing
-    if (selectionRectangle.visible) {
-      return;
-    }
+      const minX = Math.min(p1.x, p2.x, p3.x, p4.x);
+      const minY = Math.min(p1.y, p2.y, p3.y, p4.y);
+      const maxX = Math.max(p1.x, p2.x, p3.x, p4.x);
+      const maxY = Math.max(p1.y, p2.y, p3.y, p4.y);
 
-    // If click on empty area - remove all selections
-    if (e.target === e.target.getStage()) {
-      setSelectedIds([]);
-      setSelectedNodes([]);
-      return;
-    }
+      return {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+      };
+    };
 
-    // Do nothing if clicked NOT on our rectangles
-    if (!e.target.hasName(["rect", "circle", "star"])) {
-      return;
-    }
+    const isSelecting = useRef(false);
+    const transformerRef = useRef<Konva.Transformer>(null);
+    const elementRefs = useRef(new Map());
+    const timelineRef = useRef<HTMLDivElement>(null);
 
-    const clickedId = e.target.id();
+    const stageRef = useRef<Konva.Stage>(null);
 
-    const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
+    // Click handler for stage
+    const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // If we are selecting with rect, do nothing
+      if (selectionRectangle.visible) {
+        return;
+      }
 
-    const isSelected = selectedIds.includes(clickedId);
+      // If click on empty area - remove all selections
+      if (e.target === e.target.getStage()) {
+        setSelectedIds([]);
+        setSelectedNodes([]);
+        return;
+      }
 
-    if (!metaPressed && !isSelected) {
-      // If no key pressed and the node is not selected
-      // select just one
-      setSelectedIds([clickedId]);
-    } else if (metaPressed && isSelected) {
-      // If we pressed keys and node was selected
-      // we need to remove it from selection
-      setSelectedIds(selectedIds.filter((id) => id !== clickedId));
-    } else if (metaPressed && !isSelected) {
-      // Add the node into selection
-      setSelectedIds([...selectedIds, clickedId]);
-    }
-  };
+      // Do nothing if clicked NOT on our rectangles
+      if (!e.target.hasName(["rect", "circle", "star"])) {
+        return;
+      }
 
-  const handleMultipleTransformEnd = (
-    e: Konva.KonvaEventObject<MouseEvent>
-  ) => {
-    // Get current selected nodes
-    const nodes = selectedIds
-      .map((id) => elementRefs.current?.get(id))
-      .filter((node) => node) as Konva.Node[];
+      const clickedId = e.target.id();
 
-    if (nodes.length === 0) return;
+      const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
 
-    console.log("Transform end - nodes:", nodes);
+      const isSelected = selectedIds.includes(clickedId);
 
-    // Get scale from the first node (all nodes should have same scale in multi-select)
-    const scaleX = nodes[0].scaleX();
-    const scaleY = nodes[0].scaleY();
+      if (!metaPressed && !isSelected) {
+        // If no key pressed and the node is not selected
+        // select just one
+        setSelectedIds([clickedId]);
+      } else if (metaPressed && isSelected) {
+        // If we pressed keys and node was selected
+        // we need to remove it from selection
+        setSelectedIds(selectedIds.filter((id) => id !== clickedId));
+      } else if (metaPressed && !isSelected) {
+        // Add the node into selection
+        setSelectedIds([...selectedIds, clickedId]);
+      }
+    };
 
-    console.log("Unified scale - scaleX:", scaleX, "scaleY:", scaleY);
+    const handleMultiDragEnd = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      const currentSelectedIds = selectedIds;
+      const nodes = currentSelectedIds
+        .map((id) => elementRefs.current?.get(id))
+        .filter((node) => node) as Konva.Node[];
 
-    // Use functional state update to avoid stale closure
-    setShapes((prevShapes) => {
-      const newShapes = [...prevShapes]; // Create new array
+      if (nodes.length === 0) return;
 
-      // Process each selected node
-      nodes.forEach((node, nodeIndex) => {
-        // Reset scaling on the node
-        node.scaleX(1);
-        node.scaleY(1);
+      console.log("Multi drag end - nodes:", nodes);
+      console.log("Multi drag end - selectedIds:", currentSelectedIds);
 
-        // Find the shape in the current state (not stale closure)
-        const shapeIndex = newShapes.findIndex(
-          (shape) =>
-            selectedIds[nodeIndex] && shape.id === selectedIds[nodeIndex]
-        );
+      setShapes((prevShapes) => {
+        const newShapes = [...prevShapes];
 
-        if (shapeIndex === -1) return; // Shape not found
+        // Process each node individually
+        nodes.forEach((node, nodeIndex) => {
+          // Get the corresponding shape ID (nodes and selectedIds should be in same order)
+          const shapeId = currentSelectedIds[nodeIndex];
+          if (!shapeId) return;
 
-        const currentShape = newShapes[shapeIndex];
+          // Find the shape in current state
+          const shapeIndex = newShapes.findIndex((shape) => shape.id === shapeId);
+          if (shapeIndex === -1) return;
 
-        // Calculate new dimensions
-        const newWidth = Math.max(50, currentShape.width * Math.abs(scaleX));
-        const newHeight = Math.max(50, currentShape.height * Math.abs(scaleY));
+          const currentShape = newShapes[shapeIndex];
 
-        // Get the layer for coordinate conversion
-        const shapeLayer = getShapeLayer(currentShape.id);
-        if (!shapeLayer) return;
+          // Get the layer for coordinate conversion
+          const shapeLayer = getShapeLayer(shapeId);
+          if (!shapeLayer) {
+            // If no layer, use node position directly
+            newShapes[shapeIndex] = {
+              ...currentShape,
+              x: node.x(),
+              y: node.y(),
+              rotation: node.rotation(),
+            };
+            return;
+          }
 
-        // Convert from layer-relative to world coordinates
-        const newX = node.x() + shapeLayer.x;
-        const newY = node.y() + shapeLayer.y;
+          // Convert from layer-relative to world coordinates
+          const worldX = node.x() + shapeLayer.x;
+          const worldY = node.y() + shapeLayer.y;
 
-        // Update the shape (create new object, don't mutate)
-        newShapes[shapeIndex] = {
-          ...currentShape,
-          x: newX,
-          y: newY,
-          width: newWidth,
-          height: newHeight,
-          rotation: node.rotation(),
-        };
+          // Update this specific shape
+          newShapes[shapeIndex] = {
+            ...currentShape,
+            x: worldX,
+            y: worldY,
+            rotation: node.rotation(),
+          };
+
+          console.log(`Updated shape ${shapeId}:`, {
+            nodePos: { x: node.x(), y: node.y() },
+            layerPos: { x: shapeLayer.x, y: shapeLayer.y },
+            worldPos: { x: worldX, y: worldY },
+          });
+        });
+
+        console.log("Multi drag end - updated shapes:", newShapes);
+        return newShapes;
       });
+    };
 
-      console.log("Updated shapes:", newShapes);
-      return newShapes; // Return new state
-    });
-  };
+    const handleMultipleTransformEnd = (
+      e: Konva.KonvaEventObject<MouseEvent>
+    ) => {
+
+      const currentSelectedIds = selectedIds;
+      // Get current selected nodes
+      const nodes = currentSelectedIds
+        .map((id) => elementRefs.current?.get(id))
+        .filter((node) => node) as Konva.Node[];
+
+      if (nodes.length === 0) return;
+
+      console.log("Transform end - nodes:", nodes);
+
+      // Get scale from the first node (all nodes should have same scale in multi-select)
+      const scaleX = nodes[0].scaleX();
+      const scaleY = nodes[0].scaleY();
+
+      console.log("Unified scale - scaleX:", scaleX, "scaleY:", scaleY);
+
+      // Use functional state update to avoid stale closure
+      setShapes((prevShapes) => {
+        const newShapes = [...prevShapes]; // Create new array
+
+        // Process each selected node
+        nodes.forEach((node, nodeIndex) => {
+          // Reset scaling on the node
+          node.scaleX(1);
+          node.scaleY(1);
+
+          // Find the shape in the current state (not stale closure)
+          const shapeIndex = newShapes.findIndex(
+            (shape) =>
+              selectedIds[nodeIndex] && shape.id === selectedIds[nodeIndex]
+          );
+
+          if (shapeIndex === -1) return; // Shape not found
+
+          const currentShape = newShapes[shapeIndex];
+
+          // Calculate new dimensions
+          const newWidth = Math.max(50, currentShape.width * Math.abs(scaleX));
+          const newHeight = Math.max(50, currentShape.height * Math.abs(scaleY));
+
+          // Get the layer for coordinate conversion
+          const shapeLayer = getShapeLayer(currentShape.id);
+          if (!shapeLayer) return;
+
+          // Convert from layer-relative to world coordinates
+          const newX = node.x() + shapeLayer.x;
+          const newY = node.y() + shapeLayer.y;
+
+          // Update the shape (create new object, don't mutate)
+          newShapes[shapeIndex] = {
+            ...currentShape,
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight,
+            rotation: node.rotation(),
+          };
+        });
+
+        console.log("Updated shapes:", newShapes);
+        return newShapes; // Return new state
+      });
+    };
 
 
-  // Update transformer when selection changes
-  useEffect(() => {
-    if (selectedIds.length && transformerRef.current) {
-      // Get the nodes from the refs Map
-      const nodes = selectedIds
-        .map((id) => elementRefs.current.get(id))
-        .filter((node) => node);
+    // Update transformer when selection changes
+    useEffect(() => {
+      if (selectedIds.length && transformerRef.current) {
+        // Get the nodes from the refs Map
+        const nodes = selectedIds
+          .map((id) => elementRefs.current.get(id))
+          .filter((node) => node);
 
-      transformerRef.current.nodes(nodes as Konva.Node[]);
-    } else if (transformerRef.current) {
-      // Clear selection
-      transformerRef.current.nodes([]);
-    }
-  }, [selectedIds]);
+        transformerRef.current.nodes(nodes as Konva.Node[]);
+      } else if (transformerRef.current) {
+        // Clear selection
+        transformerRef.current.nodes([]);
+      }
+    }, [selectedIds]);
 
-  useEffect(() => {
-    // Update dimensions when component mounts
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-
-    // Handle window resize
-    function handleResize() {
+    useEffect(() => {
+      // Update dimensions when component mounts
       setDimensions({
         width: window.innerWidth,
         height: window.innerHeight,
       });
-    }
 
-    // Handle keyboard events for space key
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.code === "Space" && !isSpacePressed) {
-        setIsSpacePressed(true);
-        document.body.style.cursor = "grab";
-        e.preventDefault();
+      // Handle window resize
+      function handleResize() {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
       }
-    }
 
-    function handleKeyUp(e: KeyboardEvent) {
-      if (e.code === "Space") {
-        setIsSpacePressed(false);
-        setIsDraggingCanvas(false);
-        document.body.style.cursor = "default";
-        e.preventDefault();
+      // Handle keyboard events for space key
+      function handleKeyDown(e: KeyboardEvent) {
+        if (e.code === "Space" && !isSpacePressed) {
+          setIsSpacePressed(true);
+          document.body.style.cursor = "grab";
+          e.preventDefault();
+        }
       }
-    }
 
-    // Handle zoom with wheel
-    function handleWheel(e: WheelEvent) {
-      const isOverTimeline = timelineRef.current?.contains(e.target as Node);
-      if (isOverTimeline) {
+      function handleKeyUp(e: KeyboardEvent) {
+        if (e.code === "Space") {
+          setIsSpacePressed(false);
+          setIsDraggingCanvas(false);
+          document.body.style.cursor = "default";
+          e.preventDefault();
+        }
+      }
+
+      // Handle zoom with wheel
+      function handleWheel(e: WheelEvent) {
+        const isOverTimeline = timelineRef.current?.contains(e.target as Node);
+        if (isOverTimeline) {
+          return;
+        }
+        // Check if Cmd (Mac) or Ctrl (Windows/Linux) is pressed for zoom
+        if (e.metaKey || e.ctrlKey) {
+          e.preventDefault();
+
+          const stage = stageRef.current;
+          if (!stage) return;
+
+          const oldScale = stageScale;
+          const pointer = stage.getPointerPosition();
+
+          if (!pointer) return;
+
+          const mousePointTo = {
+            x: (pointer.x - stageX) / oldScale,
+            y: (pointer.y - stageY) / oldScale,
+          };
+
+          // Determine zoom direction and amount
+          const direction = e.deltaY > 0 ? -1 : 1;
+          const zoomFactor = 1.1;
+          const newScale =
+            direction > 0 ? oldScale * zoomFactor : oldScale / zoomFactor;
+
+          // Clamp scale between reasonable limits
+          const clampedScale = Math.max(0.1, Math.min(5, newScale));
+
+          const newPos = {
+            x: pointer.x - mousePointTo.x * clampedScale,
+            y: pointer.y - mousePointTo.y * clampedScale,
+          };
+
+          setStageScale(clampedScale);
+          setStageX(newPos.x);
+          setStageY(newPos.y);
+        } else {
+          // Regular scrolling for panning up/down and left/right
+          e.preventDefault();
+
+          const scrollSpeed = 1; // Adjust scroll sensitivity
+          const deltaX = e.deltaX * scrollSpeed;
+          const deltaY = e.deltaY * scrollSpeed;
+
+          // Update stage position for scrolling
+          setStageX(stageX - deltaX);
+          setStageY(stageY - deltaY);
+        }
+      }
+
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("wheel", handleWheel, { passive: false });
+
+      // Cleanup
+      return () => {
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("wheel", handleWheel);
+      };
+    }, [stageScale, stageX, stageY, isSpacePressed]);
+
+    const checkDeselect = (e: any) => {
+      // Don't deselect when panning
+      if (isDraggingCanvas) return;
+
+      // Deselect when clicked on empty area
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) {
+        setSelectedIds([]);
+      }
+    };
+
+    const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (isSpacePressed) {
+        setIsDraggingCanvas(true);
+        document.body.style.cursor = "grabbing";
+        const pos = e.target.getStage()?.getPointerPosition();
+        setLastPointerPosition({ x: pos?.x || 0, y: pos?.y || 0 });
         return;
       }
-      // Check if Cmd (Mac) or Ctrl (Windows/Linux) is pressed for zoom
-      if (e.metaKey || e.ctrlKey) {
-        e.preventDefault();
+      checkDeselect(e);
 
-        const stage = stageRef.current;
-        if (!stage) return;
-
-        const oldScale = stageScale;
-        const pointer = stage.getPointerPosition();
-
-        if (!pointer) return;
-
-        const mousePointTo = {
-          x: (pointer.x - stageX) / oldScale,
-          y: (pointer.y - stageY) / oldScale,
-        };
-
-        // Determine zoom direction and amount
-        const direction = e.deltaY > 0 ? -1 : 1;
-        const zoomFactor = 1.1;
-        const newScale =
-          direction > 0 ? oldScale * zoomFactor : oldScale / zoomFactor;
-
-        // Clamp scale between reasonable limits
-        const clampedScale = Math.max(0.1, Math.min(5, newScale));
-
-        const newPos = {
-          x: pointer.x - mousePointTo.x * clampedScale,
-          y: pointer.y - mousePointTo.y * clampedScale,
-        };
-
-        setStageScale(clampedScale);
-        setStageX(newPos.x);
-        setStageY(newPos.y);
-      } else {
-        // Regular scrolling for panning up/down and left/right
-        e.preventDefault();
-
-        const scrollSpeed = 1; // Adjust scroll sensitivity
-        const deltaX = e.deltaX * scrollSpeed;
-        const deltaY = e.deltaY * scrollSpeed;
-
-        // Update stage position for scrolling
-        setStageX(stageX - deltaX);
-        setStageY(stageY - deltaY);
+      // Do nothing if we mousedown on any shape
+      if (e.target !== e.target.getStage()) {
+        return;
       }
-    }
-
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("wheel", handleWheel, { passive: false });
-
-    // Cleanup
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("wheel", handleWheel);
-    };
-  }, [stageScale, stageX, stageY, isSpacePressed]);
-
-  const checkDeselect = (e: any) => {
-    // Don't deselect when panning
-    if (isDraggingCanvas) return;
-
-    // Deselect when clicked on empty area
-    const clickedOnEmpty = e.target === e.target.getStage();
-    if (clickedOnEmpty) {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isSpacePressed) {
-      setIsDraggingCanvas(true);
-      document.body.style.cursor = "grabbing";
+      // Start selection rectangle
+      isSelecting.current = true;
       const pos = e.target.getStage()?.getPointerPosition();
-      setLastPointerPosition({ x: pos?.x || 0, y: pos?.y || 0 });
-      return;
-    }
-    checkDeselect(e);
-
-    // Do nothing if we mousedown on any shape
-    if (e.target !== e.target.getStage()) {
-      return;
-    }
-    // Start selection rectangle
-    isSelecting.current = true;
-    const pos = e.target.getStage()?.getPointerPosition();
-    const posX = ((pos?.x || 0) - stageX) / stageScale;
-    const posY = ((pos?.y || 0) - stageY) / stageScale;
-    setSelectionRectangle({
-      visible: true,
-      x1: posX || 0,
-      y1: posY || 0,
-      x2: posX || 0,
-      y2: posY || 0,
-    });
-  };
-
-  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isDraggingCanvas && isSpacePressed) {
-      const stage = e.target.getStage();
-      const pos = stage?.getPointerPosition();
-
-      const dx = (pos?.x || 0) - lastPointerPosition.x;
-      const dy = (pos?.y || 0) - lastPointerPosition.y;
-
-      setStageX(stageX + dx);
-      setStageY(stageY + dy);
-
-      setLastPointerPosition({ x: pos?.x || 0, y: pos?.y || 0 });
-    }
-
-    // Do nothing if we didn't start selection
-    if (!isSelecting.current) {
-      return;
-    }
-
-    const pos = e.target.getStage()?.getPointerPosition();
-    const posX = ((pos?.x || 0) - stageX) / stageScale;
-    const posY = ((pos?.y || 0) - stageY) / stageScale;
-    setSelectionRectangle({
-      ...selectionRectangle,
-      x2: posX || 0,
-      y2: posY || 0,
-    });
-
-    const selBox = {
-      x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
-      y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
-      width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
-      height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
+      const posX = ((pos?.x || 0) - stageX) / stageScale;
+      const posY = ((pos?.y || 0) - stageY) / stageScale;
+      setSelectionRectangle({
+        visible: true,
+        x1: posX || 0,
+        y1: posY || 0,
+        x2: posX || 0,
+        y2: posY || 0,
+      });
     };
 
-    const selected = shapes.filter((shape) => {
-      // Check if rectangle intersects with selection box
-      return Konva.Util.haveIntersection(selBox, getClientRect(shape));
-    });
+    const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (isDraggingCanvas && isSpacePressed) {
+        const stage = e.target.getStage();
+        const pos = stage?.getPointerPosition();
 
-    setSelectedIds(selected.map((shape) => shape.id));
-  };
+        const dx = (pos?.x || 0) - lastPointerPosition.x;
+        const dy = (pos?.y || 0) - lastPointerPosition.y;
 
-  const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isDraggingCanvas) {
-      setIsDraggingCanvas(false);
-      if (isSpacePressed) {
-        document.body.style.cursor = "grab";
-      } else {
-        document.body.style.cursor = "default";
+        setStageX(stageX + dx);
+        setStageY(stageY + dy);
+
+        setLastPointerPosition({ x: pos?.x || 0, y: pos?.y || 0 });
       }
-    }
 
-    // Do nothing if we didn't start selection
-    if (!isSelecting.current) {
-      return;
-    }
-    isSelecting.current = false;
+      // Do nothing if we didn't start selection
+      if (!isSelecting.current) {
+        return;
+      }
 
-    // Update visibility in timeout, so we can check it in click event
-    setTimeout(() => {
+      const pos = e.target.getStage()?.getPointerPosition();
+      const posX = ((pos?.x || 0) - stageX) / stageScale;
+      const posY = ((pos?.y || 0) - stageY) / stageScale;
       setSelectionRectangle({
         ...selectionRectangle,
-        visible: false,
+        x2: posX || 0,
+        y2: posY || 0,
       });
-    });
-  };
 
-  const handleShapeChange = (index: number, newAttrs: Shape) => {
-    const newShapes = shapes.slice();
-    newShapes[index] = newAttrs;
-    setShapes(newShapes);
-  };
-
-  const handleLayerChange = (index: number, newAttrs: LayerContainer) => {
-    const newLayers = layers.slice();
-    newLayers[index] = newAttrs;
-    setLayers(newLayers);
-  };
-
-  const handleShapeHover = (shapeId: string, hovered: boolean) => {
-    setHoveredId(hovered ? shapeId : null);
-  };
-
-  const handleDragStart = (shapeId: string) => {
-    setDraggingId(shapeId);
-  };
-
-  const handleDragEnd = (shapeId: string) => {
-    setDraggingId(null);
-    const id = shapeId;
-    setShapes((prevShapes) => {
-      const newShapes = [...prevShapes];
-      const index = newShapes.findIndex((r) => r.id === id);
-      if (index !== -1) {
-        newShapes[index] = {
-          ...newShapes[index],
-          x: newShapes[index].x,
-          y: newShapes[index].y,
-        };
-      }
-      return newShapes;
-    });
-  };
-
-  // Helper function to check if a shape is inside a layer
-  const getShapeLayer = (shapeId: string): LayerContainer | null => {
-    return layers.find((layer) => layer.children.includes(shapeId)) || null;
-  };
-
-  // Helper function to check if a layer is currently selected
-  const isLayerSelected = (): boolean => {
-    if (!selectedIds) return false;
-    console.log(selectedIds);
-    return layers.some((layer) => selectedIds.includes(layer.id));
-  };
-
-  // Function to add a shape to a layer
-  const addShapeToLayer = (shapeId: string, layerId: string) => {
-    const newLayers = layers.map((layer) => {
-      if (layer.id === layerId) {
-        return {
-          ...layer,
-          children: [...layer.children.filter((id) => id !== shapeId), shapeId],
-        };
-      }
-      // Remove from other layers
-      return {
-        ...layer,
-        children: layer.children.filter((id) => id !== shapeId),
+      const selBox = {
+        x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
+        y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
+        width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
+        height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
       };
-    });
-    setLayers(newLayers);
-  };
 
-  const addShapeToSelectedLayer = (shapeType: "rect" | "circle" | "star") => {
-    if (!selectedIds) return;
+      const selected = shapes.filter((shape) => {
+        // Check if rectangle intersects with selection box
+        return Konva.Util.haveIntersection(selBox, getClientRect(shape));
+      });
 
-    // Check if selected item is a layer
-    const selectedLayer = layers.find((layer) =>
-      selectedIds.includes(layer.id)
-    );
-    if (!selectedLayer) return;
-
-    // Create new shape ID
-    const newShapeId = `${shapeType}_${Date.now()}`;
-
-    let newShape: Shape;
-
-    // Create shape based on type
-    switch (shapeType) {
-      case "rect":
-        newShape = {
-          id: newShapeId,
-          type: "rect",
-          x: selectedLayer.x,
-          y: selectedLayer.y,
-          width: 100,
-          height: 80,
-          fill: "#696969",
-          draggable: true,
-        } as RectShape;
-        break;
-
-      case "circle":
-        newShape = {
-          id: newShapeId,
-          type: "circle",
-          x: selectedLayer.x,
-          y: selectedLayer.y,
-          width: 100,
-          height: 100,
-          fill: "#696969",
-          draggable: true,
-        } as CircleShape;
-        break;
-
-      case "star":
-        newShape = {
-          id: newShapeId,
-          type: "star",
-          x: selectedLayer.x,
-          y: selectedLayer.y,
-          width: 100,
-          height: 100,
-          numPoints: 5,
-          innerRadius: 17,
-          outerRadius: 40,
-          fill: "#696969",
-          draggable: true,
-        } as StarShape;
-        break;
-    }
-
-    // Add shape to shapes array
-    setShapes([...shapes, newShape]);
-
-    // Add shape to layer's children
-    addShapeToLayer(newShapeId, selectedLayer.id);
-
-    // Select the newly created shape
-    setSelectedIds([newShapeId]);
-  };
-
-  const addNewLayer = () => {
-    // Find the rightmost position of existing layers
-    let rightmostX = 0;
-    if (layers.length > 0) {
-      rightmostX = Math.max(
-        ...layers.map((layer) => layer.x + layer.width / 2)
-      );
-    }
-
-    // Create new layer ID
-    const newLayerId = `layer${layers.length + 1}`;
-
-    // Position the new layer 50px to the right of the rightmost layer
-    const newX = rightmostX + 50 + 1920 / 2; // Add half width to center the layer
-
-    const newLayer: LayerContainer = {
-      id: newLayerId,
-      type: "layer",
-      x: newX,
-      y: 300, // Default y position
-      width: 1920,
-      height: 1080,
-      fill: "#ffffff",
-      draggable: true,
-      children: [],
-      showBorder: true,
-      duration: 1000,
+      setSelectedIds(selected.map((shape) => shape.id));
     };
 
-    // Add the new layer to the layers array
-    setLayers([...layers, newLayer]);
+    const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (isDraggingCanvas) {
+        setIsDraggingCanvas(false);
+        if (isSpacePressed) {
+          document.body.style.cursor = "grab";
+        } else {
+          document.body.style.cursor = "default";
+        }
+      }
 
-    // Select the newly created layer
-    setSelectedIds([newLayerId]);
-  };
+      // Do nothing if we didn't start selection
+      if (!isSelecting.current) {
+        return;
+      }
+      isSelecting.current = false;
 
-  const getSelectedItemDuration = (selectedId: string): number => {
-    // First check if it's a layer
-    const selectedLayer = layers.find((layer) => layer.id === selectedId);
-    if (selectedLayer) {
-      return selectedLayer.duration;
+      // Update visibility in timeout, so we can check it in click event
+      setTimeout(() => {
+        setSelectionRectangle({
+          ...selectionRectangle,
+          visible: false,
+        });
+      });
+    };
+
+    const handleShapeChange = (index: number, newAttrs: Shape) => {
+      const newShapes = shapes.slice();
+      newShapes[index] = newAttrs;
+      setShapes(newShapes);
+    };
+
+    const handleLayerChange = (index: number, newAttrs: LayerContainer) => {
+      const newLayers = layers.slice();
+      newLayers[index] = newAttrs;
+      setLayers(newLayers);
+    };
+
+    const handleShapeHover = (shapeId: string, hovered: boolean) => {
+      setHoveredId(hovered ? shapeId : null);
+    };
+
+    const handleDragStart = (shapeId: string) => {
+      setDraggingId(shapeId);
+    };
+
+    const handleDragEnd = (shapeId: string) => {
+      setDraggingId(null);
+      const id = shapeId;
+      setShapes((prevShapes) => {
+        const newShapes = [...prevShapes];
+        const index = newShapes.findIndex((r) => r.id === id);
+        if (index !== -1) {
+          newShapes[index] = {
+            ...newShapes[index],
+            x: newShapes[index].x,
+            y: newShapes[index].y,
+          };
+        }
+        return newShapes;
+      });
+    };
+
+    // Helper function to check if a shape is inside a layer
+    const getShapeLayer = (shapeId: string): LayerContainer | null => {
+      return layers.find((layer) => layer.children.includes(shapeId)) || null;
+    };
+
+    // Helper function to check if a layer is currently selected
+    const isLayerSelected = (): boolean => {
+      if (!selectedIds) return false;
+      console.log(selectedIds);
+      return layers.some((layer) => selectedIds.includes(layer.id));
+    };
+
+    const isItemSelected = (): boolean => {
+      if (!selectedIds.length) return false;
+      
+      const hasLayerSelected = layers.some((layer) =>
+        selectedIds.includes(layer.id)
+      );
+      if (hasLayerSelected) return true;
+
+      const hasShapeSelected = shapes.some((shape) =>
+        selectedIds.includes(shape.id)
+      );
+      return hasShapeSelected;
     }
 
-    // If not a layer, check if it's a shape and get its parent layer
-    const parentLayer = getShapeLayer(selectedId);
-    return parentLayer?.duration || 1000; // fallback to 1000
-  };
+    // Function to add a shape to a layer
+    const addShapeToLayer = (shapeId: string, layerId: string) => {
+      const newLayers = layers.map((layer) => {
+        if (layer.id === layerId) {
+          return {
+            ...layer,
+            children: [...layer.children.filter((id) => id !== shapeId), shapeId],
+          };
+        }
+        // Remove from other layers
+        return {
+          ...layer,
+          children: layer.children.filter((id) => id !== shapeId),
+        };
+      });
+      setLayers(newLayers);
+    };
 
-  return (
-    <div className="bg-[#323232] h-screen overflow-hidden">
-      {/* Toolbar */}
-      <Toolbar
-        addNewLayer={addNewLayer}
-        isLayerSelected={isLayerSelected}
-        addShapeToSelectedLayer={addShapeToSelectedLayer}
-        stageScale={stageScale}
-      />
-      {/* Sidebar */}
-      <div className="absolute top-0 left-0 w-[250px] h-screen bg-[#232323] border-r border-[#474747] z-10">
-        <LayerPanel
-          layers={layers}
-          shapes={shapes}
-          selectedIds={selectedIds}
-          onSelectLayer={(id) => setSelectedIds([id])}
-          onSelectShape={(id) => setSelectedIds([id])}
-          getShapeLayer={(id) => getShapeLayer(id)}
+    const addShapeToSelectedLayer = (shapeType: "rect" | "circle" | "star") => {
+      if (!selectedIds) return;
+
+      let selectedLayer = null;
+
+      // Check if selected item is a layer
+      const layer = layers.find((layer) =>
+        selectedIds.includes(layer.id)
+      );
+      if (layer) {
+        selectedLayer = layer;
+      }
+      
+      const shapeLayer = getShapeLayer(selectedIds[0]);
+      if (shapeLayer) {
+        selectedLayer = shapeLayer;
+      }
+
+      if (!selectedLayer) return;
+
+      // Create new shape ID
+      const newShapeId = `${shapeType}_${Date.now()}`;
+
+      let newShape: Shape;
+
+      // Create shape based on type
+      switch (shapeType) {
+        case "rect":
+          newShape = {
+            id: newShapeId,
+            type: "rect",
+            x: selectedLayer.x,
+            y: selectedLayer.y,
+            width: 100,
+            height: 80,
+            fill: "#696969",
+            draggable: true,
+          } as RectShape;
+          break;
+
+        case "circle":
+          newShape = {
+            id: newShapeId,
+            type: "circle",
+            x: selectedLayer.x,
+            y: selectedLayer.y,
+            width: 100,
+            height: 100,
+            fill: "#696969",
+            draggable: true,
+          } as CircleShape;
+          break;
+
+        case "star":
+          newShape = {
+            id: newShapeId,
+            type: "star",
+            x: selectedLayer.x,
+            y: selectedLayer.y,
+            width: 100,
+            height: 100,
+            numPoints: 5,
+            innerRadius: 17,
+            outerRadius: 40,
+            fill: "#696969",
+            draggable: true,
+          } as StarShape;
+          break;
+      }
+
+      // Add shape to shapes array
+      setShapes([...shapes, newShape]);
+
+      // Add shape to layer's children
+      addShapeToLayer(newShapeId, selectedLayer.id);
+
+      // Select the newly created shape
+      setSelectedIds([newShapeId]);
+    };
+
+    const addNewLayer = () => {
+      // Find the rightmost position of existing layers
+      let rightmostX = 0;
+      if (layers.length > 0) {
+        rightmostX = Math.max(
+          ...layers.map((layer) => layer.x + layer.width / 2)
+        );
+      }
+
+      // Create new layer ID
+      const newLayerId = `layer${layers.length + 1}`;
+
+      // Position the new layer 50px to the right of the rightmost layer
+      const newX = rightmostX + 50 + 1920 / 2; // Add half width to center the layer
+
+      const newLayer: LayerContainer = {
+        id: newLayerId,
+        type: "layer",
+        x: newX,
+        y: 300, // Default y position
+        width: 1920,
+        height: 1080,
+        fill: "#ffffff",
+        draggable: true,
+        children: [],
+        showBorder: true,
+        duration: 1000,
+      };
+
+      // Add the new layer to the layers array
+      setLayers([...layers, newLayer]);
+
+      // Select the newly created layer
+      setSelectedIds([newLayerId]);
+    };
+
+    const getSelectedItemDuration = (selectedId: string): number => {
+      // First check if it's a layer
+      const selectedLayer = layers.find((layer) => layer.id === selectedId);
+      if (selectedLayer) {
+        return selectedLayer.duration;
+      }
+
+      // If not a layer, check if it's a shape and get its parent layer
+      const parentLayer = getShapeLayer(selectedId);
+      return parentLayer?.duration || 1000; // fallback to 1000
+    };
+
+    return (
+      <div className="bg-[#323232] h-screen overflow-hidden">
+        {/* Toolbar */}
+        <Toolbar
+          addNewLayer={addNewLayer}
+          isLayerSelected={isItemSelected}
+          addShapeToSelectedLayer={addShapeToSelectedLayer}
+          stageScale={stageScale}
         />
-      </div>
-      {/* Properties Panel */}
-      <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-10">
-        <PropertiesPanel
-          selectedIds={selectedIds}
-          shapes={shapes}
-          layers={layers}
-          handleShapeChange={handleShapeChange}
-          handleLayerChange={handleLayerChange}
-        />
-      </div>
-      {/* Timeline */}
-      {mode === "animate" && (
-        <div
-          ref={timelineRef}
-          className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]"
-        >
-          <Timeline
+        {/* Sidebar */}
+        <div className="absolute top-0 left-0 w-[250px] h-screen bg-[#232323] border-r border-[#474747] z-10">
+          <LayerPanel
             layers={layers}
-            selectedLayer={
-              layers.find((layer) => selectedIds.includes(layer.id)) || null
-            }
-            layerDuration={getSelectedItemDuration(selectedIds[0])}
-            selectedShape={
-              shapes.find((shape) => selectedIds.includes(shape.id)) || null
-            }
-            onShapeAnimationChange={(updatedShape) => {
-              const shapeIndex = shapes.findIndex(
-                (s) => s.id === updatedShape.id
-              );
-              if (shapeIndex !== -1) {
-                const newShapes = [...shapes];
-                newShapes[shapeIndex] = updatedShape;
-                setShapes(newShapes);
-              }
-            }}
+            shapes={shapes}
+            selectedIds={selectedIds}
+            onSelectLayer={(id) => setSelectedIds([id])}
+            onSelectShape={(id) => setSelectedIds([id])}
+            getShapeLayer={(id) => getShapeLayer(id)}
           />
         </div>
-      )}
-      {/* Infinite Canvas */}
-      <InfiniteCanvas
-        dimensions={dimensions}
-        handleMouseDown={handleMouseDown}
-        handleMouseMove={handleMouseMove}
-        handleMouseUp={handleMouseUp}
-        stageRef={stageRef}
-        stageScale={stageScale}
-        stageX={stageX}
-        stageY={stageY}
-        layers={layers}
-        shapes={shapes}
-        selectedIds={selectedIds}
-        hoveredId={hoveredId}
-        draggingId={draggingId}
-        selectShape={(id: string | null) => {
-          if (id) {
-            // Only change selection if the shape is not already selected
-            // This preserves multi-selection during drag operations
-            if (!selectedIds.includes(id)) {
-              setSelectedIds([id]);
+        {/* Properties Panel */}
+        <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-10">
+          <PropertiesPanel
+            selectedIds={selectedIds}
+            shapes={shapes}
+            layers={layers}
+            handleShapeChange={handleShapeChange}
+            handleLayerChange={handleLayerChange}
+          />
+        </div>
+        {/* Timeline */}
+        {mode === "animate" && (
+          <div
+            ref={timelineRef}
+            className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]"
+          >
+            <Timeline
+              layers={layers}
+              selectedLayer={
+                layers.find((layer) => selectedIds.includes(layer.id)) || null
+              }
+              layerDuration={getSelectedItemDuration(selectedIds[0])}
+              selectedShape={
+                shapes.find((shape) => selectedIds.includes(shape.id)) || null
+              }
+              onShapeAnimationChange={(updatedShape) => {
+                const shapeIndex = shapes.findIndex(
+                  (s) => s.id === updatedShape.id
+                );
+                if (shapeIndex !== -1) {
+                  const newShapes = [...shapes];
+                  newShapes[shapeIndex] = updatedShape;
+                  setShapes(newShapes);
+                }
+              }}
+            />
+          </div>
+        )}
+        {/* Infinite Canvas */}
+        <InfiniteCanvas
+          dimensions={dimensions}
+          handleMouseDown={handleMouseDown}
+          handleMouseMove={handleMouseMove}
+          handleMouseUp={handleMouseUp}
+          stageRef={stageRef}
+          stageScale={stageScale}
+          stageX={stageX}
+          stageY={stageY}
+          layers={layers}
+          shapes={shapes}
+          selectedIds={selectedIds}
+          hoveredId={hoveredId}
+          draggingId={draggingId}
+          selectShape={(id: string | null) => {
+            if (id) {
+              // Only change selection if the shape is not already selected
+              // This preserves multi-selection during drag operations
+              if (!selectedIds.includes(id)) {
+                setSelectedIds([id]);
+              }
+            } else {
+              setSelectedIds([]);
             }
-          } else {
-            setSelectedIds([]);
-          }
-        }}
-        handleLayerChange={handleLayerChange}
-        handleShapeChange={handleShapeChange}
-        handleShapeHover={handleShapeHover}
-        handleDragStart={handleDragStart}
-        handleDragEnd={handleDragEnd}
-        getShapeLayer={getShapeLayer}
-        selectionRectangle={selectionRectangle}
-        transformerRef={transformerRef}
-        handleStageClick={handleStageClick}
-        elementRefs={elementRefs}
-        handleMultipleTransformEnd={handleMultipleTransformEnd}
-      />
-    </div>
-  );
-};
+          }}
+          handleLayerChange={handleLayerChange}
+          handleShapeChange={handleShapeChange}
+          handleShapeHover={handleShapeHover}
+          handleDragStart={handleDragStart}
+          handleDragEnd={handleDragEnd}
+          getShapeLayer={getShapeLayer}
+          selectionRectangle={selectionRectangle}
+          transformerRef={transformerRef}
+          handleStageClick={handleStageClick}
+          elementRefs={elementRefs}
+          handleMultipleTransformEnd={handleMultipleTransformEnd}
+          handleMultiDragEnd={handleMultiDragEnd}
+        />
+      </div>
+    );
+  };
 
-export default App;
+  export default App;

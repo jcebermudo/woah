@@ -46,6 +46,7 @@ interface InfiniteCanvasProps {
   handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  handleMultiDragEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
 }
 
 export default function InfiniteCanvas({
@@ -74,6 +75,7 @@ export default function InfiniteCanvas({
   handleMouseUp,
   elementRefs,
   handleMultipleTransformEnd,
+  handleMultiDragEnd,
 }: InfiniteCanvasProps) {
   // Get selected shapes and their corresponding nodes
   const getSelectedShapesAndNodes = () => {
@@ -178,8 +180,10 @@ export default function InfiniteCanvas({
                     onHover={(hovered) => handleShapeHover(shape.id, hovered)}
                     onDragStart={() => handleDragStart(shape.id)}
                     onDragEnd={() => handleDragEnd(shape.id)}
+                    handleMultiDragEnd={handleMultiDragEnd}
                     elementRefs={elementRefs}
                     isMultipleSelected={selectedIds.length > 1}
+                    selectedIds={selectedIds}
                   />
                 );
               })}
@@ -193,6 +197,7 @@ export default function InfiniteCanvas({
           selectedNodes={selectedNodes}
           stageScale={stageScale}
           handleMultipleTransformEnd={handleMultipleTransformEnd}
+          handleMultiDragEnd={handleMultiDragEnd}
           onShapeChange={handleCustomTransformerShapeChange}
           visible={selectedShapes.length > 0}
         />

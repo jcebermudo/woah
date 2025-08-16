@@ -27,11 +27,13 @@ interface ShapeComponentProps {
   onHover: (hovered: boolean) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  handleMultiDragEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   stageScale: number;
   worldX: number;
   worldY: number;
   elementRefs: React.RefObject<Map<string, Konva.Node>>;
   isMultipleSelected: boolean; // Add this new prop
+  selectedIds: string[];
 }
 
 export default function ShapeComponent({
@@ -49,12 +51,24 @@ export default function ShapeComponent({
   worldY,
   elementRefs,
   isMultipleSelected,
+  handleMultiDragEnd,
+  selectedIds,
 }: ShapeComponentProps) {
   const shapeRef = useRef<any>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const animationManagerRef = useRef<AnimationManager>(new AnimationManager());
   const { timelinePlayhead, isTimelinePlaying, timelineDuration } =
     usePlaybackStore();
+
+  const handleShapeDragEnd = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isMultipleSelected && selectedIds.includes(shapeProps.id)) {
+      // This is a multi-drag operation
+      handleMultiDragEnd(e);
+    } else {
+      // Single shape drag
+      handleDragEnd(e as Konva.KonvaEventObject<DragEvent>);
+    }
+  };
 
   // Dynamic animation system
   useGSAP(() => {
@@ -396,7 +410,7 @@ export default function ShapeComponent({
       draggable: shapeProps.draggable,
       rotation: shapeProps.rotation || 0,
       onDragStart: handleDragStart,
-      onDragEnd: handleDragEnd,
+      onDragEnd: handleShapeDragEnd,
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
       onTransformEnd: handleTransformEnd,
@@ -426,6 +440,7 @@ export default function ShapeComponent({
               shapeRef.current = node;
             }}
             onTransformEnd={handleTransformEnd}
+            onDragEnd={handleShapeDragEnd}
           />
         );
 
@@ -446,6 +461,7 @@ export default function ShapeComponent({
               shapeRef.current = node;
             }}
             onTransformEnd={handleTransformEnd}
+            onDragEnd={handleShapeDragEnd}
           />
         );
 
@@ -474,6 +490,7 @@ export default function ShapeComponent({
               shapeRef.current = node;
             }}
             onTransformEnd={handleTransformEnd}
+            onDragEnd={handleShapeDragEnd}
           />
         );
 

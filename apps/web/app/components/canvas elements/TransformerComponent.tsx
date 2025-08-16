@@ -18,6 +18,7 @@ interface TransformerComponent {
   onShapeChange: (shapeId: string, newAttrs: Partial<Shape>) => void;
   getShapeLayer: (shapeId: string) => LayerContainer | null;
   handleMultipleTransformEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  handleMultiDragEnd: (e: Konva.KonvaEventObject<MouseEvent>) => void;
   visible: boolean;
 }
 
@@ -29,6 +30,7 @@ export default function TransformerComponent({
   onShapeChange,
   getShapeLayer,
   handleMultipleTransformEnd,
+  handleMultiDragEnd,
   visible,
 }: TransformerComponent) {
   const trRef = useRef<Konva.Transformer>(null);
@@ -333,7 +335,6 @@ export default function TransformerComponent({
       const minWidth = 5;
       const minHeight = 5;
 
-      // Check if new dimensions are too small
       if (
         Math.abs(newBox.width) < minWidth ||
         Math.abs(newBox.height) < minHeight
@@ -357,24 +358,13 @@ export default function TransformerComponent({
         }
       }
 
-      const layer = getShapeLayer(selectedShapes[0].id);
+      // DON'T update currentBoundingBox here - remove this entirely:
+      // setCurrentBoundingBox({ ... });
 
-      console.log("layer", layer);
-
-      // Convert newBox coordinates from layer space to world space
-      // newBox is in layer coordinates, but we need world coordinates for our state
-      // Update the current bounding box state with the new box in world coordinates
-      setCurrentBoundingBox({
-        x: 500,
-        y: 0,
-        width: newBox.width,
-        height: newBox.height,
-        rotation: newBox.rotation || 0,
-      });
       return newBox;
     };
 
-    const boundingBox = currentBoundingBox || getBoundingBox();
+    const boundingBox = getBoundingBox();
 
     const handleMultiSideAnchorDrag = (
       side: "top" | "bottom" | "left" | "right",
@@ -578,11 +568,6 @@ export default function TransformerComponent({
           flipEnabled={false}
           padding={0}
           ignoreStroke={true}
-          boundBoxFunc={(oldBox, newBox) => {
-            console.log("oldBox", oldBox);
-            console.log("newBox", newBox);
-            return boundBoxFunc(oldBox, newBox);
-          }}
           rotateEnabled={false}
           borderStroke="#29A9FF"
           borderStrokeWidth={1}
@@ -597,7 +582,9 @@ export default function TransformerComponent({
             "bottom-right",
             "bottom-left",
           ]}
-          onTransformEnd={handleMultipleTransformEnd}
+          onTransformEnd={(e) => {
+            handleMultipleTransformEnd(e as Konva.KonvaEventObject<MouseEvent>);
+          }}
         />
 
         {/* Custom Side Anchors */}
@@ -794,7 +781,7 @@ export default function TransformerComponent({
           anchorFill="white"
           anchorStrokeWidth={1}
           anchorSize={8}
-          anchorCornerRadius={2}
+          anchorCornerRadius={0}
           enabledAnchors={[
             "top-left",
             "top-right",

@@ -86,7 +86,7 @@ export function SideAnchor({
       y={y}
       width={width}
       height={height}
-      fill="red"
+      fill="transparent"
       stroke="transparent"
       draggable
       onMouseEnter={() => {

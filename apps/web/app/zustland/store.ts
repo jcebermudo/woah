@@ -37,3 +37,13 @@ export const usePlaybackStore = create<PlaybackState>((set) => ({
   setTimelineDuration: (duration: number) =>
     set({ timelineDuration: duration }),
 }));
+
+interface AnimationSelectionState {
+  selectedAnimationIds: string[];
+  setSelectedAnimationIds: (ids: string[]) => void;
+}
+
+export const useAnimationStateStore = create<AnimationSelectionState>((set) => ({
+  selectedAnimationIds: [],
+  setSelectedAnimationIds: (ids: string[]) => set({ selectedAnimationIds: ids }),
+}));

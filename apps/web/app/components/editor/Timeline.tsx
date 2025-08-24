@@ -472,12 +472,29 @@ export default function Timeline({
     );
 
     // Collect all animations from all shapes in the layer
-    const allAnimations = layerShapes.flatMap(
-      (shape) =>
-        shape.animations?.filter((animation) => animation.enabled) || []
+    const allAnimationTracks = layerShapes.flatMap((shape) =>
+      (shape.animations?.filter((animation) => animation.enabled) || []).map(
+        (animation) => ({
+          animation,
+          shape,
+          // Create a display name for the shape
+          shapeName: (() => {
+          switch (shape.type) {
+      case "rect":
+        return "Rectangle";
+      case "circle":
+        return "Circle";
+      case "star":
+        return "Star";
+      default:
+        return "Shape";
+    }
+  })(),
+        })
+      )
     );
 
-    return allAnimations;
+    return allAnimationTracks;
   };
 
   const animationTracks = getAnimationTracks();
@@ -530,41 +547,30 @@ export default function Timeline({
         <div className="bg-[#232323] border-r border-[#474747] h-full min-w-[250px] z-[50]">
           {/* Timeline header */}
           <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-start p-[20px]">
-            <span className="text-white font-semibold text-sm">{selectedLayer?.id}</span>
+            <span className="text-white font-semibold text-sm">
+              {selectedLayer?.id}
+            </span>
           </div>
 
           {/* Animation tracks headers */}
           {animationTracks.length > 0 ? (
             <div className="overflow-y-auto">
-              {animationTracks.map((animation, index) => (
+              {animationTracks.map((track, index) => (
                 <div
-                  key={animation.id}
+                  key={track.animation.id}
                   className="h-[40px] border-b border-[#474747] flex items-center px-4 bg-[#232323]"
                 >
                   <div className="flex items-center gap-2 w-full">
-                    <button className="text-gray-400 hover:text-white">
-                      <Eye className="w-3 h-3" />
-                    </button>
-                    <div className="flex-1">
+                    <div className="flex-1 flex flex-row gap-[7px] items-center">
                       <div className="text-white text-sm font-medium">
-                        {animation.type.charAt(0).toUpperCase() +
-                          animation.type.slice(1)}
+                        {track.animation.type.charAt(0).toUpperCase() +
+                          track.animation.type.slice(1)}
                       </div>
+                      <div className="bg-[#5c5c5c] w-[3px] h-[3px] rounded-full"></div>
                       <div className="text-gray-400 text-xs">
-                        {animation.duration}s
-                        {/* Only show infinity symbol for infinite repeats */}
-                        {animation.repeat === -1 && " ∞"}
-                        {/* Show repeat count for finite repeats > 0 */}
-                        {animation.repeat &&
-                          animation.repeat > 0 &&
-                          ` x${animation.repeat + 1}`}
+                        {track.shapeName}
                       </div>
                     </div>
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        animation.enabled ? "bg-green-400" : "bg-gray-600"
-                      }`}
-                    />
                   </div>
                 </div>
               ))}
@@ -641,46 +647,47 @@ export default function Timeline({
 
           {/* Animation Track Bars */}
           {animationTracks.length > 0 && (
-            <div className="relative">
-              {animationTracks.map((animation, index) => (
+            <div className="relative flex-col">
+              {animationTracks.map((track, index) => (
                 <div
-                  key={animation.id}
-                  className="relative"
+                  key={track.animation.id}
+                  className="relative flex flex-row items-center justify-center"
                   style={{
-                    height: `${TRACK_HEIGHT}px`,
-                    top: `${index * TRACK_HEIGHT}px`,
+                    height: "40px",
                   }}
                 >
-                  {/* Track background */}
-                  <div className="absolute inset-0 border-b border-[#474747] bg-[#232323]" />
-
                   {/* Interactive Animation Bar */}
                   <AnimationBar
-                    animation={animation}
+                    animation={track.animation}
                     totalDuration={layerDuration}
                     timelineWidth={getBaseTimelineWidth()}
                     zoomLevel={zoomLevel}
                     panOffset={panOffset}
                     onAnimationChange={(updatedAnimation) => {
-                      if (!selectedShape) return;
+                      const ownerShape = shapes.find((shape) =>
+                        shape.animations?.some(
+                          (anim) => anim.id === updatedAnimation.id
+                        )
+                      );
+
+                      if (!ownerShape) return;
 
                       const updatedAnimations =
-                        selectedShape.animations?.map((anim) =>
+                        ownerShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim,
+                            : anim
                         ) || [];
 
                       const updatedShape = {
-                        ...selectedShape,
+                        ...ownerShape,
                         animations: updatedAnimations,
                       };
 
-                      // You'll need to pass this function from parent component
                       onShapeAnimationChange(updatedShape);
                     }}
-                    onSelect={() => setSelectedAnimationId(animation.id)}
-                    isSelected={selectedAnimationId === animation.id}
+                    onSelect={() => setSelectedAnimationId(track.animation.id)}
+                    isSelected={selectedAnimationId === track.animation.id}
                   />
                 </div>
               ))}

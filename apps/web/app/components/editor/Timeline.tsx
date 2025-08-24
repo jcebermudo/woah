@@ -10,6 +10,7 @@ interface TimelineProps {
   layerDuration: number;
   selectedShape: Shape | null;
   onShapeAnimationChange: (updatedShape: Shape) => void; // Add this
+  shapes: Shape[];
 }
 
 export default function Timeline({
@@ -18,6 +19,7 @@ export default function Timeline({
   layerDuration,
   selectedShape,
   onShapeAnimationChange,
+  shapes,
 }: TimelineProps) {
   const { mode, duration } = useStore();
   const {
@@ -449,8 +451,33 @@ export default function Timeline({
 
   // Get animation tracks for the selected shape
   const getAnimationTracks = () => {
-    if (!selectedShape?.animations) return [];
-    return selectedShape.animations.filter((animation) => animation.enabled);
+    // Determine which layer to use
+    let targetLayer = selectedLayer;
+
+    // If no selectedLayer but we have a selectedShape, find its parent layer
+    if (!targetLayer && selectedShape) {
+      // You'll need to add a helper function or pass getShapeLayer from parent
+      // For now, assuming you can access it somehow
+      targetLayer =
+        layers.find((layer) => layer.children.includes(selectedShape.id)) ||
+        null;
+    }
+
+    // If still no layer, return empty
+    if (!targetLayer) return [];
+
+    // Get all shapes that belong to the target layer
+    const layerShapes = shapes.filter((shape) =>
+      targetLayer.children.includes(shape.id)
+    );
+
+    // Collect all animations from all shapes in the layer
+    const allAnimations = layerShapes.flatMap(
+      (shape) =>
+        shape.animations?.filter((animation) => animation.enabled) || []
+    );
+
+    return allAnimations;
   };
 
   const animationTracks = getAnimationTracks();
@@ -502,8 +529,8 @@ export default function Timeline({
         {/* Track Headers - Left Sidebar */}
         <div className="bg-[#232323] border-r border-[#474747] h-full min-w-[250px] z-[50]">
           {/* Timeline header */}
-          <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-center">
-            <span className="text-gray-400 text-sm">Animations</span>
+          <div className="bg-[#232323] h-[50px] border-b border-[#474747] w-full flex flex-row items-center justify-start p-[20px]">
+            <span className="text-white font-semibold text-sm">{selectedLayer?.id}</span>
           </div>
 
           {/* Animation tracks headers */}

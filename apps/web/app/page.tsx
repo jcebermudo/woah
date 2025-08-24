@@ -764,7 +764,11 @@ const App: React.FC = () => {
           <Timeline
             layers={layers}
             selectedLayer={
-              layers.find((layer) => selectedIds.includes(layer.id)) || null
+              // First check if the selected item IS a layer
+              layers.find((layer) => selectedIds.includes(layer.id)) ||
+              // Otherwise, find the parent layer of the selected shape
+              getShapeLayer(selectedIds[0]) ||
+              null
             }
             layerDuration={getSelectedItemDuration(selectedIds[0])}
             selectedShape={
@@ -772,7 +776,7 @@ const App: React.FC = () => {
             }
             onShapeAnimationChange={(updatedShape) => {
               const shapeIndex = shapes.findIndex(
-                (s) => s.id === updatedShape.id,
+                (s) => s.id === updatedShape.id
               );
               if (shapeIndex !== -1) {
                 const newShapes = [...shapes];
@@ -780,6 +784,7 @@ const App: React.FC = () => {
                 setShapes(newShapes);
               }
             }}
+            shapes={shapes}
           />
         </div>
       )}

@@ -24,7 +24,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
       repeat: 0,
       startLocation: 100,
       endLocation: 0,
-      ease: "power2.inOut",
+      ease: "elastic.out",
     },
   },
   {
@@ -325,7 +325,7 @@ export class AnimationManager {
     originalProps?: { y?: number },
   ) {
     const startY = (originalProps?.y || 0) + animation.startLocation;
-    const endY = (originalProps?.y || 0) + animation.endLocation;
+    const endY = (originalProps?.y || 0);
     timeline.fromTo(
       target,
       { y: startY }, // use startLocation instead of originalProps?.y

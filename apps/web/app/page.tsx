@@ -776,7 +776,7 @@ const App: React.FC = () => {
             }
             onShapeAnimationChange={(updatedShape) => {
               const shapeIndex = shapes.findIndex(
-                (s) => s.id === updatedShape.id
+                (s) => s.id === updatedShape.id,
               );
               if (shapeIndex !== -1) {
                 const newShapes = [...shapes];

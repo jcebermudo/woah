@@ -468,7 +468,7 @@ export default function Timeline({
 
     // Get all shapes that belong to the target layer
     const layerShapes = shapes.filter((shape) =>
-      targetLayer.children.includes(shape.id)
+      targetLayer.children.includes(shape.id),
     );
 
     // Collect all animations from all shapes in the layer
@@ -479,19 +479,19 @@ export default function Timeline({
           shape,
           // Create a display name for the shape
           shapeName: (() => {
-          switch (shape.type) {
-      case "rect":
-        return "Rectangle";
-      case "circle":
-        return "Circle";
-      case "star":
-        return "Star";
-      default:
-        return "Shape";
-    }
-  })(),
-        })
-      )
+            switch (shape.type) {
+              case "rect":
+                return "Rectangle";
+              case "circle":
+                return "Circle";
+              case "star":
+                return "Star";
+              default:
+                return "Shape";
+            }
+          })(),
+        }),
+      ),
     );
 
     return allAnimationTracks;
@@ -666,8 +666,8 @@ export default function Timeline({
                     onAnimationChange={(updatedAnimation) => {
                       const ownerShape = shapes.find((shape) =>
                         shape.animations?.some(
-                          (anim) => anim.id === updatedAnimation.id
-                        )
+                          (anim) => anim.id === updatedAnimation.id,
+                        ),
                       );
 
                       if (!ownerShape) return;
@@ -676,7 +676,7 @@ export default function Timeline({
                         ownerShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim
+                            : anim,
                         ) || [];
 
                       const updatedShape = {

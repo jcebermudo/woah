@@ -79,12 +79,20 @@ export interface ShakeAnimation extends BaseAnimation {
   axis: "x" | "y" | "both";
 }
 
+export interface BounceUpAnimation extends BaseAnimation {
+  type: "bounceUp";
+  startTime: number;
+  startLocation: number;
+  endLocation: number;
+}
+
 export type ShapeAnimation =
   | SpinAnimation
   | PulseAnimation
   | BounceAnimation
   | FadeAnimation
-  | ShakeAnimation;
+  | ShakeAnimation
+  | BounceUpAnimation;
 
 export type Shape = RectShape | CircleShape | StarShape;
 

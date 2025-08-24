@@ -91,7 +91,7 @@ export default function ShapeComponent({
           const timeline = manager.createAnimationTimeline(
             shapeRef.current,
             animation,
-            originalProps
+            originalProps,
           );
 
           manager.addTimeline(animation.id, timeline);
@@ -117,7 +117,7 @@ export default function ShapeComponent({
           animation.id,
           timelinePlayhead,
           timelineDuration,
-          animation
+          animation,
         );
       }
     });
@@ -234,7 +234,7 @@ export default function ShapeComponent({
   const handleSideAnchorDrag = (
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number
+    deltaY: number,
   ) => {
     // Note: deltaX and deltaY are already in the correct coordinate system
     // from layer.getRelativePointerPosition(), so no stage scale adjustment needed

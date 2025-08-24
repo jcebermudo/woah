@@ -220,7 +220,7 @@ export function RotationAnchor({
         if (pos) {
           startAngle.current = Math.atan2(
             pos.y - groupCenterY,
-            pos.x - groupCenterX
+            pos.x - groupCenterX,
           );
           initialRotation.current = currentRotation; // Use the current rotation from props
         }
@@ -232,7 +232,7 @@ export function RotationAnchor({
           // Calculate current angle
           const currentAngle = Math.atan2(
             pos.y - groupCenterY,
-            pos.x - groupCenterX
+            pos.x - groupCenterX,
           );
 
           // Calculate the difference from start angle

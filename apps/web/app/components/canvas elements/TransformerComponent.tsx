@@ -95,7 +95,7 @@ export default function TransformerComponent({
     pivotY: number,
     diffX: number,
     diffY: number,
-    angle: number
+    angle: number,
   ) => {
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     angle += Math.atan2(diffY, diffX);
@@ -131,7 +131,7 @@ export default function TransformerComponent({
     shape: Shape,
     side: "top" | "bottom" | "left" | "right",
     deltaX: number,
-    deltaY: number
+    deltaY: number,
   ) => {
     // Note: deltaX and deltaY are already in the correct coordinate system
     // from layer.getRelativePointerPosition(), so no stage scale adjustment needed
@@ -239,7 +239,7 @@ export default function TransformerComponent({
         width: number;
         height: number;
         rotation: number;
-      }
+      },
     );
     const isOut =
       clientRect.x < 0 ||
@@ -369,7 +369,7 @@ export default function TransformerComponent({
     const handleMultiSideAnchorDrag = (
       side: "top" | "bottom" | "left" | "right",
       deltaX: number,
-      deltaY: number
+      deltaY: number,
     ) => {
       // Note: deltaX and deltaY are already in the correct coordinate system
       // from layer.getRelativePointerPosition(), so no stage scale adjustment needed

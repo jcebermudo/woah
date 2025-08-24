@@ -7,9 +7,26 @@ import {
   BounceAnimation,
   FadeAnimation,
   ShakeAnimation,
+  BounceUpAnimation,
 } from "@/types/canvasElements";
 
 export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
+  {
+    type: "bounceUp",
+    name: "Bounce Up",
+    defaultValues: {
+      id: "",
+      type: "bounceUp",
+      duration: 1,
+      startTime: 0,
+      enabled: true,
+      playOnSelect: true,
+      repeat: 0,
+      startLocation: 100,
+      endLocation: 0,
+      ease: "power2.inOut",
+    },
+  },
   {
     type: "spin",
     name: "Spin",
@@ -247,6 +264,14 @@ export class AnimationManager {
 
     // ... rest of the method remains the same
     switch (animation.type) {
+      case "bounceUp":
+        this.createBounceUpAnimation(
+          timeline,
+          target,
+          animation as BounceUpAnimation,
+          safeOriginalProps,
+        );
+        break;
       case "spin":
         this.createSpinAnimation(
           timeline,
@@ -291,6 +316,25 @@ export class AnimationManager {
     }
 
     return timeline;
+  }
+
+  private createBounceUpAnimation(
+    timeline: gsap.core.Timeline,
+    target: any,
+    animation: BounceUpAnimation,
+    originalProps?: { y?: number },
+  ) {
+    const startY = (originalProps?.y || 0) + animation.startLocation;
+    const endY = (originalProps?.y || 0) + animation.endLocation;
+    timeline.fromTo(
+      target,
+      { y: startY }, // use startLocation instead of originalProps?.y
+      {
+        y: endY,
+        duration: animation.duration,
+        ease: animation.ease || "power2.inOut",
+      },
+    );
   }
 
   private createSpinAnimation(

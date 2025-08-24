@@ -1,5 +1,5 @@
 import { LayerContainer, Shape } from "@/types/canvasElements";
-import { useStore, usePlaybackStore } from "@/app/zustland/store";
+import { useStore, usePlaybackStore, useAnimationStateStore } from "@/app/zustland/store";
 import { Pause, Play, Repeat2, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import AnimationBar from "./AnimationBar";
@@ -22,6 +22,7 @@ export default function Timeline({
   shapes,
 }: TimelineProps) {
   const { mode, duration } = useStore();
+  const { selectedAnimationIds, setSelectedAnimationIds } = useAnimationStateStore();
   const {
     timelinePlayhead,
     isTimelinePlaying,
@@ -220,6 +221,7 @@ export default function Timeline({
     if (isTimelinePlaying) {
       pausePlayback();
     }
+
     setIsDragging(true);
     setIsScrubbing(true);
     e.preventDefault();
@@ -518,6 +520,10 @@ export default function Timeline({
 
   return (
     <div className="h-screen w-full">
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-black opacity-0 z-[0]"
+        onClick={() => setSelectedAnimationIds([])}
+      ></div>
       <div className="w-full h-[50px] bg-[#232323] border-b border-[#474747] flex flex-row justify-center items-center">
         <div className="flex flex-row gap-[10px]">
           <button onClick={togglePlay}>
@@ -552,13 +558,21 @@ export default function Timeline({
             </span>
           </div>
 
+          <div
+            className="absolute top-0 left-0 w-[250px] h-full bg-black opacity-0 z-[-10]"
+            onClick={() => setSelectedAnimationIds([])}
+          ></div>
+
           {/* Animation tracks headers */}
           {animationTracks.length > 0 ? (
             <div className="overflow-y-auto">
               {animationTracks.map((track, index) => (
                 <div
                   key={track.animation.id}
-                  className="h-[40px] border-b border-[#474747] flex items-center px-4 bg-[#232323]"
+                  className={`h-[40px] flex items-center px-4 cursor-pointer ${selectedAnimationIds.includes(track.animation.id) ? "bg-[#549EFF]" : ""}`}
+                  onClick={() => {
+                    setSelectedAnimationIds([track.animation.id]);
+                  }}
                 >
                   <div className="flex items-center gap-2 w-full">
                     <div className="flex-1 flex flex-row gap-[7px] items-center">
@@ -566,8 +580,12 @@ export default function Timeline({
                         {track.animation.type.charAt(0).toUpperCase() +
                           track.animation.type.slice(1)}
                       </div>
-                      <div className="bg-[#5c5c5c] w-[3px] h-[3px] rounded-full"></div>
-                      <div className="text-gray-400 text-xs">
+                      <div
+                        className={` w-[3px] h-[3px] rounded-full ${selectedAnimationIds.includes(track.animation.id) ? "bg-[#DEECFF]" : "bg-[#5c5c5c]"}`}
+                      ></div>
+                      <div
+                        className={`text-xs ${selectedAnimationIds.includes(track.animation.id) ? "text-[#DEECFF]" : "text-gray-400"}`}
+                      >
                         {track.shapeName}
                       </div>
                     </div>
@@ -647,11 +665,11 @@ export default function Timeline({
 
           {/* Animation Track Bars */}
           {animationTracks.length > 0 && (
-            <div className="relative flex-col">
+            <div className="relative flex-col z-4">
               {animationTracks.map((track, index) => (
                 <div
                   key={track.animation.id}
-                  className="relative flex flex-row items-center justify-center"
+                  className={` relative flex flex-row items-center justify-center ${selectedAnimationIds.includes(track.animation.id) ? "bg-[#2C4A71]" : ""}`}
                   style={{
                     height: "40px",
                   }}
@@ -666,8 +684,8 @@ export default function Timeline({
                     onAnimationChange={(updatedAnimation) => {
                       const ownerShape = shapes.find((shape) =>
                         shape.animations?.some(
-                          (anim) => anim.id === updatedAnimation.id,
-                        ),
+                          (anim) => anim.id === updatedAnimation.id
+                        )
                       );
 
                       if (!ownerShape) return;
@@ -676,7 +694,7 @@ export default function Timeline({
                         ownerShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim,
+                            : anim
                         ) || [];
 
                       const updatedShape = {
@@ -686,8 +704,12 @@ export default function Timeline({
 
                       onShapeAnimationChange(updatedShape);
                     }}
-                    onSelect={() => setSelectedAnimationId(track.animation.id)}
-                    isSelected={selectedAnimationId === track.animation.id}
+                    onSelect={() => {
+                      setSelectedAnimationIds([track.animation.id]);
+                    }}
+                    isSelected={selectedAnimationIds.includes(
+                      track.animation.id
+                    )}
                   />
                 </div>
               ))}

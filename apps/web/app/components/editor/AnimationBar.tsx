@@ -68,7 +68,7 @@ export default function AnimationBar({
   const handleMouseDown = useCallback(
     (
       e: React.MouseEvent,
-      dragType: "move" | "resize-left" | "resize-right",
+      dragType: "move" | "resize-left" | "resize-right"
     ) => {
       e.stopPropagation();
 
@@ -82,7 +82,7 @@ export default function AnimationBar({
         startDuration: animation.duration,
       });
     },
-    [animation.startTime, animation.duration, onSelect],
+    [animation.startTime, animation.duration, onSelect]
   );
 
   const handleMouseMove = useCallback(
@@ -101,8 +101,8 @@ export default function AnimationBar({
             0,
             Math.min(
               totalDuration - animation.duration,
-              dragState.startTime + timeDelta,
-            ),
+              dragState.startTime + timeDelta
+            )
           );
           break;
 
@@ -111,8 +111,8 @@ export default function AnimationBar({
             0,
             Math.min(
               dragState.startTime + dragState.startDuration - 0.1,
-              dragState.startTime + timeDelta,
-            ),
+              dragState.startTime + timeDelta
+            )
           );
           newDuration =
             dragState.startDuration + (dragState.startTime - newStart);
@@ -124,8 +124,8 @@ export default function AnimationBar({
             0.1,
             Math.min(
               totalDuration - dragState.startTime,
-              dragState.startDuration + timeDelta,
-            ),
+              dragState.startDuration + timeDelta
+            )
           );
           break;
       }
@@ -144,7 +144,7 @@ export default function AnimationBar({
       zoomLevel,
       panOffset,
       onAnimationChange,
-    ],
+    ]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -181,8 +181,8 @@ export default function AnimationBar({
   return (
     <div
       ref={barRef}
-      className={`absolute h-[30px] ml-[10px] rounded-[5px] flex items-center select-none bg-[#29A9FF]  ${
-        isSelected ? "" : ""
+      className={`absolute h-[27px] ml-[10px] rounded-[5px] flex items-center select-none  ${
+        isSelected ? "bg-[#29A9FF]" : "bg-[#696969]"
       }`}
       style={{
         left: `${screenStartPosition + 30}px`,
@@ -192,17 +192,19 @@ export default function AnimationBar({
       }}
       onMouseDown={(e) => handleMouseDown(e, "move")}
     >
-      {/* Left resize handle */}
-      <div
-        className="absolute left-[5px] top-[5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
-        onMouseDown={(e) => handleMouseDown(e, "resize-left")}
-      />
+      {isSelected && (
+        <div
+          className="absolute left-[5px] top-[3.5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
+          onMouseDown={(e) => handleMouseDown(e, "resize-left")}
+        />
+      )}
 
-      {/* Right resize handle */}
-      <div
-        className="absolute right-[5px] top-[5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
-        onMouseDown={(e) => handleMouseDown(e, "resize-right")}
-      />
+      {isSelected && (
+        <div
+          className="absolute right-[5px] top-[3.5px] w-[4px] h-[20px] bg-white bg-opacity-20 cursor-ew-resize hover:bg-opacity-40 rounded-full"
+          onMouseDown={(e) => handleMouseDown(e, "resize-right")}
+        />
+      )}
     </div>
   );
 }

@@ -47,20 +47,27 @@ interface AnimationSelectionState {
     shape: Shape;
     shapeName: string;
   }[];
-  setSelectedAnimationDetails: (details: {
-    animation: ShapeAnimation;
-    shape: Shape;
-    shapeName: string;
-  }[]) => void;
+  setSelectedAnimationDetails: (
+    details: {
+      animation: ShapeAnimation;
+      shape: Shape;
+      shapeName: string;
+    }[],
+  ) => void;
 }
 
-export const useAnimationStateStore = create<AnimationSelectionState>((set) => ({
-  selectedAnimationIds: [],
-  setSelectedAnimationIds: (ids: string[]) => set({ selectedAnimationIds: ids }),
-  selectedAnimationDetails: [],
-  setSelectedAnimationDetails: (details: {
-    animation: ShapeAnimation;
-    shape: Shape;
-    shapeName: string;
-  }[]) => set({ selectedAnimationDetails: details }),
-}));
+export const useAnimationStateStore = create<AnimationSelectionState>(
+  (set) => ({
+    selectedAnimationIds: [],
+    setSelectedAnimationIds: (ids: string[]) =>
+      set({ selectedAnimationIds: ids }),
+    selectedAnimationDetails: [],
+    setSelectedAnimationDetails: (
+      details: {
+        animation: ShapeAnimation;
+        shape: Shape;
+        shapeName: string;
+      }[],
+    ) => set({ selectedAnimationDetails: details }),
+  }),
+);

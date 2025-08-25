@@ -231,25 +231,25 @@ export class AnimationManager {
       repeat: animation.repeat ?? 0,
       paused: true,
       onComplete: () => {
-  if (animation.repeat !== -1) {
-    // Persist final animation values as new shapeProps
-    const finalX = target.x();
-    const finalY = target.y();
-    const finalRotation = target.rotation();
-    const finalOpacity = target.opacity?.();
+        if (animation.repeat !== -1) {
+          // Persist final animation values as new shapeProps
+          const finalX = target.x();
+          const finalY = target.y();
+          const finalRotation = target.rotation();
+          const finalOpacity = target.opacity?.();
 
-    // call the shape's onChange (you’ll need to pass it in)
-    if (target._onChange) {
-      target._onChange({
-        ...target,
-        x: finalX,
-        y: finalY,
-        rotation: finalRotation,
-        opacity: finalOpacity,
-      });
-    }
-  }
-}
+          // call the shape's onChange (you’ll need to pass it in)
+          if (target._onChange) {
+            target._onChange({
+              ...target,
+              x: finalX,
+              y: finalY,
+              rotation: finalRotation,
+              opacity: finalOpacity,
+            });
+          }
+        }
+      },
     });
 
     const safeOriginalProps = {

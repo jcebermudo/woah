@@ -68,7 +68,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newWidth = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, { ...selectedLayer, width: newWidth });
               }}
@@ -84,7 +84,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newHeight = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id
+                  (l) => l.id === selectedLayer.id,
                 );
                 handleLayerChange(index, {
                   ...selectedLayer,
@@ -111,7 +111,7 @@ export default function PropertiesPanel({
                   onChange={(e) => {
                     const newDuration = Number(e.target.value);
                     const index = layers.findIndex(
-                      (l) => l.id === selectedLayer.id
+                      (l) => l.id === selectedLayer.id,
                     );
                     handleLayerChange(index, {
                       ...selectedLayer,
@@ -159,7 +159,7 @@ export default function PropertiesPanel({
                               } as ShapeAnimation;
 
                               const index = shapes.findIndex(
-                                (s) => s.id === selectedShape.id
+                                (s) => s.id === selectedShape.id,
                               );
                               const currentAnimations =
                                 selectedShape.animations || [];
@@ -192,8 +192,7 @@ export default function PropertiesPanel({
         </div>
       )}
 
-      
-            {/* Current animations list
+      {/* Current animations list
           {selectedShape.animations && selectedShape.animations.length > 0 && (
             <div className="mb-4">
               <span className="text-[14px] font-medium text-white mb-2 block">
@@ -283,7 +282,6 @@ export default function PropertiesPanel({
             </div>
           )}
              */}
-
-      </div>
+    </div>
   );
 }

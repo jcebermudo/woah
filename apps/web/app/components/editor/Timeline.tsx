@@ -1,5 +1,9 @@
 import { LayerContainer, Shape } from "@/types/canvasElements";
-import { useStore, usePlaybackStore, useAnimationStateStore } from "@/app/zustland/store";
+import {
+  useStore,
+  usePlaybackStore,
+  useAnimationStateStore,
+} from "@/app/zustland/store";
 import { Pause, Play, Repeat2, Eye, EyeOff } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import AnimationBar from "./AnimationBar";
@@ -22,7 +26,12 @@ export default function Timeline({
   shapes,
 }: TimelineProps) {
   const { mode, duration } = useStore();
-  const { selectedAnimationIds, setSelectedAnimationIds, selectedAnimationDetails, setSelectedAnimationDetails } = useAnimationStateStore();
+  const {
+    selectedAnimationIds,
+    setSelectedAnimationIds,
+    selectedAnimationDetails,
+    setSelectedAnimationDetails,
+  } = useAnimationStateStore();
   const {
     timelinePlayhead,
     isTimelinePlaying,
@@ -496,11 +505,13 @@ export default function Timeline({
       ),
     );
 
-    setSelectedAnimationDetails(allAnimationTracks.map((track) => ({
-      animation: track.animation,
-      shape: track.shape,
-      shapeName: track.shapeName,
-    })));
+    setSelectedAnimationDetails(
+      allAnimationTracks.map((track) => ({
+        animation: track.animation,
+        shape: track.shape,
+        shapeName: track.shapeName,
+      })),
+    );
 
     return allAnimationTracks;
   };
@@ -690,8 +701,8 @@ export default function Timeline({
                     onAnimationChange={(updatedAnimation) => {
                       const ownerShape = shapes.find((shape) =>
                         shape.animations?.some(
-                          (anim) => anim.id === updatedAnimation.id
-                        )
+                          (anim) => anim.id === updatedAnimation.id,
+                        ),
                       );
 
                       if (!ownerShape) return;
@@ -700,7 +711,7 @@ export default function Timeline({
                         ownerShape.animations?.map((anim) =>
                           anim.id === updatedAnimation.id
                             ? updatedAnimation
-                            : anim
+                            : anim,
                         ) || [];
 
                       const updatedShape = {
@@ -714,7 +725,7 @@ export default function Timeline({
                       setSelectedAnimationIds([track.animation.id]);
                     }}
                     isSelected={selectedAnimationIds.includes(
-                      track.animation.id
+                      track.animation.id,
                     )}
                   />
                 </div>

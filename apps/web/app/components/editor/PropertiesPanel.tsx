@@ -1,6 +1,6 @@
 import { LayerContainer, Shape, ShapeAnimation } from "@/types/canvasElements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStore } from "@/app/zustland/store";
+import { useStore, useAnimationStateStore } from "@/app/zustland/store";
 import { useState } from "react";
 import { ANIMATION_TEMPLATES, AnimationManager } from "@/utils/animations";
 
@@ -21,6 +21,8 @@ export default function PropertiesPanel({
 }: PropertiesPanelProps) {
   const [isAddingAnimation, setIsAddingAnimation] = useState(false);
   const { mode, setMode } = useStore();
+  const { selectedAnimationIds, selectedAnimationDetails } =
+    useAnimationStateStore();
   const selectedShape = shapes.find((shape) => selectedIds.includes(shape.id));
   const selectedLayer = layers.find((layer) => selectedIds.includes(layer.id));
 
@@ -51,7 +53,7 @@ export default function PropertiesPanel({
       </Tabs>
       <div className="select-none flex flex-row justify-start items-center border-y border-[#474747] py-[15px] px-[15px]">
         <span className="text-white text-[14px] font-medium">
-          {capitalizedType}
+          {selectedAnimationIds.length === 0 ? capitalizedType : "a"}
         </span>
       </div>
       {mode === "design" && selectedLayer && (
@@ -66,7 +68,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newWidth = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id,
+                  (l) => l.id === selectedLayer.id
                 );
                 handleLayerChange(index, { ...selectedLayer, width: newWidth });
               }}
@@ -82,7 +84,7 @@ export default function PropertiesPanel({
               onChange={(e) => {
                 const newHeight = Number(e.target.value);
                 const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id,
+                  (l) => l.id === selectedLayer.id
                 );
                 handleLayerChange(index, {
                   ...selectedLayer,
@@ -93,33 +95,105 @@ export default function PropertiesPanel({
           </label>
         </div>
       )}
-      {mode === "animate" && selectedLayer && (
-        <div className="select-none flex flex-row gap-4 border-b border-[#474747] py-[15px] px-[15px]">
-          <div className="flex flex-col gap-[10px]">
-            <span className="text-[14px] font-medium text-white">Duration</span>
-            <input
-              type="number"
-              className="rounded-[10px] px-[10px] py-[8px] w-24 bg-[#383838] font-medium text-white text-[14px] focus:outline-none"
-              value={selectedLayer.duration}
-              min={1}
-              onChange={(e) => {
-                const newDuration = Number(e.target.value);
-                const index = layers.findIndex(
-                  (l) => l.id === selectedLayer.id,
-                );
-                handleLayerChange(index, {
-                  ...selectedLayer,
-                  duration: newDuration,
-                });
-              }}
-            />
-          </div>
+      {mode === "animate" && (
+        <div>
+          {selectedLayer && (
+            <div className="select-none flex flex-row gap-4 border-b border-[#474747] py-[15px] px-[15px]">
+              <div className="flex flex-col gap-[10px]">
+                <span className="text-[14px] font-medium text-white">
+                  Duration
+                </span>
+                <input
+                  type="number"
+                  className="rounded-[10px] px-[10px] py-[8px] w-24 bg-[#383838] font-medium text-white text-[14px] focus:outline-none"
+                  value={selectedLayer.duration}
+                  min={1}
+                  onChange={(e) => {
+                    const newDuration = Number(e.target.value);
+                    const index = layers.findIndex(
+                      (l) => l.id === selectedLayer.id
+                    );
+                    handleLayerChange(index, {
+                      ...selectedLayer,
+                      duration: newDuration,
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          {selectedAnimationIds.length === 1 && (
+            <div className="select-none border-b border-[#474747] py-[15px] px-[15px]">
+              <div className="flex flex-col gap-[10px]">
+                <span className="text-[14px] font-medium text-white">
+                  Current Animation
+                </span>
+              </div>
+            </div>
+          )}
+          {selectedShape && selectedAnimationIds.length === 0 && (
+            <div className="select-none border-b border-[#474747] py-[15px] px-[15px]">
+              <button
+                onClick={() => setIsAddingAnimation(true)}
+                className="cursor-pointer rounded-[10px] w-full px-[10px] py-[8px] bg-[#29A9FF] font-medium text-white text-[14px] focus:outline-none"
+              >
+                Add animation
+              </button>
+              {isAddingAnimation && (
+                <div className="flex flex-col gap-[10px] absolute w-[280px] h-[300px] translate-x-[-150px] bg-[#232323] rounded-[20px] p-[20px]">
+                  <div className="flex items-center justify-between">
+                    <Tabs className="w-full" defaultValue="in">
+                      <TabsList className="w-full h-[45px] rounded-[10px] p-[5px]">
+                        <TabsTrigger value="in">In</TabsTrigger>
+                        <TabsTrigger value="out">Out</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="in">
+                        {ANIMATION_TEMPLATES.map((template) => (
+                          <button
+                            key={template.type}
+                            onClick={() => {
+                              const animationManager = new AnimationManager();
+                              const newAnimation: ShapeAnimation = {
+                                ...template.defaultValues,
+                                id: animationManager.generateAnimationId(),
+                              } as ShapeAnimation;
+
+                              const index = shapes.findIndex(
+                                (s) => s.id === selectedShape.id
+                              );
+                              const currentAnimations =
+                                selectedShape.animations || [];
+                              const updatedAnimations = [
+                                ...currentAnimations,
+                                newAnimation,
+                              ];
+
+                              handleShapeChange(index, {
+                                ...selectedShape,
+                                animations: updatedAnimations,
+                              });
+                              setIsAddingAnimation(false);
+                            }}
+                            className="cursor-pointer rounded-[10px] px-[10px] py-[8px] bg-[#232323] border border-[#474747] font-medium text-white text-[12px] hover:bg-[#383838] focus:outline-none"
+                          >
+                            {template.name}
+                          </button>
+                        ))}
+                      </TabsContent>
+                      <TabsContent value="out">
+                        <div className="flex flex-col gap-[10px]"></div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {mode === "animate" && selectedShape && (
-        <div className="select-none border-b border-[#474747] py-[15px] px-[15px]">
-          {/* Current animations list */}
+      
+            {/* Current animations list
           {selectedShape.animations && selectedShape.animations.length > 0 && (
             <div className="mb-4">
               <span className="text-[14px] font-medium text-white mb-2 block">
@@ -208,67 +282,8 @@ export default function PropertiesPanel({
               </div>
             </div>
           )}
+             */}
 
-          {/* Add animation section */}
-          {!isAddingAnimation && (
-            <button
-              onClick={() => setIsAddingAnimation(true)}
-              className="cursor-pointer rounded-[10px] w-full px-[10px] py-[8px] bg-[#29A9FF] font-medium text-white text-[14px] focus:outline-none"
-            >
-              Add animation
-            </button>
-          )}
-
-          {isAddingAnimation && (
-            <div className="flex flex-col gap-[10px] absolute w-[280px] h-[300px] translate-x-[-150px] bg-[#232323] rounded-[20px] p-[20px]">
-              <div className="flex items-center justify-between">
-                <Tabs className="w-full" defaultValue="in">
-                  <TabsList className="w-full h-[45px] rounded-[10px] p-[5px]">
-                    <TabsTrigger value="in">In</TabsTrigger>
-                    <TabsTrigger value="out">Out</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="in">
-                    {ANIMATION_TEMPLATES.map((template) => (
-                      <button
-                        key={template.type}
-                        onClick={() => {
-                          const animationManager = new AnimationManager();
-                          const newAnimation: ShapeAnimation = {
-                            ...template.defaultValues,
-                            id: animationManager.generateAnimationId(),
-                          } as ShapeAnimation;
-
-                          const index = shapes.findIndex(
-                            (s) => s.id === selectedShape.id,
-                          );
-                          const currentAnimations =
-                            selectedShape.animations || [];
-                          const updatedAnimations = [
-                            ...currentAnimations,
-                            newAnimation,
-                          ];
-
-                          handleShapeChange(index, {
-                            ...selectedShape,
-                            animations: updatedAnimations,
-                          });
-                          setIsAddingAnimation(false);
-                        }}
-                        className="cursor-pointer rounded-[10px] px-[10px] py-[8px] bg-[#232323] border border-[#474747] font-medium text-white text-[12px] hover:bg-[#383838] focus:outline-none"
-                      >
-                        {template.name}
-                      </button>
-                    ))}
-                  </TabsContent>
-                  <TabsContent value="out">
-                    <div className="flex flex-col gap-[10px]"></div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+      </div>
   );
 }

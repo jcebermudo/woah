@@ -22,7 +22,7 @@ export default function Timeline({
   shapes,
 }: TimelineProps) {
   const { mode, duration } = useStore();
-  const { selectedAnimationIds, setSelectedAnimationIds } = useAnimationStateStore();
+  const { selectedAnimationIds, setSelectedAnimationIds, selectedAnimationDetails, setSelectedAnimationDetails } = useAnimationStateStore();
   const {
     timelinePlayhead,
     isTimelinePlaying,
@@ -495,6 +495,12 @@ export default function Timeline({
         }),
       ),
     );
+
+    setSelectedAnimationDetails(allAnimationTracks.map((track) => ({
+      animation: track.animation,
+      shape: track.shape,
+      shapeName: track.shapeName,
+    })));
 
     return allAnimationTracks;
   };

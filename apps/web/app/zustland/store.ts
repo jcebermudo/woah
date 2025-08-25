@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import Konva from "konva";
+import { Shape, ShapeAnimation } from "@/types/canvasElements";
 
 type Store = {
   mode: "design" | "animate";
@@ -41,9 +42,25 @@ export const usePlaybackStore = create<PlaybackState>((set) => ({
 interface AnimationSelectionState {
   selectedAnimationIds: string[];
   setSelectedAnimationIds: (ids: string[]) => void;
+  selectedAnimationDetails: {
+    animation: ShapeAnimation;
+    shape: Shape;
+    shapeName: string;
+  }[];
+  setSelectedAnimationDetails: (details: {
+    animation: ShapeAnimation;
+    shape: Shape;
+    shapeName: string;
+  }[]) => void;
 }
 
 export const useAnimationStateStore = create<AnimationSelectionState>((set) => ({
   selectedAnimationIds: [],
   setSelectedAnimationIds: (ids: string[]) => set({ selectedAnimationIds: ids }),
+  selectedAnimationDetails: [],
+  setSelectedAnimationDetails: (details: {
+    animation: ShapeAnimation;
+    shape: Shape;
+    shapeName: string;
+  }[]) => set({ selectedAnimationDetails: details }),
 }));

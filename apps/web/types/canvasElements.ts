@@ -80,7 +80,7 @@ export interface ShakeAnimation extends BaseAnimation {
 }
 
 export interface BounceUpAnimation extends BaseAnimation {
-  type: "bounceUp";
+  type: "Bounce Up";
   startTime: number;
   startLocation: number;
   endLocation: number;

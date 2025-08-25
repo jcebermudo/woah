@@ -16,7 +16,7 @@ export const ANIMATION_TEMPLATES: AnimationTemplate[] = [
     name: "Bounce Up",
     defaultValues: {
       id: "",
-      type: "bounceUp",
+      type: "Bounce Up",
       duration: 1,
       startTime: 0,
       enabled: true,
@@ -231,21 +231,25 @@ export class AnimationManager {
       repeat: animation.repeat ?? 0,
       paused: true,
       onComplete: () => {
-        // Reset to original values when animation completes (for non-infinite animations)
-        if (animation.repeat !== -1 && originalProps) {
-          // Use a gentle reset to avoid jitter
-          gsap.to(target, {
-            ...originalProps,
-            duration: 0.1,
-            ease: "power2.out",
-            onComplete: () => {
-              if (target.getLayer) {
-                target.getLayer()?.batchDraw();
-              }
-            },
-          });
-        }
-      },
+  if (animation.repeat !== -1) {
+    // Persist final animation values as new shapeProps
+    const finalX = target.x();
+    const finalY = target.y();
+    const finalRotation = target.rotation();
+    const finalOpacity = target.opacity?.();
+
+    // call the shape's onChange (you’ll need to pass it in)
+    if (target._onChange) {
+      target._onChange({
+        ...target,
+        x: finalX,
+        y: finalY,
+        rotation: finalRotation,
+        opacity: finalOpacity,
+      });
+    }
+  }
+}
     });
 
     const safeOriginalProps = {
@@ -264,7 +268,7 @@ export class AnimationManager {
 
     // ... rest of the method remains the same
     switch (animation.type) {
-      case "bounceUp":
+      case "Bounce Up":
         this.createBounceUpAnimation(
           timeline,
           target,

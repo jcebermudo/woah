@@ -1,6 +1,6 @@
 import { LayerContainer, Shape, ShapeAnimation } from "@/types/canvasElements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStore, useAnimationStateStore } from "@/app/zustland/store";
+import { useStore, useAnimationStateStore, usePropertiesPanelStore } from "@/app/zustland/store";
 import { useState, useRef, useEffect } from "react";
 import { ANIMATION_TEMPLATES, AnimationManager } from "@/utils/animations";
 
@@ -19,7 +19,7 @@ export default function PropertiesPanel({
   handleShapeChange,
   handleLayerChange,
 }: PropertiesPanelProps) {
-  const [isAddingAnimation, setIsAddingAnimation] = useState(false);
+  const { isAddingAnimation, setIsAddingAnimation } = usePropertiesPanelStore();
   const animationContainerRef = useRef<HTMLDivElement>(null);
   const { mode, setMode } = useStore();
   const { selectedAnimationIds, selectedAnimationDetails } =

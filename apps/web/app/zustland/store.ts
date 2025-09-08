@@ -2,6 +2,11 @@ import { create } from "zustand";
 import Konva from "konva";
 import { Shape, ShapeAnimation } from "@/types/canvasElements";
 
+interface PropertiesPanelState {
+  isAddingAnimation: boolean;
+  setIsAddingAnimation: (isAddingAnimation: boolean) => void;
+}
+
 type Store = {
   mode: "design" | "animate";
   setMode: (mode: "design" | "animate") => void;
@@ -71,3 +76,9 @@ export const useAnimationStateStore = create<AnimationSelectionState>(
     ) => set({ selectedAnimationDetails: details }),
   }),
 );
+
+export const usePropertiesPanelStore = create<PropertiesPanelState>((set) => ({
+  isAddingAnimation: false,
+  setIsAddingAnimation: (isAddingAnimation: boolean) =>
+    set({ isAddingAnimation }),
+}));

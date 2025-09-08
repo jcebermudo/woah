@@ -505,14 +505,6 @@ export default function Timeline({
       ),
     );
 
-    setSelectedAnimationDetails(
-      allAnimationTracks.map((track) => ({
-        animation: track.animation,
-        shape: track.shape,
-        shapeName: track.shapeName,
-      })),
-    );
-
     return allAnimationTracks;
   };
 
@@ -539,7 +531,10 @@ export default function Timeline({
     <div className="h-screen w-full">
       <div
         className="absolute top-0 left-0 w-full h-full bg-black opacity-0 z-[0]"
-        onClick={() => setSelectedAnimationIds([])}
+        onClick={() => {
+          setSelectedAnimationIds([]);
+          setSelectedAnimationDetails([]);
+        }}
       ></div>
       <div className="w-full h-[50px] bg-[#232323] border-b border-[#474747] flex flex-row justify-center items-center">
         <div className="flex flex-row gap-[10px]">
@@ -577,7 +572,10 @@ export default function Timeline({
 
           <div
             className="absolute top-0 left-0 w-[250px] h-full bg-black opacity-0 z-[-10]"
-            onClick={() => setSelectedAnimationIds([])}
+            onClick={() => {
+              setSelectedAnimationIds([]);
+              setSelectedAnimationDetails([]);
+            }}
           ></div>
 
           {/* Animation tracks headers */}
@@ -589,6 +587,11 @@ export default function Timeline({
                   className={`h-[40px] flex items-center px-4 cursor-pointer ${selectedAnimationIds.includes(track.animation.id) ? "bg-[#549EFF]" : ""}`}
                   onClick={() => {
                     setSelectedAnimationIds([track.animation.id]);
+                    setSelectedAnimationDetails([{
+                      animation: track.animation,
+                      shape: track.shape,
+                      shapeName: track.shapeName,
+                    }]);
                   }}
                 >
                   <div className="flex items-center gap-2 w-full">
@@ -601,7 +604,7 @@ export default function Timeline({
                         className={` w-[3px] h-[3px] rounded-full ${selectedAnimationIds.includes(track.animation.id) ? "bg-[#DEECFF]" : "bg-[#5c5c5c]"}`}
                       ></div>
                       <div
-                        className={`text-xs ${selectedAnimationIds.includes(track.animation.id) ? "text-[#DEECFF]" : "text-gray-400"}`}
+                        className={`text-sm ${selectedAnimationIds.includes(track.animation.id) ? "text-[#DEECFF]" : "text-gray-400"}`}
                       >
                         {track.shapeName}
                       </div>
@@ -723,6 +726,11 @@ export default function Timeline({
                     }}
                     onSelect={() => {
                       setSelectedAnimationIds([track.animation.id]);
+                      setSelectedAnimationDetails([{
+                        animation: track.animation,
+                        shape: track.shape,
+                        shapeName: track.shapeName,
+                      }]);
                     }}
                     isSelected={selectedAnimationIds.includes(
                       track.animation.id,

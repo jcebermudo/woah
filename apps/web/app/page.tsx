@@ -40,7 +40,7 @@ const initialLayers: LayerContainer[] = [
     draggable: true,
     children: [], // No initial children
     showBorder: true,
-    duration: 1000,
+    duration: 10,
   },
 ];
 
@@ -84,7 +84,7 @@ const App: React.FC = () => {
     pivotY: number,
     diffX: number,
     diffY: number,
-    angle: number,
+    angle: number
   ) => {
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     angle += Math.atan2(diffY, diffX);
@@ -229,7 +229,7 @@ const App: React.FC = () => {
   };
 
   const handleMultipleTransformEnd = (
-    e: Konva.KonvaEventObject<MouseEvent>,
+    e: Konva.KonvaEventObject<MouseEvent>
   ) => {
     const currentSelectedIds = selectedIds;
     // Get current selected nodes
@@ -260,7 +260,7 @@ const App: React.FC = () => {
         // Find the shape in the current state (not stale closure)
         const shapeIndex = newShapes.findIndex(
           (shape) =>
-            selectedIds[nodeIndex] && shape.id === selectedIds[nodeIndex],
+            selectedIds[nodeIndex] && shape.id === selectedIds[nodeIndex]
         );
 
         if (shapeIndex === -1) return; // Shape not found
@@ -571,12 +571,12 @@ const App: React.FC = () => {
     if (!selectedIds.length) return false;
 
     const hasLayerSelected = layers.some((layer) =>
-      selectedIds.includes(layer.id),
+      selectedIds.includes(layer.id)
     );
     if (hasLayerSelected) return true;
 
     const hasShapeSelected = shapes.some((shape) =>
-      selectedIds.includes(shape.id),
+      selectedIds.includes(shape.id)
     );
     return hasShapeSelected;
   };
@@ -682,7 +682,7 @@ const App: React.FC = () => {
     let rightmostX = 0;
     if (layers.length > 0) {
       rightmostX = Math.max(
-        ...layers.map((layer) => layer.x + layer.width / 2),
+        ...layers.map((layer) => layer.x + layer.width / 2)
       );
     }
 
@@ -703,7 +703,7 @@ const App: React.FC = () => {
       draggable: true,
       children: [],
       showBorder: true,
-      duration: 1000,
+      duration: 10,
     };
 
     // Add the new layer to the layers array
@@ -746,7 +746,7 @@ const App: React.FC = () => {
         />
       </div>
       {/* Properties Panel */}
-      <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-10">
+      <div className="absolute top-0 right-0 w-[250px] h-screen bg-[#232323] border-l border-[#474747] z-[15]">
         <PropertiesPanel
           selectedIds={selectedIds}
           shapes={shapes}
@@ -759,7 +759,7 @@ const App: React.FC = () => {
       {mode === "animate" && (
         <div
           ref={timelineRef}
-          className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[20]"
+          className="absolute bottom-0 left-0 w-full max-h-[350px] bg-[#232323] border-t border-[#474747] z-[11]"
         >
           <Timeline
             layers={layers}
@@ -776,7 +776,7 @@ const App: React.FC = () => {
             }
             onShapeAnimationChange={(updatedShape) => {
               const shapeIndex = shapes.findIndex(
-                (s) => s.id === updatedShape.id,
+                (s) => s.id === updatedShape.id
               );
               if (shapeIndex !== -1) {
                 const newShapes = [...shapes];

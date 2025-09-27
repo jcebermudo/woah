@@ -20,7 +20,7 @@ interface LayerComponentProps {
   stageScale: number;
 }
 
-export default function LayerComponent({
+export default function SceneComponent({
   layerProps,
   isSelected,
   isHovered,
